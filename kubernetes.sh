@@ -55,7 +55,7 @@ kubernetes:deploy() {
 
   shopt -s nullglob
   for FILE in ${DEPLOYMENT_FILES_PATH}/{.,$ENVIRONMENT}/*.yaml; do
-    COMMIT="P" TIMESTAMP=$(date +%Y%m%d-%H:%M:%S) envsubst < ${FILE} | ${KUBECTL_CMD} apply --record=false -f -
+    COMMIT=${COMMIT} TIMESTAMP=$(date +%Y%m%d-%H:%M:%S) envsubst < ${FILE} | ${KUBECTL_CMD} apply --record=false -f -
   done
 
   if [[ $(${KUBECTL_CMD} get deployment ${IMAGE_NAME} 2> /dev/null) ]]; then
