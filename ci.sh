@@ -17,12 +17,12 @@ set -u
 
 ci:build_name() {
   local BUILD_NAME=${CI_BUILD_NAME:-$(basename $PWD)}
-  : ${BUILD_NAME:?"BUILD_NAME cannot be deterined"}
+  : ${BUILD_NAME:?"BUILD_NAME cannot be determined"}
   echo $BUILD_NAME
 }
 
 ci:commit() {
   local COMMIT=${CI_COMMIT:-$(vcs:getCommit)}
-  : ${COMMIT:?"COMMIT cannot be deterined"}
+  : ${COMMIT:?"COMMIT cannot be determined"}
   echo $COMMIT
 }
