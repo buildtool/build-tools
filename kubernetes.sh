@@ -53,9 +53,11 @@ kubernetes:deploy() {
   echo "Deploying '${IMAGE_NAME}' using '${KUBECTL_CMD}'"
   [[ "${ENVIRONMENT}" == "local" ]] && kubernetes:local_setup
 
+  shopt -s extglob
   shopt -s nullglob
-  for FILE in ${DEPLOYMENT_FILES_PATH}/{.,$ENVIRONMENT}/*.yaml; do
-    COMMIT="P" TIMESTAMP=$(date +%Y%m%d-%H:%M:%S) envsubst < ${FILE} | ${KUBECTL_CMD} apply --record=false -f -
+  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/{.,${ENVIRONMENT}}/*([^-]).yaml ${DEPLOYMENT_FILES_PATH}/*-${ENVIRONMENT}.yaml)
+  for FILE in ${FILES}; do
+    COMMIT="$(ci:commit)" TIMESTAMP=$(date +%Y%m%d-%H:%M:%S) envsubst < ${FILE} | ${KUBECTL_CMD} apply --record=false -f -
   done
 
   if [[ $(${KUBECTL_CMD} get deployment ${IMAGE_NAME} 2> /dev/null) ]]; then
