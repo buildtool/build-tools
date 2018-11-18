@@ -105,4 +105,5 @@ kubernetes:load_mysql_data() {
   db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=mysql' --output jsonpath={.items..metadata.name})
 
   cat "$FILE" | ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c "mysql -u $SERVICE_NAME -p\"$SERVICE_NAME\" $SERVICE_NAME"
+  ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c "mysqlcheck -u root --password=\"password\" --optimize \"${SERVICE_NAME}\""
 }
