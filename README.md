@@ -13,28 +13,46 @@ To be able to use the build scripts locally:
 - Add `BUILD_TOOLS_PATH=<PATH TO THIS REPOSITORY>` to your shell environment, typically in `.bash_profile` or something similar
 
 ## Build project structure
-The scripts assume that the project follow the directory layout described below,it also depends on configuration in `environments.sh` to determine valid target environments and deployment commands.
-
-
+Configuration and setup is done in `.buildtools` files. Those files must be present in the project folder or upwards in the dicectory structure. This lets you create a common `.buildtools` file to be used for a set of projects.
 Example:
 
-    $ cat environments.sh
-    ...
+    $ pwd
+    ~/source/
+    $ tree
+    .
+    ├── customer1
+    │   ├── project1
+    │   └── project2
+    └── customer2
+        └── project1
+        
+Here we can choose to put a `buildtools` file in the different `customer` directories since they (most likely) have different deployment configuration.
+
+    $ cat customer1/.buildtools
     valid_environments=(
-    ["local"]="--context docker-for-desktop --namespace default"
-    ["staging"]="--context docker-for-desktop --namespace staging"
-    ["prod"]="--context docker-for-desktop --namespace prod"
+        ["local"]="--context docker-for-desktop --namespace default"
+        ["staging"]="--context docker-for-desktop --namespace staging"
+        ["prod"]="--context docker-for-desktop --namespace prod"
     )
-    ...
 
 This defines three environments (local,staging,prod) all which are to be deployed to a local Kubernetes cluster but in different namespaces. 
+
+    $ cat customer2/.buildtools
+    valid_environments=(
+        ["local"]="--context docker-for-desktop --namespace local"
+        ["prod"]="--context kube-cluster-prod --namespace prod"
+    )
+
 Context and namespaces must be provided/created/configured elsewhere.
+
+
+The scripts assume that the project follow the directory layout described below.
 
 ### Project structure
 The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
 
 There must be a `deployment_files` directory in the root of your project file. This directory contains all the `yaml` files used to describe the Kubernetes deployment tasks needed to run this service.
-Environment specific files are to be located in sub-directories, for example `deployment_files/local` for local setup.
+Environment specific files can be handled in two different ways depending on personal preference. They can either be located in sub-directories, for example `deployment_files/local` for local setup.
 
     $ cd projecct
     $ tree
@@ -42,9 +60,18 @@ Environment specific files are to be located in sub-directories, for example `de
     └── deployment_files
         ├── deploy.yaml
         ├── local
-        │   ├── local-ingress.yaml
-        │   └── setup-local.sh
+        │   ├── ingress.yaml
+        │   └── setup.sh
         └── prod
-            └── prod-ingress.yaml
+            └── ingress.yaml
 
+Or they can be defined using a `-<environment>` suffix, i.e. ingress-prod.yaml
 
+    $ cd projecct
+    $ tree
+    .
+    └── deployment_files
+        ├── deploy.yaml
+        ├── ingress-local.yaml
+        ├── setup-local.sh
+        └── ingress-prod.yaml
