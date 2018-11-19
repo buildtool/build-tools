@@ -46,7 +46,7 @@ kubernetes:deploy() {
 
   shopt -s extglob
   shopt -s nullglob
-  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/${ENVIRONMENT}/*.sh)
+  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/${ENVIRONMENT}/*.sh ${DEPLOYMENT_FILES_PATH}/setup-${ENVIRONMENT}.sh)
     for FILE in ${FILES}; do
       echo "Processing ${FILE}"
       ${FILE}
