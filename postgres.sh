@@ -7,7 +7,7 @@ source ${SCRIPT_DIR}/kubernetes.sh
 # Intended for local setup.
 # Parameters
 # 1 - the service name for which to create the database user, username and password will be the same as well
-# 2 - the environment to us to access Kubernetes
+# 2 - the environment to use to access Kubernetes
 postgres:create_database_user() {
   local SERVICE_NAME="${1}"
   local ENVIRONMENT="${2}"
