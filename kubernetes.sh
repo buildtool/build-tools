@@ -46,14 +46,13 @@ kubernetes:deploy() {
 
   shopt -s extglob
   shopt -s nullglob
-  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/${ENVIRONMENT}/*.sh ${DEPLOYMENT_FILES_PATH}/setup-${ENVIRONMENT}.sh 2>/dev/null)
+  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/${ENVIRONMENT}/*.sh ${DEPLOYMENT_FILES_PATH}/setup-${ENVIRONMENT}.sh 2>/dev/null || true)
     for FILE in ${FILES}; do
       echo "Processing ${FILE}"
       ${FILE}
     done
 
-
-  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/{.,${ENVIRONMENT}}/*([^-]).yaml ${DEPLOYMENT_FILES_PATH}/*-${ENVIRONMENT}.yaml)
+  FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/{.,${ENVIRONMENT}}/*([^-]).yaml ${DEPLOYMENT_FILES_PATH}/*-${ENVIRONMENT}.yaml 2>/dev/null || true)
   for FILE in ${FILES}; do
     COMMIT=$(ci:commit)  TIMESTAMP=$(date +%Y%m%d-%H:%M:%S) envsubst < ${FILE} | ${KUBECTL_CMD} apply --record=false -f -
   done
