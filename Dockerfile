@@ -3,7 +3,7 @@ FROM debian:sid-slim
 ENV KUBERNETES_VERSION=1.10.9
 
 RUN apt-get update && \
-        apt-get install -y gettext openssl curl tar ca-certificates git && \
+        apt-get install -y gettext openssl curl tar ca-certificates git sudo && \
         curl -sSL https://get.docker.com/ | sh && \
         apt-get update && \
         apt-get upgrade -y && \
