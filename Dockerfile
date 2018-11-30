@@ -1,4 +1,4 @@
-FROM alpine
+FROM frolvlad/alpine-glibc
 
 ENV KUBERNETES_VERSION=1.10.9
 
