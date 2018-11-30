@@ -7,7 +7,7 @@ source ${SCRIPT_DIR}/vcs.sh
 
 ## CONFIG BLOCK
 # The docker registry base url, used to name the image (and push)
-DOCKER_REGISTRY_URL="875131241629.dkr.ecr.eu-west-1.amazonaws.com"
+DOCKER_REGISTRY_URL=""
 ## END CONFIG BLOCK
 
 ## The folling methods are ECR specific
