@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source ${SCRIPT_DIR}/commons.sh
-source ${SCRIPT_DIR}/ci.sh
-source ${SCRIPT_DIR}/vcs.sh
+source "$( cd "$( dirname "$0" )" && pwd )/commons.sh"
+source "$( cd "$( dirname "$0" )" && pwd )/ci.sh"
+source "$( cd "$( dirname "$0" )" && pwd )/vcs.sh"
 
 ## CONFIG BLOCK
-# The docker registry base url, used to name the image (and push)
-DOCKER_REGISTRY_URL=""
+# The docker registry base url, used to name the image (and push).
+# Define this in a .buildtools-file on a relevant level
+#DOCKER_REGISTRY_URL=""
 ## END CONFIG BLOCK
 
-## The folling methods are ECR specific
+sourceBuildToolsFiles
+
+## The following methods are ECR specific
 # Logs in to the docker repository
 docker:login() {
   $(aws ecr get-login --no-include-email --region eu-west-1)

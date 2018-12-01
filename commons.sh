@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 yell() {
   echo "$0: $*" >&2;
@@ -14,11 +13,22 @@ try() {
   "$@" || die "cannot $*";
 }
 
+upfind:local() {
+  CURRDIR=$1
+  FILE=$2
+  while [[ ${CURRDIR} != / ]]; do
+    find "${CURRDIR}" -maxdepth 1 -mindepth 1 -name "$FILE"
+    CURRDIR="$(readlink -f "${CURRDIR}"/..)"
+  done
+}
+
 upfind() {
-  IFS=/; dn=($1); ct=${#dn[@]}
-  for((i=0; i<ct; i++)); do
-    subd+=/"${dn[i]}"
-    dots=$(for((j=ct-i; j>1; j--)); do printf "../"; done)
-    find "$subd" -maxdepth 1 -type f -name "$2" -printf "$dots%f\n"
+  upfind:local "$1" "$2" | tac
+}
+
+sourceBuildToolsFiles() {
+  for CONFIG in $(upfind "${PWD}" ".buildtools"); do
+    echo "Sourcing ${CONFIG}"
+    source ${CONFIG}
   done
 }
