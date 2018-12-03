@@ -16,6 +16,6 @@ RUN apt-get update && \
 
 WORKDIR /usr/local/bin
 
-ADD ./* ./
+ADD . ./
 
 ENV BUILD_TOOLS_PATH=/usr/local/bin
