@@ -10,6 +10,8 @@ source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 #DOCKER_REGISTRY_URL=""
 ## END CONFIG BLOCK
 
+declare -A valid_environments
+
 sourceBuildToolsFiles
 
 ## The following methods are ECR specific
