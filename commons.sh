@@ -30,13 +30,10 @@ sourceBuildToolsFiles() {
   if [ -n "${BUILDTOOLS_CONTENT-}" ]; then
     echo "Found buildtools content, creating .buildtools-file"
     echo "${BUILDTOOLS_CONTENT}" | base64 -d > .buildtools
-    echo "${BUILDTOOLS_CONTENT}"
-    cat .buildtools
   fi
 
   for CONFIG in $(upfind "${PWD}" ".buildtools"); do
     echo "Sourcing ${CONFIG}"
-    cat ${CONFIG}
     source ${CONFIG}
   done
 }

@@ -2,6 +2,8 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source ${SCRIPT_DIR}/commons.sh
 
+declare -A valid_environments
+
 environment:check_args() {
   : ${1:?"Usage: $0 ENVIRONMENT"}
   local environment=$(echo "$1" | tr '[:upper:]' '[:lower:]')

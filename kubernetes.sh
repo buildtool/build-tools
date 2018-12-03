@@ -50,10 +50,9 @@ kubernetes:deploy() {
 
   if [ -n "${KUBECONFIG_CONTENT-}" ]; then
     echo "Found KUBECONFIG_CONTENT, creating ~/.kube/config"
-    echo ${KUBECONFIG_CONTENT}
     mkdir -p ~/.kube
     echo ${KUBECONFIG_CONTENT} | base64 -d > ~/.kube/config
-    cat ~/.kube/config
+    export KUBECONFIG=~/.kube/config
   fi
 
   shopt -s extglob
