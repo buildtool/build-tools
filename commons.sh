@@ -36,6 +36,7 @@ sourceBuildToolsFiles() {
 
   for CONFIG in $(upfind "${PWD}" ".buildtools"); do
     echo "Sourcing ${CONFIG}"
+    cat ${CONFIG}
     source ${CONFIG}
   done
 }
