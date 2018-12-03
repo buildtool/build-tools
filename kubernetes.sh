@@ -47,6 +47,7 @@ kubernetes:deploy() {
   echo "Deploying '${IMAGE_NAME}' using '${KUBECTL_CMD}'"
 
   if [ -n "${KUBECONFIG_CONTENT}" ]; then
+    mkdir -p ~/.kube
     echo ${KUBECONFIG_CONTENT} | base64 -d > ~/.kube/config
   fi
 
