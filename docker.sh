@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-source "$( cd "$( dirname "$0" )" && pwd )/commons.sh"
-source "$( cd "$( dirname "$0" )" && pwd )/ci.sh"
-source "$( cd "$( dirname "$0" )" && pwd )/vcs.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/commons.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 
 ## CONFIG BLOCK
 # The docker registry base url, used to name the image (and push).

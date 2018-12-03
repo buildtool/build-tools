@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$( cd "$( dirname "$0" )" && pwd )/vcs.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 
 # CI build engine configuration
 # Map CI specific environment variables to the ones used by these tools
