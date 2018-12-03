@@ -5,7 +5,7 @@ source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 # CI build engine configuration
 # Map CI specific environment variables to the ones used by these tools
 
-for CI in ./ci.d/*.sh; do
+for CI in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.d/*.sh; do
   source ${CI}
 done
 
