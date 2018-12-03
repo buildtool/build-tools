@@ -46,6 +46,10 @@ kubernetes:deploy() {
 
   echo "Deploying '${IMAGE_NAME}' using '${KUBECTL_CMD}'"
 
+  if [ -n "${KUBECONFIG_CONTENT}" ]; then
+    echo ${KUBECONFIG_CONTENT} | base64 -d > ~/.kube/config
+  fi
+
   shopt -s extglob
   shopt -s nullglob
   FILES=$(ls -1 ${DEPLOYMENT_FILES_PATH}/${ENVIRONMENT}/*.sh ${DEPLOYMENT_FILES_PATH}/setup-${ENVIRONMENT}.sh 2>/dev/null || true)

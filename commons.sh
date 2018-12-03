@@ -27,6 +27,10 @@ upfind() {
 }
 
 sourceBuildToolsFiles() {
+  if [ -n "${BUILDTOOLS_CONTENT-}" ]; then
+    echo ${BUILDTOOLS_CONTENT} | base64 -d > .buildtools
+  fi
+
   for CONFIG in $(upfind "${PWD}" ".buildtools"); do
     echo "Sourcing ${CONFIG}"
     source ${CONFIG}
