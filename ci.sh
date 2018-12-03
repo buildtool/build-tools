@@ -5,14 +5,9 @@ source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 # CI build engine configuration
 # Map CI specific environment variables to the ones used by these tools
 
-# CONFIG BLOCK
-# Buildkite
-set +u
-CI_COMMIT="${BUILDKITE_COMMIT}"
-CI_BUILD_NAME="${BUILDKITE_PIPELINE_SLUG}"
-CI_BRANCH_NAME="${BUILDKITE_BRANCH_NAME}"
-set -u
-# END CONFIG BLOCK
+for CI in ./ci.d/*.sh; do
+  source ${CI}
+done
 
 ci:build_name() {
   local BUILD_NAME=${CI_BUILD_NAME:-$(basename $PWD)}
