@@ -28,7 +28,8 @@ upfind() {
 
 sourceBuildToolsFiles() {
   if [ -n "${BUILDTOOLS_CONTENT-}" ]; then
-    echo ${BUILDTOOLS_CONTENT} | base64 -d > .buildtools
+    echo "Found buildtools content, creating .buildtools-file"
+    echo "${BUILDTOOLS_CONTENT}" | base64 -d > .buildtools
   fi
 
   for CONFIG in $(upfind "${PWD}" ".buildtools"); do
