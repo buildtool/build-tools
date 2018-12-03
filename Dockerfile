@@ -19,3 +19,5 @@ WORKDIR /usr/local/bin
 ADD ./* ./
 
 ENV BUILD_TOOLS_PATH=/usr/local/bin
+
+RUN source ./docker.sh
