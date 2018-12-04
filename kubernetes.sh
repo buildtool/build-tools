@@ -7,8 +7,6 @@ source ${SCRIPT_DIR}/ci.sh
 
 sourceBuildToolsFiles
 
-kubectl config get-contexts
-
 DEPLOYMENT_FILES_PATH="deployment_files"
 export KOPS_STATE_STORE=s3://adfenix-k8s.adfenix.com-kops-storage
 
@@ -53,6 +51,8 @@ kubernetes:deploy() {
     mkdir -p ~/.kube
     echo ${KUBECONFIG_CONTENT} | base64 -d > ~/.kube/config
     export KUBECONFIG=~/.kube/config
+    echo "Existing contexts:"
+    kubectl config get-contexts
   fi
 
   shopt -s extglob
