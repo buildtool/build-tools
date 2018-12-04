@@ -15,6 +15,16 @@ ci:build_name() {
   echo $BUILD_NAME
 }
 
+ci:branch() {
+  local BRANCH=${CI_BRANCH_NAME:-$(vcs:getBranch)}
+  : ${BRANCH:?"BRANCH cannot be determined"}
+  echo $BRANCH
+}
+
+ci:getBranchReplaceSlash() {
+  ci:branch | sed 's^/^_^g' | sed 's/ /_/g'
+}
+
 ci:commit() {
   local COMMIT=${CI_COMMIT:-$(vcs:getCommit)}
   : ${COMMIT:?"COMMIT cannot be determined"}

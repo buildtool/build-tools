@@ -27,7 +27,7 @@ upfind() {
 }
 
 sourceBuildToolsFiles() {
-  if [ -n "${BUILDTOOLS_CONTENT-}" ]; then
+  if [ -n "${BUILDTOOLS_CONTENT:-}" ]; then
     echo "Found buildtools content, creating .buildtools-file"
     echo "${BUILDTOOLS_CONTENT}" | base64 -d > .buildtools
   fi
