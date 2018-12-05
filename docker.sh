@@ -71,8 +71,9 @@ docker:build() {
     CACHES="--cache-from=${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${STAGE} ${CACHES}"
     try eval $(echo docker build --pull --shm-size 256m --memory=3g --memory-swap=-1 ${CACHES} --target ${STAGE} -t ${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${STAGE} ${DOCKER_BUILD_PATH} ${DOCKER_ADDITIONAL_ARGS})
   done
-  docker pull ${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${COMMIT} || true
-  CACHES="--cache-from=${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${COMMIT} $CACHES"
+  docker pull ${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${DOCKER_TAG} || true
+  docker pull ${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:latest || true
+  CACHES="--cache-from=${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${DOCKER_TAG} --cache-from=${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:latest $CACHES"
   try eval $(echo docker build --pull --shm-size 256m --memory=3g --memory-swap=-1 ${CACHES} -t ${DOCKER_REGISTRY_URL}/${IMAGE_NAME}:${COMMIT} ${DOCKER_BUILD_PATH} ${DOCKER_ADDITIONAL_ARGS})
 
   if [[ "${DOCKER_TAG}" == "master" ]]; then
