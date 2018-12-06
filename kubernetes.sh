@@ -49,7 +49,7 @@ kubernetes:deploy() {
   if [ -n "${KUBECONFIG_CONTENT:-}" ]; then
     echo "Found KUBECONFIG_CONTENT, creating ~/.kube/config"
     mkdir -p ~/.kube
-    echo ${KUBECONFIG_CONTENT} | base64 -d >! ~/.kube/config
+    echo ${KUBECONFIG_CONTENT} | base64 -d >| ~/.kube/config
     export KUBECONFIG=~/.kube/config
     echo "Existing contexts:"
     kubectl config get-contexts
