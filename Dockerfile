@@ -14,9 +14,7 @@ RUN apt-get update && \
         chmod +x /usr/bin/kubectl && \
         kubectl version --client && \
         useradd -m -u 1001 vsts_VSTSContainer && \
-        groupadd VSTS_Container_SUDO && \
-        usermod -a -G VSTS_Container_SUDO,docker vsts_VSTSContainer && \
-        su -c "echo '%VSTS_Container_SUDO ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers"
+        usermod -a -G docker vsts_VSTSContainer
 
 WORKDIR /usr/local/bin
 
