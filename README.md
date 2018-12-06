@@ -150,10 +150,8 @@ Other environment variables that need to be defined (either automatically by the
       container: build-tools
       steps:
       - script: |
-          env
-          source ${BUILD_TOOLS_PATH}/docker.sh
-          docker:build
-          docker:push
+          build
+          push
         name: build
         env:
           DOCKERHUB_PASSWORD: $(DOCKERHUB_PASSWORD)
@@ -165,9 +163,8 @@ Other environment variables that need to be defined (either automatically by the
 
     steps:
       - command: |-
-          source ${BUILD_TOOLS_PATH}/docker.sh
-          docker:build
-          docker:push
+          build
+          push
         label: build
     
       - wait
@@ -202,9 +199,8 @@ Other environment variables that need to be defined (either automatically by the
       services:
         - docker:dind
       script:
-      - source ${BUILD_TOOLS_PATH}/docker.sh
-      - docker:build
-      - docker:push
+      - build
+      - push
     
     deploy-to-staging:
       stage: deploy-staging
