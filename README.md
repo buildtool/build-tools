@@ -108,6 +108,8 @@ The container registry to use when running `docker:push` is also defined by envi
 | DOCKERHUB_REPOSITORY | Docker Hub | bitnami (resulting in bitnami/\<image> |
 | ECR_URL | AWS ECR | 12345678.dkr.ecr.eu-west-1.amazonaws.com |
 | CI_REGISTRY_IMAGE | Gitlab Registry | registry.gitlab.com/sparetimecoder/build-tools |
+| QUAY_REPOSITORY | Quay.io | quay.io/bitnami |
+
 
 Other environment variables that need to be defined (either automatically by the CI/CD environment or manually in the build pipeline) for each of the container registries are defined below.
 
@@ -127,6 +129,12 @@ Other environment variables that need to be defined (either automatically by the
 | -------- | ----------- |
 | CI_BUILD_TOKEN | The build-token set by GitlabCI |
 | CI_REGISTRY | The URL to the registry set by GitlabCI |
+
+### Quay.io
+| Variable | Description |
+| -------- | ----------- |
+| QUAY_USERNAME | Username |
+| QUAY_PASSWORD | Password |
 
 ## Example Azure Devops pipeline (azure-pipelines.yml)
 
