@@ -144,25 +144,22 @@ Other environment variables that need to be defined (either automatically by the
         image: registry.gitlab.com/sparetimecoder/build-tools
     
     jobs:
-    - job: build
+    - job: build_and_deploy
       pool:
         vmImage: 'Ubuntu 16.04'
       container: build-tools
       steps:
       - script: |
-          sudo -E /bin/bash -c "source ${BUILD_TOOLS_PATH}/docker.sh && docker:build && docker:push"
+          env
+          source ${BUILD_TOOLS_PATH}/docker.sh
+          docker:build
+          docker:push
+        name: build
         env:
           DOCKERHUB_PASSWORD: $(DOCKERHUB_PASSWORD)
-    
-    - job: deploy_staging
-      pool:
-        vmImage: 'Ubuntu 16.04'
-      container: build-tools
-      dependsOn: build
-      condition: succeeded('build')
-      steps:
-      - script: |
-          deploy staging
+      - script: deploy staging
+        name: deploy_staging
+        condition: succeeded()
 
 ## Example Buildkite pipeline (.buildkite/pipeline.yml)
 
