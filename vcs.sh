@@ -9,6 +9,14 @@ vcs:getCommit() {
   echo "NO_COMMIT"
 }
 
-for VCS in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.d/*.sh; do
-  source ${VCS}
+vcs:scaffold() {
+  echo "No VCS configured"
+}
+
+vcs:webhook() {
+  echo "No VCS configured"
+}
+
+for FILE in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.d/*.sh; do
+  source ${FILE}
 done
