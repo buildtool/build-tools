@@ -11,3 +11,8 @@ if [ -n "${DOCKERHUB_REPOSITORY:-}" ]; then
     true
   }
 fi
+
+if [ "$REGISTRY" == "dockerhub" ]; then
+  echo "Will use Dockerhub as container registry"
+  DOCKER_REGISTRY_URL="$DOCKERHUB_REPOSITORY"
+fi

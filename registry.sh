@@ -8,6 +8,6 @@ registry:create() {
   true
 }
 
-for REGISTRY in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.d/*.sh; do
-  source ${REGISTRY}
+for FILE in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.d/*.sh; do
+  source ${FILE}
 done

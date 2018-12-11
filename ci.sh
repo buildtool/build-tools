@@ -5,8 +5,20 @@ source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
 # CI build engine configuration
 # Map CI specific environment variables to the ones used by these tools
 
-for CI in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.d/*.sh; do
-  source ${CI}
+ci:scaffold() {
+  echo "No CI engine configured"
+}
+
+ci:scaffold:mkdirs() {
+  true
+}
+
+ci:scaffold:dotfiles() {
+  true
+}
+
+for FILE in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.d/*.sh; do
+  source ${FILE}
 done
 
 ci:build_name() {
