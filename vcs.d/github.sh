@@ -4,7 +4,9 @@ if [ "${VCS:-}" == "github" ]; then
   : ${GITHUB_ORG:?"GITHUB_ORG must be set"}
   : ${GITHUB_TOKEN:?"GITHUB_TOKEN must be set"}
 
-  scaffold:git:github() {
+  echo "Will use Github as VCS"
+
+  vcs:github:scaffold:repo() {
     local projectname="$1"
 
     curl --silent -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/orgs/${GITHUB_ORG}/repos \
@@ -36,7 +38,7 @@ if [ "${VCS:-}" == "github" ]; then
       }"
   }
 
-  scaffold:git:local() {
+  vcs:git:scaffold:local() {
     local clone_url="$1"
     git clone "$clone_url"
   }
@@ -44,9 +46,9 @@ if [ "${VCS:-}" == "github" ]; then
   vcs:scaffold() {
     local projectname="$1"
 
-    scaffold:git:github "$projectname"
+    vcs:github:scaffold:repo "$projectname"
     local clone_url="git@github.com:${GITHUB_ORG}/${projectname}.git"
-    scaffold:git:local "$clone_url"
+    vcs:git:scaffold:local "$clone_url"
     echo "$clone_url"
   }
 

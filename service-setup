@@ -5,6 +5,8 @@ source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/commons.sh"
 declare -A PIPELINE_VARIABLES
 sourceBuildToolsFiles
 
+set -o errexit -o pipefail -o noclobber -o nounset
+
 source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.sh"
 source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.sh"
 source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/stack.sh"
@@ -65,13 +67,17 @@ main() {
     fi
   fi
 
+  scaffold:validate "$projectname"
+
   echo "Creating repository for $projectname"
   local repository=$(vcs:scaffold "$projectname")
   cd "$projectname"
   echo "Created repo $repository"
+  scaffold:mkdirs
   echo "Creating build pipeline for $projectname"
   ci:scaffold "$projectname" "$repository"
-  scaffold:mkdirs
+  local webhook_url=$(ci:webhook "$projectname")
+  vcs:webhook "$projectname" "$webhook_url"
   scaffold:dotfiles
   scaffold:create_readme "$projectname"
   deployment:scaffold "$projectname"

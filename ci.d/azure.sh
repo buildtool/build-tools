@@ -28,6 +28,22 @@ if [[ "${CI:-}" == "azure" ]]; then
       | jq -r '.value[] | select(.name == "Hosted Ubuntu 1604") | .pool.id'
   }
 
+  ci:azure:get_definition_id() {
+    local projectname="$1"
+    curl --silent \
+      -u "${AZURE_USER}:${AZURE_TOKEN}" \
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/build/definitions?api-version=4.1&name=$projectname" \
+      | jq '.value[0].id'
+  }
+
+  ci:azure:get_definition() {
+    local projectname="$1"
+    local definitionId=$(ci:azure:get_definition_id "$projectname")
+    curl --silent \
+      -u "${AZURE_USER}:${AZURE_TOKEN}" \
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/build/definitions/$definitionId?api-version=4.1"
+  }
+
   ci:azure:variable() {
     local name="$1"
     local value="$2"
@@ -129,7 +145,7 @@ if [[ "${CI:-}" == "azure" ]]; then
 resources:
   containers:
   - container: build-tools
-    image: registry.gitlab.com/sparetimecoder/build-tools
+    image: registry.gitlab.com/sparetimecoder/build-tools:master
 
 jobs:
 - job: build_and_deploy
@@ -153,15 +169,36 @@ jobs:
 EOF
   }
 
+  ci:validate() {
+    local projectname="$1"
+
+    local statuscode=$(curl --silent -I -u "${AZURE_USER}:${AZURE_TOKEN}" -X GET "https://dev.azure.com/${AZURE_ORG}/_apis/projects?api-version=4.0" -w '%{http_code}' -o /dev/null)
+    if [[ "404" -eq "$statuscode" ]]; then
+      echo "Invalid Azure user, token or organization"
+      exit 1
+    fi
+    local projectId=$(ci:azure:get_project_id)
+    local definitionId=$(ci:azure:get_definition_id "$projectname")
+  }
+
   ci:scaffold() {
     local projectname="$1"
     local repository="$2"
     local projectid=$(ci:azure:get_project_id)
     local poolid=$(ci:azure:get_ubuntu_pool_id)
-    local response=$(ci:azure:scaffold:pipeline "$projectname" "$projectid" "$poolid")
+    (ci:azure:scaffold:pipeline "$projectname" "$projectid" "$poolid") >/dev/null
     (ci:azure:scaffold:file) >/dev/null
+  }
+
+  ci:badges() {
+    local projectname="$1"
+    local response=$(ci:azure:get_definition "$projectname")
     local id=$(echo "$response" | jq -r '.id')
-    export badge_url=$(echo "$response" | jq -r '._links.badge.href')
-    export build_url="https://dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_build/latest?definitionId=$id"
+    local build_url="https://dev.azure.com/$AZURE_ORG/$AZURE_PROJECT/_build/latest?definitionId=$id"
+    (echo "$response" | jq --arg web "$build_url" -r '"[![](\(._links.badge.href))](\($web))"')
+  }
+
+  ci:webhook() {
+    local projectname="$1"
   }
 fi

@@ -77,6 +77,11 @@ EOF
   fi
 }
 
+scaffold:validate() {
+  local projectname="$1"
+  ci:validate "$projectname"
+}
+
 scaffold:mkdirs() {
   mkdir -p deployment_files
   ci:scaffold:mkdirs
@@ -99,9 +104,10 @@ scaffold:dotfiles() {
 
 scaffold:create_readme() {
   local projectname="$1"
-  cat <<EOF > README.md
+  local badges=$(ci:badges "$projectname")
+  cat <<EOF >| README.md
 # ${projectname}
-[![Build status](${badge_url})](${build_url})
+${badges}
 EOF
 }
 
