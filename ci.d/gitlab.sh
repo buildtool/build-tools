@@ -8,3 +8,12 @@ if [ -n "${GITLAB_CI-}" ]; then
   CI_BRANCH_NAME="${CI_COMMIT_REF_NAME}"
   set -u
 fi
+
+if [ "${CI:-}" == "gitlab" ]; then
+  echo "Will use Gitlab as CI"
+
+  ci:scaffold() {
+    local projectname="$1"
+    local repository="$2"
+  }
+fi
