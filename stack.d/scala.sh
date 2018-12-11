@@ -5,7 +5,7 @@
 stack:scaffold:dockerfile() {
   local projectname="$1"
   cat <<EOF > Dockerfile
-FROM pliljenberg/scala-sbt:2.12.8-1.2.7 as builder
+FROM hseeberger/scala-sbt:11.0.1_2.12.8_1.2.7 as builder
 WORKDIR /build
 
 COPY project /build/project
