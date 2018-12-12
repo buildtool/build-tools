@@ -1,18 +1,15 @@
 stages:
   - build
 
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+
+image: registry.gitlab.com/sparetimecoders/build-tools:master
+
 build:
   stage: build
-  image: docker:18.05.0-ce
   services:
     - docker:dind
   script:
-  - docker version
-  - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-  - docker pull $CI_REGISTRY_IMAGE:latest || true
-  - docker build --cache-from $CI_REGISTRY_IMAGE:latest -t $CI_REGISTRY_IMAGE:latest .
-  - docker tag $CI_REGISTRY_IMAGE:latest $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  - docker tag $CI_REGISTRY_IMAGE:latest $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
-  - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
-  - docker push $CI_REGISTRY_IMAGE:latest
+  - build
+  - push

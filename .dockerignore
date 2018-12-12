@@ -1,4 +1,5 @@
 README.md
+LICENSE
 .gitignore
 Dockerfile
 *.iml
