@@ -3,5 +3,5 @@
 set -o errexit -o pipefail -o noclobber -o nounset
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source ${SCRIPT_DIR}/docker.sh
+source ${SCRIPT_DIR}/scripts/docker.sh
 docker:build "$@"

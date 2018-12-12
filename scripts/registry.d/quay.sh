@@ -12,7 +12,7 @@ if [ -n "${QUAY_REPOSITORY:-}" ]; then
   }
 fi
 
-if [ "$REGISTRY" == "quay" ]; then
+if [ "${REGISTRY:-}" == "quay" ]; then
   echo "Will use Quay.io as container registry"
   DOCKER_REGISTRY_URL="$QUAY_REPOSITORY"
 fi

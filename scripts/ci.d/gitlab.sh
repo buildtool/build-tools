@@ -25,7 +25,7 @@ stages:
 variables:
   DOCKER_HOST: tcp://docker:2375/
 
-image: registry.gitlab.com/sparetimecoder/build-tools:master
+image: registry.gitlab.com/sparetimecoders/build-tools:master
 
 build:
   stage: build

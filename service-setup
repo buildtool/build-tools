@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/commons.sh"
-
-declare -A PIPELINE_VARIABLES
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/commons.sh"
 sourceBuildToolsFiles
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/ci.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/registry.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/stack.sh"
+source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/scaffold.sh"
 
 set -o errexit -o pipefail -o noclobber -o nounset
-
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/stack.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scaffold.sh"
 
 main() {
   OPTIONS=s:
@@ -58,12 +55,12 @@ main() {
   fi
 
   if [[ -n "$STACK" ]]; then
-    if [[ ! -f "$(cd "$(dirname "${BASH_SOURCE-$0}")" && pwd)/stack.d/$STACK.sh" ]]; then
-      local stacks=$(ls -1 "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/stack.d/" | sed -e 's/.sh//' | paste -sd "," -)
+    if [[ ! -f "$(cd "$(dirname "${BASH_SOURCE-$0}")" && pwd)/scripts/stack.d/$STACK.sh" ]]; then
+      local stacks=$(ls -1 "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/stack.d/" | sed -e 's/.sh//' | paste -sd "," -)
       echo "Provided stack does not exist yet. Available stacks are: ($stacks)"
       exit 3
     else
-      source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/stack.d/$STACK.sh"
+      source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/scripts/stack.d/$STACK.sh"
     fi
   fi
 

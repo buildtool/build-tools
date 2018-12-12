@@ -141,7 +141,7 @@ Other environment variables that need to be defined (either automatically by the
     resources:
       containers:
       - container: build-tools
-        image: registry.gitlab.com/sparetimecoder/build-tools
+        image: registry.gitlab.com/sparetimecoders/build-tools
     
     jobs:
     - job: build_and_deploy
@@ -192,7 +192,7 @@ Other environment variables that need to be defined (either automatically by the
     variables:
       DOCKER_HOST: tcp://docker:2375/
     
-    image: registry.gitlab.com/sparetimecoder/build-tools
+    image: registry.gitlab.com/sparetimecoders/build-tools
     
     build:
       stage: build
