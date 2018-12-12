@@ -1,16 +1,23 @@
 # build-tools
-A repository with tools for building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
+A repository with tools for creating and building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
 
+## Basic setup
+- Clone this repository
+- Add `BUILD_TOOLS_PATH=<PATH TO THIS REPOSITORY>` to your shell environment, typically in `.bash_profile` or something similar
+
+
+## Setup script
+Script to be used for scaffolding a component/service. Handles repository, build-pipeline and basic files-scaffolding.
+
+    ${BUILD_TOOLS_PATH}/service-setup --stack <stack> <name>
+
+See [Build project structure](#Build-project-structure) below
 
 ## Common build scripts
 Scripts to be used for building and deploying our services (typically when running in a CI/CD environment). They can also be used for local builds/deploy.
 
-    source ${BUILD_TOOLS_PATH}/docker.sh
-
-To be able to use the build scripts locally:
-
-- Clone this repository
-- Add `BUILD_TOOLS_PATH=<PATH TO THIS REPOSITORY>` to your shell environment, typically in `.bash_profile` or something similar
+    ${BUILD_TOOLS_PATH}/build
+    ${BUILD_TOOLS_PATH}/push
 
 ## Build project structure
 Configuration and setup is done in `.buildtools` files. Those files must be present in the project folder or upwards in the dicectory structure. This lets you create a common `.buildtools` file to be used for a set of projects.
@@ -26,9 +33,27 @@ Example:
     └── customer2
         └── project1
         
-Here we can choose to put a `buildtools` file in the different `customer` directories since they (most likely) have different deployment configuration.
+Here we can choose to put a `.buildtools` file in the different `customer` directories since they (most likely) have different deployment configuration.
 
     $ cat customer1/.buildtools
+    CI=azure
+    VCS=azure
+    REGISTRY=dockerhub
+    ORGANIZATION=com.organization
+    DOCKERHUB_REPOSITORY=repository
+    DOCKERHUB_USERNAME=user
+    DOCKERHUB_PASSWORD=$(lpass show devenv/docker.com --password)
+    AZURE_USER=user
+    AZURE_TOKEN=token
+    AZURE_ORG=organization
+    AZURE_PROJECT=project
+    PIPELINE_VARIABLES=(
+    ["DOCKERHUB_REPOSITORY"]="repository"
+    ["DOCKERHUB_USERNAME"]="user"
+    ["DOCKERHUB_PASSWORD"]="secret:$(lpass show devenv/docker.com --password)"
+    ["BUILDTOOLS_CONTENT"]="$(lpass show devenv/organization/team/buildtools --notes | base64 -w0)"
+    ["KUBECONFIG_CONTENT"]="$(lpass show devenv/organization/team/kubeconfig --notes | base64 -w0)"
+    )
     valid_environments=(
         ["local"]="--context docker-for-desktop --namespace default"
         ["staging"]="--context docker-for-desktop --namespace staging"
@@ -44,6 +69,38 @@ This defines three environments (local,staging,prod) all which are to be deploye
     )
 
 Context and namespaces must be provided/created/configured elsewhere.
+
+### Configuration for service-setup
+The `service-setup` script need to know where to scaffold things (i.e. which VCS, CI and container registry to use and how to connect to them).
+The environment variables `CI`, `VCS` and `REGISTRY` are used to define this.
+Depending on the values of those variables, other variables are required as well. See each section below for the required variables.
+Values from the associative array `PIPELINE_VARIABLES` will be created as pipeline-variables in the CI-system. If the value is prepended vith `secret:` the variable will be a secret (if the CI-system supports that).
+
+#### Azure Devops
+If `CI` and/or `VCS` is set to `azure` the following variables are required:
+
+| Variable | Value |
+|----------|-------|
+| AZURE_USER | Azure username |
+| AZURE_TOKEN | Azure Personal Access Token |
+| AZURE_ORG | The organization name in Azure |
+| AZURE_PROJECT | The project name in Azure where repository and build-pipeline will be created |
+
+#### Buildkite
+If `CI` is set to `buildkite` the following variables are required:
+
+| Variable | Value |
+|----------|-------|
+| BUILDKITE_TOKEN | Buildkite Access Token |
+| BUILDKITE_ORG | The organization name in Buildkite where the build-pipeline will be created |
+
+#### GitlabCI
+If `CI` or `VCS` is set to `buildkite` the following variables are required:
+
+| Variable | Value |
+|----------|-------|
+| GITLAB_TOKEN | Gitlab Access Token |
+| GITLAB_GROUP | The group name in Gitlab where project will be created |
 
 ### Configuration using environment variables
 The `.buildtools` file can be created by defining an environment variable in the build pipeline named `BUILDTOOLS_CONTENT`. The value should be a base64-encoded string.
@@ -107,7 +164,7 @@ The container registry to use when running `docker:push` is also defined by envi
 | ------------- | --------------------- | ------------- |
 | DOCKERHUB_REPOSITORY | Docker Hub | bitnami (resulting in bitnami/\<image> |
 | ECR_URL | AWS ECR | 12345678.dkr.ecr.eu-west-1.amazonaws.com |
-| CI_REGISTRY_IMAGE | Gitlab Registry | registry.gitlab.com/sparetimecoder/build-tools |
+| CI_REGISTRY_IMAGE | Gitlab Registry | registry.gitlab.com/sparetimecoders/build-tools |
 | QUAY_REPOSITORY | Quay.io | quay.io/bitnami |
 
 
