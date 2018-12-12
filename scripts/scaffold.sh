@@ -6,7 +6,6 @@ deployment:scaffold:create_deploy_file() {
   local projectname="$1"
   if [[ ! -f ./deployment_files/docker-compose.yml ]]
   then
-
     cat <<EOF > ./deployment_files/deploy.yaml
 apiVersion: extensions/v1beta1
 kind: Deployment

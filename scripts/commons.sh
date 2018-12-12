@@ -37,3 +37,6 @@ sourceBuildToolsFiles() {
     source ${CONFIG}
   done
 }
+
+declare -A valid_environments
+declare -A PIPELINE_VARIABLES

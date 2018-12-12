@@ -1,19 +1,10 @@
 #!/usr/bin/env bash
 
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/commons.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/ci.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.sh"
-source "$( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.sh"
-
-## CONFIG BLOCK
-# The docker registry base url, used to name the image (and push).
-# Define this in a .buildtools-file on a relevant level
-#DOCKER_REGISTRY_URL=""
-## END CONFIG BLOCK
-
-declare -A valid_environments
-
+source "$( cd "$( dirname "${BASH_SOURCE:-$0}" )" && pwd )/commons.sh"
 sourceBuildToolsFiles
+source "$( cd "$( dirname "${BASH_SOURCE:-$0}" )" && pwd )/ci.sh"
+source "$( cd "$( dirname "${BASH_SOURCE:-$0}" )" && pwd )/vcs.sh"
+source "$( cd "$( dirname "${BASH_SOURCE:-$0}" )" && pwd )/registry.sh"
 
 # Build and tags docker image.
 # Tags:

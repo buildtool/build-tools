@@ -12,7 +12,7 @@ if [ -n "${CI_REGISTRY_IMAGE:-}" ]; then
   }
 fi
 
-if [ "$REGISTRY" == "gitlab" ]; then
+if [ "${REGISTRY:-}" == "gitlab" ]; then
   echo "Will use Gitlab as container registry"
   DOCKER_REGISTRY_URL="registry.gitlab.com/$GITLAB_GROUP"
 fi

@@ -145,7 +145,7 @@ if [[ "${CI:-}" == "azure" ]]; then
 resources:
   containers:
   - container: build-tools
-    image: registry.gitlab.com/sparetimecoder/build-tools:master
+    image: registry.gitlab.com/sparetimecoders/build-tools:master
 
 jobs:
 - job: build_and_deploy

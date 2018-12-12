@@ -8,7 +8,6 @@ source ${SCRIPT_DIR}/ci.sh
 sourceBuildToolsFiles
 
 DEPLOYMENT_FILES_PATH="deployment_files"
-export KOPS_STATE_STORE=s3://adfenix-k8s.adfenix.com-kops-storage
 
 kubernetes:get_command() {
   local ENVIRONMENT="${1}"
