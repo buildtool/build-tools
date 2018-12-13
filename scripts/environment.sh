@@ -8,7 +8,7 @@ environment:check_args() {
   : ${1:?"Usage: $0 ENVIRONMENT"}
   local environment=$(echo "$1" | tr '[:upper:]' '[:lower:]')
   if [[ ${valid_environments[$environment]+abc} != abc ]];then
-    die "Wrong environment ${environment} not in (${!valid_environments[@]})"
+    die "Environment '${environment}' not in available environments [${!valid_environments[@]}]"
   fi
 }
 
