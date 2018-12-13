@@ -24,7 +24,7 @@ done
 ci:build_name() {
   local BUILD_NAME=${CI_BUILD_NAME:-$(basename $PWD)}
   : ${BUILD_NAME:?"BUILD_NAME cannot be determined"}
-  echo $BUILD_NAME
+  echo ${BUILD_NAME,,}
 }
 
 ci:branch() {
