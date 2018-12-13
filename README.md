@@ -212,6 +212,7 @@ Other environment variables that need to be defined (either automatically by the
         name: build
         env:
           DOCKERHUB_PASSWORD: $(DOCKERHUB_PASSWORD)
+          QUAY_PASSWORD: $(QUAY_PASSWORD)
       - script: deploy staging
         name: deploy_staging
         condition: succeeded()
