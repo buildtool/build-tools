@@ -9,6 +9,10 @@ ci:scaffold() {
   echo "No CI engine configured"
 }
 
+ci:validate() {
+  true
+}
+
 ci:scaffold:mkdirs() {
   true
 }

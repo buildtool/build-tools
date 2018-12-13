@@ -79,6 +79,9 @@ EOF
 scaffold:validate() {
   local projectname="$1"
   ci:validate "$projectname"
+  vcs:validate "$projectname"
+  registry:validate "$projectname"
+  stack:validate "$projectname"
 }
 
 scaffold:mkdirs() {
