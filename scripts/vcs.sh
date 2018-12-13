@@ -17,6 +17,10 @@ vcs:webhook() {
   echo "No VCS configured"
 }
 
+vcs:validate() {
+  true
+}
+
 for FILE in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/vcs.d/*.sh; do
   source ${FILE}
 done

@@ -8,6 +8,10 @@ registry:create() {
   true
 }
 
+registry:validate() {
+  true
+}
+
 for FILE in $( cd "$( dirname "${BASH_SOURCE-$0}" )" && pwd )/registry.d/*.sh; do
   source ${FILE}
 done

@@ -8,3 +8,7 @@ stack:scaffold() {
 stack:scaffold:dotfiles() {
   true
 }
+
+stack:validate() {
+  true
+}
