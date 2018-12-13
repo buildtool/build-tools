@@ -6,7 +6,7 @@ if [ -n "${QUAY_REPOSITORY:-}" ]; then
   : ${QUAY_PASSWORD:?"QUAY_PASSWORD must be set"}
 
   registry:login() {
-    docker login -u ${QUAY_USERNAME} -p ${QUAY_PASSWORD}
+    docker login -u ${QUAY_USERNAME} -p ${QUAY_PASSWORD} quay.io
   }
 
   registry:create() {
