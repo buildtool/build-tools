@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ -n "${QUAY_REPOSITORY:-}" ]; then
-  DOCKER_REGISTRY_URL=${QUAY_REPOSITORY}
+  DOCKER_REGISTRY_URL="quay.io/$QUAY_REPOSITORY"
   : ${QUAY_USERNAME:?"QUAY_USERNAME must be set"}
   : ${QUAY_PASSWORD:?"QUAY_PASSWORD must be set"}
 
