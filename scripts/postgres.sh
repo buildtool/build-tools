@@ -12,9 +12,9 @@ postgres:create_database_user() {
   local SERVICE_NAME="${1}"
   local ENVIRONMENT="${2}"
   local KUBECTL_CMD=$(kubernetes:get_command ${ENVIRONMENT})
-  db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=postgresql' --output jsonpath={.items..metadata.name})
-
-  ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c "echo \"CREATE USER ${SERVICE_NAME} WITH PASSWORD '${SERVICE_NAME}';CREATE DATABASE ${SERVICE_NAME} WITH OWNER ${SERVICE_NAME} ENCODING utf8\" | psql -f -"
+  local db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=postgresql' --output jsonpath={.items..metadata.name})
+  local db_cmd="CREATE USER \\\"${SERVICE_NAME}\\\" WITH PASSWORD '${SERVICE_NAME}';CREATE DATABASE \\\"${SERVICE_NAME}\\\" WITH OWNER \\\"${SERVICE_NAME}\\\" ENCODING utf8"
+  ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c " echo \"${db_cmd}\" | psql -U postgres -f -"
 
   local SECRET_NAME="${SERVICE_NAME}-db"
   ${KUBECTL_CMD} delete secret ${SECRET_NAME} &> /dev/null || true
