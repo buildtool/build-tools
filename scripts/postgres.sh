@@ -19,6 +19,7 @@ postgres:create_database_user() {
   local SECRET_NAME="${SERVICE_NAME}-db"
   ${KUBECTL_CMD} delete secret ${SECRET_NAME} &> /dev/null || true
   ${KUBECTL_CMD} create secret generic ${SECRET_NAME} \
- --from-literal=USERNAME="${SERVICE_NAME}" \
- --from-literal=PASSWORD="${SERVICE_NAME}"
+ --from-literal=POSTGRES_USERNAME="${SERVICE_NAME}" \
+ --from-literal=POSTGRES_PASSWORD="${SERVICE_NAME}" \
+ --from-literal=POSTGRES_DBNAME="${SERVICE_NAME}"
 }
