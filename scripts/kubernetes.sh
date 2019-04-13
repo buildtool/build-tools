@@ -68,6 +68,11 @@ kubernetes:deploy() {
   done
 
   if [[ $(${KUBECTL_CMD} get deployment ${IMAGE_NAME} 2> /dev/null) ]]; then
-    ${KUBECTL_CMD} rollout status deployment ${IMAGE_NAME}
+    ${KUBECTL_CMD} rollout status deployment --timeout=1m ${IMAGE_NAME} || OK=$? && true
+
+    if [[ "${OK}" != "0" ]]; then
+      local label=$(${KUBECTL_CMD} get deployment ${IMAGE_NAME} -o json | jq '.spec.template.metadata.labels | keys[] as $k | "\($k)=\(.[$k])"' -r)
+      ${KUBECTL_CMD} describe pods -l ${label} --show-events=true | grep -A20 Events:
+    fi
   fi
 }
