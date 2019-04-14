@@ -1,6 +1,6 @@
 FROM debian:sid-slim
 
-ENV KUBERNETES_VERSION=1.10.9
+ENV KUBERNETES_VERSION=1.14.0
 
 RUN groupadd -f -g 117 docker && \
         apt-get update && \
