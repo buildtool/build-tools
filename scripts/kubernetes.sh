@@ -73,6 +73,7 @@ kubernetes:deploy() {
     if [[ "${OK}" != "0" ]]; then
       ${KUBECTL_CMD} describe deployment ${IMAGE_NAME} --show-events=true | grep -A20 Events:
       ${KUBECTL_CMD} describe pods -l app=${IMAGE_NAME} --show-events=true | grep -A20 Events:
+      exit ${OK}
     fi
   fi
 }
