@@ -21,11 +21,11 @@ if [[ "${CI:-}" == "azure" ]]; then
     curl --silent -u "${AZURE_USER}:${AZURE_TOKEN}" "https://dev.azure.com/${AZURE_ORG}/_apis/projects/${AZURE_PROJECT}?api-version=4.0" | jq -r '.id'
   }
 
-  ci:azure:get_ubuntu_pool_id() {
+  ci:azure:get_ubuntu_queue() {
     curl --silent \
       -u "${AZURE_USER}:${AZURE_TOKEN}" \
-      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/distributedtask/queues?api-version=4.1-preview.1" \
-      | jq -r '.value[] | select(.name == "Hosted Ubuntu 1604") | .pool.id'
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/distributedtask/queues?api-version=5.0-preview.1" \
+      | jq -r '.value[] | select(.name == "Hosted Ubuntu 1604")'
   }
 
   ci:azure:get_definition_id() {
@@ -59,7 +59,7 @@ if [[ "${CI:-}" == "azure" ]]; then
   ci:azure:scaffold:pipeline() {
     local projectname="$1"
     local projectid="$2"
-    local poolid="$3"
+    local queue="$3"
 
     local variables=""
     for v in ${!PIPELINE_VARIABLES[@]}; do
@@ -122,15 +122,7 @@ if [[ "${CI:-}" == "azure" ]]; then
         \"processParameters\": {},
         \"quality\": \"definition\",
         \"drafts\": [],
-        \"queue\": {
-          \"id\": ${poolid},
-          \"name\": \"Hosted Ubuntu 1604\",
-          \"pool\": {
-            \"id\": ${poolid},
-            \"name\": \"Hosted Ubuntu 1604\",
-            \"isHosted\": true
-          }
-        },
+        \"queue\": ${queue},
         \"name\": \"${projectname}\",
         \"type\": \"build\",
         \"queueStatus\": \"enabled\",
@@ -154,6 +146,7 @@ jobs:
   container: build-tools
   steps:
   - script: |
+      set -e -o pipefail
       build
       push
     name: build
@@ -185,8 +178,8 @@ EOF
     local projectname="$1"
     local repository="$2"
     local projectid=$(ci:azure:get_project_id)
-    local poolid=$(ci:azure:get_ubuntu_pool_id)
-    (ci:azure:scaffold:pipeline "$projectname" "$projectid" "$poolid") >/dev/null
+    local queue=$(ci:azure:get_ubuntu_queue)
+    (ci:azure:scaffold:pipeline "$projectname" "$projectid" "$queue") >/dev/null
     (ci:azure:scaffold:file) >/dev/null
   }
 
