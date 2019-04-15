@@ -68,6 +68,7 @@ kubernetes:deploy() {
   done
 
   if [[ $(${KUBECTL_CMD} get deployment ${IMAGE_NAME} 2> /dev/null) ]]; then
+    OK=0
     ${KUBECTL_CMD} rollout status deployment --timeout=1m ${IMAGE_NAME} || OK=$? && true
 
     if [[ "${OK}" != "0" ]]; then
