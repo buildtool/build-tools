@@ -39,9 +39,6 @@ if [ "${VCS:-}" == "azure" ]; then
     local reviewersPolicyType=$(echo "$policies" | jq -r '.value[] | select(.displayName == "Minimum number of reviewers") | .id')
     local openCommentsPolicyType=$(echo "$policies" | jq -r '.value[] | select(.displayName == "Comment requirements") | .id')
 
-    echo ${reviewersPolicyType}
-    echo ${openCommentsPolicyType}
-
     curl --silent \
       -u "${AZURE_USER}:${AZURE_TOKEN}" \
       "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/policy/configurations/?api-version=5.0" \
