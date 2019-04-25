@@ -26,7 +26,69 @@ if [ "${VCS:-}" == "azure" ]; then
           \"id\": \"${projectid}\"
         }
       }" \
-      | jq -r '.sshUrl'
+      | jq -r '"\(.sshUrl) \(.id)"'
+  }
+
+  vcs:azure:scaffold:policies() {
+    local repositoryId=$1
+
+    local policies=$(curl --silent \
+      -u "${AZURE_USER}:${AZURE_TOKEN}" \
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/policy/types?api-version=5.0")
+
+    local reviewersPolicyType=$(echo "$policies" | jq -r '.value[] | select(.displayName == "Minimum number of reviewers") | .id')
+    local openCommentsPolicyType=$(echo "$policies" | jq -r '.value[] | select(.displayName == "Comment requirements") | .id')
+
+    echo ${reviewersPolicyType}
+    echo ${openCommentsPolicyType}
+
+    curl --silent \
+      -u "${AZURE_USER}:${AZURE_TOKEN}" \
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/policy/configurations/?api-version=5.0" \
+      -H "Content-Type: application/json" \
+      -d "
+      {
+        \"isEnabled\": true,
+        \"isBlocking\": true,
+        \"type\": {
+          \"id\": \"${reviewersPolicyType}\"
+        },
+        \"settings\": {
+          \"minimumApproverCount\": 1,
+          \"creatorVoteCounts\": true,
+          \"allowDownvotes\": false,
+          \"resetOnSourcePush\": true,
+          \"scope\": [
+            {
+              \"refName\": \"refs/heads/master\",
+              \"matchKind\": \"Exact\",
+              \"repositoryId\": \"${repositoryId}\"
+            }
+          ]
+        }
+      }" > /dev/null
+
+    curl --silent \
+      -u "${AZURE_USER}:${AZURE_TOKEN}" \
+      "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/policy/configurations/?api-version=5.0" \
+      -H "Content-Type: application/json" \
+      -d "
+      {
+        \"isEnabled\": true,
+        \"isBlocking\": true,
+        \"type\": {
+          \"id\": \"${openCommentsPolicyType}\"
+        },
+        \"settings\": {
+          \"scope\": [
+            {
+              \"refName\": \"refs/heads/master\",
+              \"matchKind\": \"Exact\",
+              \"repositoryId\": \"${repositoryId}\"
+            }
+          ]
+        }
+      }" > /dev/null
   }
 
   vcs:azure:scaffold:local() {
@@ -38,7 +100,8 @@ if [ "${VCS:-}" == "azure" ]; then
     local projectname="$1"
 
     local projectid=$(vcs:azure:get_project_id)
-    local url=$(vcs:azure:scaffold:repo "$projectname" "${projectid}")
+    read url repositoryId < <(vcs:azure:scaffold:repo "$projectname" "${projectid}")
+    (vcs:azure:scaffold:policies "$repositoryId")
     (vcs:azure:scaffold:local "$url") > /dev/null
     echo "$url"
   }
