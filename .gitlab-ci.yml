@@ -81,13 +81,13 @@ docker:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script: |
-    docker build -t gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} .
-    docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
+    docker build -t registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} .
+    docker tag registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
     if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
-      docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:latest
+      docker tag registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} registry.gitlab.com/sparetimecoders/build-tools:latest
     fi
-    docker push gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
-    docker push gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
+    docker push registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
+    docker push registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
     if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
-      docker push gitlab.com/sparetimecoders/build-tools:latest
+      docker push registry.gitlab.com/sparetimecoders/build-tools:latest
     fi
