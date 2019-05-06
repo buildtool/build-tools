@@ -36,7 +36,7 @@ stages:
   - deps
   - test
   - build
-  - push
+  - docker
 
 deps:
   stage: deps
@@ -62,26 +62,27 @@ test:
 
 build:
   stage: build
-  services:
-    - docker:dind
   image: golang:1.12
   script: |
     for file in $(find ./cmd -name *.go); do
      echo "go build -o ./$(basename $(dirname ${file})) ${file}"
      GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./$(basename $(dirname ${file})) ${file}
     done
+
+docker:
+  stage: docker
+  services:
+    - docker:dind
+  image: docker:stable
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+  script: |
     docker build -t gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
     docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
     if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
       docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:latest
     fi
-
-push:
-  stage: push
-  services:
-    - docker:dind
-  image: golang:1.12
-  script: |
     docker push gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
     docker push gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
     if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
