@@ -24,9 +24,9 @@ var _ DockerClient = &docker.Client{}
 var registries = []Registry{&dockerhub{}, &ecr{}, &gitlab{}, &quay{}}
 
 func Identify() Registry {
-  for _, registry := range registries {
-    if registry.identify() {
-      return registry
+  for _, reg := range registries {
+    if reg.identify() {
+      return reg
     }
   }
   return nil
