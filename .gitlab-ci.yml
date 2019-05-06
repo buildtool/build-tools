@@ -79,7 +79,7 @@ docker:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2
   script: |
-    docker build -t gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
+    docker build -t gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} .
     docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
     if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
       docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:latest
