@@ -22,7 +22,8 @@ variables:
 
 before_script:
   - mkdir -p ${CI_PROJECT_DIR}/_go/{pkg,bin,cache}
-  - rm -rf /go/pkg
+  - rm -rf /go/pkg || true
+  - mkdir -p /go
   - ln -s ${CI_PROJECT_DIR}/_go/pkg /go/pkg
   - ln -s ${CI_PROJECT_DIR}/_go/bin /go/bin
 
