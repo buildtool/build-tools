@@ -78,6 +78,8 @@ docker:
   variables:
     DOCKER_HOST: tcp://docker:2375/
     DOCKER_DRIVER: overlay2
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script: |
     docker build -t gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} .
     docker tag gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
