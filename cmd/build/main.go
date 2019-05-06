@@ -50,6 +50,7 @@ func main() {
   if currentCI.Branch() == "master" {
     tags = append(tags, tag(currentRegistry.RegistryUrl(), "latest"))
   }
+  // TODO: Parse Dockerfile and build and tag each stage for caching?
   response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
     Dockerfile: dockerfile,
     Memory:     3 * 1024 * 1024 * 1024,

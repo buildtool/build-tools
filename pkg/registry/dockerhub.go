@@ -32,7 +32,6 @@ func (r dockerhub) Login(client DockerClient) bool {
     return true
   } else {
     panic(err)
-    return false
   }
 }
 
