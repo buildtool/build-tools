@@ -2,6 +2,7 @@ package registry
 
 import (
 	"github.com/stretchr/testify/assert"
+	docker2 "gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"os"
 	"testing"
 )
@@ -11,7 +12,7 @@ func TestIdentify_Ecr(t *testing.T) {
 	_ = os.Setenv("ECR_URL", "url")
 	_ = os.Setenv("ECR_REGION", "region")
 
-	docker := &MockDocker{}
+	docker := &docker2.MockDocker{}
 	result := Identify()
 	assert.NotNil(t, result)
 	assert.Equal(t, "url", result.RegistryUrl())

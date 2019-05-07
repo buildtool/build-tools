@@ -2,6 +2,7 @@ package registry
 
 import (
 	"github.com/stretchr/testify/assert"
+	docker2 "gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"os"
 	"testing"
 )
@@ -12,7 +13,7 @@ func TestIdentify_Quay(t *testing.T) {
 	_ = os.Setenv("QUAY_USERNAME", "user")
 	_ = os.Setenv("QUAY_PASSWORD", "pass")
 
-	docker := &MockDocker{}
+	docker := &docker2.MockDocker{}
 	result := Identify()
 	assert.NotNil(t, result)
 	assert.Equal(t, "quay.io/repo", result.RegistryUrl())

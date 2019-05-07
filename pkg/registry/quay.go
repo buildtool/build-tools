@@ -4,6 +4,7 @@ import (
 	"context"
 	"docker.io/go-docker/api/types"
 	"fmt"
+	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"log"
 	"os"
 )
@@ -27,7 +28,7 @@ func (r *quay) identify() bool {
 	return false
 }
 
-func (r quay) Login(client DockerClient) bool {
+func (r quay) Login(client docker.Client) bool {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: "quay.io"}); err == nil {
 		log.Println(ok.Status)
 		return true

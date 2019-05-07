@@ -3,6 +3,7 @@ package registry
 import (
   "context"
   "docker.io/go-docker/api/types"
+  "gitlab.com/sparetimecoders/build-tools/pkg/docker"
   "log"
   "os"
 )
@@ -26,7 +27,7 @@ func (r *dockerhub) identify() bool {
   return false
 }
 
-func (r dockerhub) Login(client DockerClient) bool {
+func (r dockerhub) Login(client docker.Client) bool {
   if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password}); err == nil {
     log.Println(ok.Status)
     return true
