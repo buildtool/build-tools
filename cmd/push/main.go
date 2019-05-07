@@ -3,7 +3,9 @@ package main
 import (
 	"docker.io/go-docker"
 	"flag"
+	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/push"
+	"os"
 )
 
 func main() {
@@ -14,18 +16,19 @@ func main() {
 		usage             = "name of the Dockerfile to use"
 	)
 
-	flag.StringVar(&dockerfile, "file", defaultDockerfile, usage)
-	flag.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
+	set := flag.NewFlagSet("push", flag.ExitOnError)
+	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
+	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
 
-	flag.Parse()
+	_ = set.Parse(os.Args)
 
 	client, err := docker.NewEnvClient()
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
 	}
 
 	err = push.Push(client, dockerfile)
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
 	}
 }
