@@ -23,20 +23,16 @@ func (r *ecr) identify() bool {
 	return false
 }
 
-func (r ecr) Login(client docker.Client) bool {
+func (r ecr) Login(client docker.Client) error {
 	// TODO: Use AWS SDK to get auth token etc. https://docs.aws.amazon.com/sdk-for-go/api/service/ecr/#example_ECR_GetAuthorizationToken_shared00
-	return false
+	return nil
 }
 
 func (r ecr) RegistryUrl() string {
 	return r.url
 }
 
-func (r ecr) Create() bool {
-	// TODO: Use AWS SDK to create registry
-	panic("implement me")
-}
-
-func (r ecr) Validate() bool {
-	panic("implement me")
-}
+//func (r ecr) Create() bool {
+//	// TODO: Use AWS SDK to create registry
+//	panic("implement me")
+//}

@@ -25,14 +25,6 @@ func (a *azure) identify() bool {
   return false
 }
 
-func (a azure) Validate() bool {
-  panic("implement me")
-}
-
-func (a azure) Scaffold() error {
-  panic("implement me")
-}
-
 func (a azure) BuildName() string {
   return a.CIBuildName
 }

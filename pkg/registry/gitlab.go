@@ -27,23 +27,15 @@ func (r *gitlab) identify() bool {
 	return false
 }
 
-func (r gitlab) Login(client docker.Client) bool {
+func (r gitlab) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: "gitlab-ci-token", Password: r.token, ServerAddress: r.url}); err == nil {
 		log.Println(ok.Status)
-		return true
+		return nil
 	} else {
-		panic(err)
+		return err
 	}
 }
 
 func (r gitlab) RegistryUrl() string {
 	return r.url
-}
-
-func (r gitlab) Create() bool {
-	panic("implement me")
-}
-
-func (r gitlab) Validate() bool {
-	panic("implement me")
 }

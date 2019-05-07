@@ -27,23 +27,16 @@ func (r *dockerhub) identify() bool {
   return false
 }
 
-func (r dockerhub) Login(client docker.Client) bool {
+func (r dockerhub) Login(client docker.Client) error {
   if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password}); err == nil {
     log.Println(ok.Status)
-    return true
+    return nil
   } else {
-    panic(err)
+    log.Println("Unable to login")
+    return err
   }
 }
 
 func (r dockerhub) RegistryUrl() string {
   return r.repository
-}
-
-func (r dockerhub) Create() bool {
-  panic("implement me")
-}
-
-func (r dockerhub) Validate() bool {
-  panic("implement me")
 }

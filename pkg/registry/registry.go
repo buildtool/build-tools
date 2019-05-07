@@ -4,10 +4,12 @@ import "gitlab.com/sparetimecoders/build-tools/pkg/docker"
 
 type Registry interface {
   identify() bool
-  Login(client docker.Client) bool
+  Login(client docker.Client) error
   RegistryUrl() string
-  Create() bool
-  Validate() bool
+  // TODO: Uncomment when implementing push
+  //Create() bool
+  // TODO: Uncomment when implementing service-setup
+  //Validate() bool
 }
 
 var registries = []Registry{&dockerhub{}, &ecr{}, &gitlab{}, &quay{}}

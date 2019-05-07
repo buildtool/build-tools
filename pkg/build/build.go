@@ -22,7 +22,9 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) 
     return fmt.Errorf("no Docker registry found")
   }
 
-  currentRegistry.Login(client)
+  if err := currentRegistry.Login(client); err != nil {
+    return err
+  }
 
   tags := []string{
     tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),

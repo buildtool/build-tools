@@ -28,23 +28,15 @@ func (r *quay) identify() bool {
 	return false
 }
 
-func (r quay) Login(client docker.Client) bool {
+func (r quay) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: "quay.io"}); err == nil {
 		log.Println(ok.Status)
-		return true
+		return nil
 	} else {
-		panic(err)
+		return err
 	}
 }
 
 func (r quay) RegistryUrl() string {
 	return r.url
-}
-
-func (r quay) Create() bool {
-	panic("implement me")
-}
-
-func (r quay) Validate() bool {
-	panic("implement me")
 }

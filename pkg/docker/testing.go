@@ -17,6 +17,7 @@ type MockDocker struct {
   ServerAddress string
   BuildContext  io.Reader
   BuildOptions  types.ImageBuildOptions
+  LoginError    error
   BuildError    error
 }
 
@@ -34,6 +35,9 @@ func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (
   m.Username = auth.Username
   m.Password = auth.Password
   m.ServerAddress = auth.ServerAddress
+  if m.LoginError != nil {
+    return registry.AuthenticateOKBody{Status: "Invalid username/password"}, m.LoginError
+  }
   return registry.AuthenticateOKBody{Status: "Logged in"}, nil
 }
 

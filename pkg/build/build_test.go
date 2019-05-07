@@ -35,6 +35,24 @@ func TestBuild_NoRegistry(t *testing.T) {
   assert.EqualError(t, err, "no Docker registry found")
 }
 
+func TestBuild_LoginError(t *testing.T) {
+  os.Clearenv()
+  _ = os.Setenv("GITLAB_CI", "1")
+  _ = os.Setenv("CI_COMMIT_SHA", "abc123")
+  _ = os.Setenv("CI_PROJECT_NAME", "reponame")
+  _ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
+  _ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+  _ = os.Setenv("DOCKERHUB_USERNAME", "user")
+  _ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+  client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
+  buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+  err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+
+  assert.NotNil(t, err)
+  assert.EqualError(t, err, "invalid username/password")
+}
+
 func TestBuild_BuildError(t *testing.T) {
   os.Clearenv()
   _ = os.Setenv("GITLAB_CI", "1")
@@ -50,7 +68,7 @@ func TestBuild_BuildError(t *testing.T) {
   err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
 
   assert.NotNil(t, err)
-  assert.Error(t, err, "build error")
+  assert.EqualError(t, err, "build error")
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {

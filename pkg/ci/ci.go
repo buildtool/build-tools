@@ -2,8 +2,9 @@ package ci
 
 type CI interface {
   identify() bool
-  Validate() bool
-  Scaffold() error
+  // TODO: Uncomment when implementing service-setup
+  //Validate() bool
+  //Scaffold() error
   BuildName() string
   Branch() string
   BranchReplaceSlash() string

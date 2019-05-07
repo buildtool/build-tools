@@ -25,14 +25,6 @@ func (g *gitlab) identify() bool {
   return false
 }
 
-func (g gitlab) Validate() bool {
-  panic("implement me")
-}
-
-func (g gitlab) Scaffold() error {
-  panic("implement me")
-}
-
 func (g gitlab) BuildName() string {
   return g.CIBuildName
 }

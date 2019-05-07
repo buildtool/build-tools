@@ -25,14 +25,6 @@ func (b *buildkite) identify() bool {
   return false
 }
 
-func (b buildkite) Validate() bool {
-  panic("implement me")
-}
-
-func (b buildkite) Scaffold() error {
-  panic("implement me")
-}
-
 func (b buildkite) BuildName() string {
   return b.CIBuildName
 }
