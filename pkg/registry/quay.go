@@ -3,6 +3,8 @@ package registry
 import (
 	"context"
 	"docker.io/go-docker/api/types"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"log"
@@ -28,7 +30,7 @@ func (r *quay) identify() bool {
 	return false
 }
 
-func (r quay) Login(client docker.Client) error {
+func (r *quay) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: "quay.io"}); err == nil {
 		log.Println(ok.Status)
 		return nil
@@ -37,6 +39,16 @@ func (r quay) Login(client docker.Client) error {
 	}
 }
 
+func (r quay) GetAuthInfo() string {
+	auth := types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: "quay.io"}
+	authBytes, _ := json.Marshal(auth)
+	return base64.URLEncoding.EncodeToString(authBytes)
+}
+
 func (r quay) RegistryUrl() string {
 	return r.url
+}
+
+func (r *quay) Create() error {
+	return nil
 }

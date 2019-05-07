@@ -1,13 +1,19 @@
 package registry
 
-import "gitlab.com/sparetimecoders/build-tools/pkg/docker"
+import (
+  "bufio"
+  "context"
+  "docker.io/go-docker/api/types"
+  "fmt"
+  "gitlab.com/sparetimecoders/build-tools/pkg/docker"
+)
 
 type Registry interface {
   identify() bool
   Login(client docker.Client) error
+  GetAuthInfo() string
   RegistryUrl() string
-  // TODO: Uncomment when implementing push
-  //Create() bool
+  Create() error
   // TODO: Uncomment when implementing service-setup
   //Validate() bool
 }
@@ -21,4 +27,17 @@ func Identify() Registry {
     }
   }
   return nil
+}
+
+func PushImage(client docker.Client, auth, image string) error {
+  if out, err := client.ImagePush(context.Background(), image, types.ImagePushOptions{All: true, RegistryAuth: auth}); err != nil {
+    return err
+  } else {
+    scanner := bufio.NewScanner(out)
+    for scanner.Scan() {
+      fmt.Println(scanner.Text())
+    }
+
+    return nil
+  }
 }

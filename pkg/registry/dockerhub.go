@@ -3,6 +3,8 @@ package registry
 import (
   "context"
   "docker.io/go-docker/api/types"
+  "encoding/base64"
+  "encoding/json"
   "gitlab.com/sparetimecoders/build-tools/pkg/docker"
   "log"
   "os"
@@ -37,6 +39,16 @@ func (r dockerhub) Login(client docker.Client) error {
   }
 }
 
+func (r dockerhub) GetAuthInfo() string {
+  auth := types.AuthConfig{Username: r.username, Password: r.password}
+  authBytes, _ := json.Marshal(auth)
+  return base64.URLEncoding.EncodeToString(authBytes)
+}
+
 func (r dockerhub) RegistryUrl() string {
   return r.repository
+}
+
+func (r *dockerhub) Create() error {
+  return nil
 }

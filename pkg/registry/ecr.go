@@ -28,11 +28,18 @@ func (r ecr) Login(client docker.Client) error {
 	return nil
 }
 
+func (r *ecr) GetAuthInfo() string {
+	//auth := types.AuthConfig{Username: r.username, Password: r.password}
+	//authBytes, _ := json.Marshal(auth)
+	//return base64.URLEncoding.EncodeToString(authBytes)
+	return ""
+}
+
 func (r ecr) RegistryUrl() string {
 	return r.url
 }
 
-//func (r ecr) Create() bool {
-//	// TODO: Use AWS SDK to create registry
-//	panic("implement me")
-//}
+func (r ecr) Create() error {
+	// TODO: Use AWS SDK to create registry
+	return nil
+}

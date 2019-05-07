@@ -17,8 +17,10 @@ type MockDocker struct {
   ServerAddress string
   BuildContext  io.Reader
   BuildOptions  types.ImageBuildOptions
+  Images        []string
   LoginError    error
   BuildError    error
+  PushError     error
 }
 
 func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
@@ -29,6 +31,16 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
     return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader("Build error"))}, m.BuildError
   }
   return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader("Build successful"))}, nil
+}
+
+func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {
+  m.Images = append(m.Images, image)
+
+  if m.PushError != nil {
+    return ioutil.NopCloser(strings.NewReader("Push error")), m.PushError
+  }
+
+  return ioutil.NopCloser(strings.NewReader("Push successful")), nil
 }
 
 func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error) {

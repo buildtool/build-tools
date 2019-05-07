@@ -1,17 +1,13 @@
-package build
+package push
 
 import (
-  "bufio"
-  "context"
-  "docker.io/go-docker/api/types"
   "fmt"
   "gitlab.com/sparetimecoders/build-tools/pkg/ci"
   "gitlab.com/sparetimecoders/build-tools/pkg/docker"
   "gitlab.com/sparetimecoders/build-tools/pkg/registry"
-  "io"
 )
 
-func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) error {
+func Push(client docker.Client, dockerfile string) error {
   currentCI := ci.Identify()
   if currentCI == nil {
     return fmt.Errorf("no CI found")
@@ -21,9 +17,13 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) 
     return fmt.Errorf("no Docker registry found")
   }
 
-  if err := currentRegistry.Login(client); err != nil {
+  auth := currentRegistry.GetAuthInfo()
+
+  if err := currentRegistry.Create(); err != nil {
     return err
   }
+
+  // TODO: Parse Dockerfile and push each stage for caching?
 
   tags := []string{
     docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
@@ -32,24 +32,11 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) 
   if currentCI.Branch() == "master" {
     tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
   }
-  // TODO: Parse Dockerfile and build and tag each stage for caching?
-  response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
-    Dockerfile: dockerfile,
-    Memory:     3 * 1024 * 1024 * 1024,
-    MemorySwap: -1,
-    Remove:     true,
-    ShmSize:    256 * 1024 * 1024,
-    Tags:       tags,
-  })
 
-  if err != nil {
-    return err
-  } else {
-    scanner := bufio.NewScanner(response.Body)
-    for scanner.Scan() {
-      fmt.Println(scanner.Text())
+  for _, tag := range tags {
+    if err := registry.PushImage(client, auth, tag); err != nil {
+      return err
     }
   }
-
   return nil
 }
