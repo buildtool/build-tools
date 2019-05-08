@@ -3,13 +3,10 @@ package ci
 import (
   "log"
   "os"
-  "strings"
 )
 
 type azure struct {
-  CICommit     string
-  CIBuildName  string
-  CIBranchName string
+  ci
 }
 
 var _ CI = &azure{}
@@ -23,20 +20,4 @@ func (a *azure) identify() bool {
     return true
   }
   return false
-}
-
-func (a azure) BuildName() string {
-  return a.CIBuildName
-}
-
-func (a azure) Branch() string {
-  return a.CIBranchName
-}
-
-func (a azure) BranchReplaceSlash() string {
-  return strings.ReplaceAll(strings.ReplaceAll(a.CIBranchName, "/", "_"), " ", "_")
-}
-
-func (a azure) Commit() string {
-  return a.CICommit
 }

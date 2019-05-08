@@ -3,13 +3,10 @@ package ci
 import (
   "log"
   "os"
-  "strings"
 )
 
 type gitlab struct {
-  CICommit     string
-  CIBuildName  string
-  CIBranchName string
+  ci
 }
 
 var _ CI = &gitlab{}
@@ -23,20 +20,4 @@ func (g *gitlab) identify() bool {
     return true
   }
   return false
-}
-
-func (g gitlab) BuildName() string {
-  return g.CIBuildName
-}
-
-func (g gitlab) Branch() string {
-  return g.CIBranchName
-}
-
-func (g gitlab) BranchReplaceSlash() string {
-  return strings.ReplaceAll(strings.ReplaceAll(g.CIBranchName, "/", "_"), " ", "_")
-}
-
-func (g gitlab) Commit() string {
-  return g.CICommit
 }

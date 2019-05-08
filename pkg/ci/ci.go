@@ -1,5 +1,9 @@
 package ci
 
+import (
+  "strings"
+)
+
 type CI interface {
   identify() bool
   // TODO: Uncomment when implementing service-setup
@@ -21,4 +25,26 @@ func Identify() CI {
   }
 
   return nil
+}
+
+type ci struct {
+  CICommit     string
+  CIBuildName  string
+  CIBranchName string
+}
+
+func (c ci) BranchReplaceSlash() string {
+  return strings.ReplaceAll(strings.ReplaceAll(c.CIBranchName, "/", "_"), " ", "_")
+}
+
+func (c ci) BuildName() string {
+  return c.CIBuildName
+}
+
+func (c ci) Branch() string {
+  return c.CIBranchName
+}
+
+func (c ci) Commit() string {
+  return c.CICommit
 }
