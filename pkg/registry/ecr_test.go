@@ -20,6 +20,16 @@ func TestEcr_Identify(t *testing.T) {
 	assert.Equal(t, "url", registry.RegistryUrl())
 }
 
+func TestEcr_Identify_BrokenConfig(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("ECR_URL", "url")
+	_ = os.Setenv("ECR_REGION", "region")
+	_ = os.Setenv("AWS_CA_BUNDLE", "/missing/bundle")
+
+	registry := Identify()
+	assert.Nil(t, registry)
+}
+
 func TestEcr_LoginAuthRequestFailed(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ecr{url: "ecr-url", region: "eu-west-1", svc: &MockECR{loginError: fmt.Errorf("auth failure")}}
