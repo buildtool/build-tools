@@ -50,5 +50,5 @@ func (r dockerhub) RegistryUrl() string {
 }
 
 func (r *dockerhub) Create(repository string) error {
-  return nil
+	return nil
 }

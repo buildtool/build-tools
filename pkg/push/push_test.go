@@ -32,18 +32,18 @@ func TestPush_NoRegistry(t *testing.T) {
 }
 
 func TestPush_LoginFailure(t *testing.T) {
-  os.Clearenv()
-  _ = os.Setenv("GITLAB_CI", "1")
-  _ = os.Setenv("CI_COMMIT_SHA", "abc123")
-  _ = os.Setenv("CI_PROJECT_NAME", "reponame")
-  _ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
-  _ = os.Setenv("ECR_URL", "ecr_url")
+	os.Clearenv()
+	_ = os.Setenv("GITLAB_CI", "1")
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
+	_ = os.Setenv("ECR_URL", "ecr_url")
 
-  client := &docker.MockDocker{}
-  err := Push(client, "Dockerfile")
+	client := &docker.MockDocker{}
+	err := Push(client, "Dockerfile")
 
-  assert.NotNil(t, err)
-  assert.EqualError(t, err, "MissingRegion: could not find region configuration")
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "MissingRegion: could not find region configuration")
 }
 
 func TestPush_PushError(t *testing.T) {

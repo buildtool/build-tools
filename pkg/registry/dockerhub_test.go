@@ -43,7 +43,7 @@ func TestDockerhub_GetAuthInfo(t *testing.T) {
 }
 
 func TestDockerhub_Create(t *testing.T) {
-  registry := &dockerhub{}
-  err := registry.Create("repo")
-  assert.Nil(t, err)
+	registry := &dockerhub{}
+	err := registry.Create("repo")
+	assert.Nil(t, err)
 }
