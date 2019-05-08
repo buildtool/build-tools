@@ -1,4 +1,4 @@
-FROM debian:jessie-slim
+FROM debian:stretch-slim
 
 ENV KUBERNETES_VERSION=1.14.0
 
