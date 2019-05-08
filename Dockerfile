@@ -1,4 +1,4 @@
-FROM debian:sid-slim
+FROM debian:jessie-slim
 
 ENV KUBERNETES_VERSION=1.14.0
 
