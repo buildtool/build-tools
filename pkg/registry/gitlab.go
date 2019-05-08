@@ -48,6 +48,6 @@ func (r gitlab) RegistryUrl() string {
 	return r.url
 }
 
-func (r *gitlab) Create() error {
+func (r *gitlab) Create(repository string) error {
 	return nil
 }

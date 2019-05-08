@@ -13,7 +13,7 @@ type Registry interface {
   Login(client docker.Client) error
   GetAuthInfo() string
   RegistryUrl() string
-  Create() error
+  Create(repository string) error
   // TODO: Uncomment when implementing service-setup
   //Validate() bool
 }

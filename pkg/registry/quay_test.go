@@ -44,6 +44,6 @@ func TestQuay_GetAuthInfo(t *testing.T) {
 
 func TestQuay_Create(t *testing.T) {
 	registry := &quay{}
-	err := registry.Create()
+	err := registry.Create("repo")
 	assert.Nil(t, err)
 }

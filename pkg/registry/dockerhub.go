@@ -49,6 +49,6 @@ func (r dockerhub) RegistryUrl() string {
   return r.repository
 }
 
-func (r *dockerhub) Create() error {
+func (r *dockerhub) Create(repository string) error {
   return nil
 }

@@ -44,6 +44,6 @@ func TestGitlab_GetAuthInfo(t *testing.T) {
 
 func TestGitlab_Create(t *testing.T) {
 	registry := &gitlab{}
-	err := registry.Create()
+	err := registry.Create("repo")
 	assert.Nil(t, err)
 }

@@ -49,6 +49,6 @@ func (r quay) RegistryUrl() string {
 	return r.url
 }
 
-func (r *quay) Create() error {
+func (r *quay) Create(repository string) error {
 	return nil
 }

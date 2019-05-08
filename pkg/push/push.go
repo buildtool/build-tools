@@ -17,9 +17,13 @@ func Push(client docker.Client, dockerfile string) error {
     return fmt.Errorf("no Docker registry found")
   }
 
+  if err := currentRegistry.Login(client); err != nil {
+    return err
+  }
+
   auth := currentRegistry.GetAuthInfo()
 
-  if err := currentRegistry.Create(); err != nil {
+  if err := currentRegistry.Create(currentCI.BuildName()); err != nil {
     return err
   }
 

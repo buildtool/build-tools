@@ -5,6 +5,7 @@ go 1.12
 require (
 	docker.io/go-docker v1.0.0
 	github.com/Sirupsen/logrus v0.0.0-00010101000000-000000000000 // indirect
+	github.com/aws/aws-sdk-go v1.19.25
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect
