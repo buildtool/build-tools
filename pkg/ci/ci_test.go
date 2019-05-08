@@ -1,14 +1,14 @@
 package ci
 
 import (
-  "github.com/stretchr/testify/assert"
-  "os"
-  "testing"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"testing"
 )
 
 func TestIdentify(t *testing.T) {
-  os.Clearenv()
+	os.Clearenv()
 
-  result := Identify()
-  assert.Nil(t, result)
+	_, err := Identify()
+	assert.EqualError(t, err, "no CI found")
 }
