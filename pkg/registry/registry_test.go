@@ -1,14 +1,14 @@
 package registry
 
 import (
-  "github.com/stretchr/testify/assert"
-  "os"
-  "testing"
+	"github.com/stretchr/testify/assert"
+	"os"
+	"testing"
 )
 
 func TestIdentify(t *testing.T) {
-  os.Clearenv()
+	os.Clearenv()
 
-  result := Identify()
-  assert.Nil(t, result)
+	result := Identify()
+	assert.Nil(t, result)
 }

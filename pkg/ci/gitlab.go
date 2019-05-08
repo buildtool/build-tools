@@ -1,42 +1,23 @@
 package ci
 
 import (
-  "log"
-  "os"
-  "strings"
+	"log"
+	"os"
 )
 
 type gitlab struct {
-  CICommit     string
-  CIBuildName  string
-  CIBranchName string
+	ci
 }
 
 var _ CI = &gitlab{}
 
 func (g *gitlab) identify() bool {
-  if _, exists := os.LookupEnv("GITLAB_CI"); exists {
-    log.Println("Running in GitlabCI")
-    g.CICommit = os.Getenv("CI_COMMIT_SHA")
-    g.CIBuildName = os.Getenv("CI_PROJECT_NAME")
-    g.CIBranchName = os.Getenv("CI_COMMIT_REF_NAME")
-    return true
-  }
-  return false
-}
-
-func (g gitlab) BuildName() string {
-  return g.CIBuildName
-}
-
-func (g gitlab) Branch() string {
-  return g.CIBranchName
-}
-
-func (g gitlab) BranchReplaceSlash() string {
-  return strings.ReplaceAll(strings.ReplaceAll(g.CIBranchName, "/", "_"), " ", "_")
-}
-
-func (g gitlab) Commit() string {
-  return g.CICommit
+	if _, exists := os.LookupEnv("GITLAB_CI"); exists {
+		log.Println("Running in GitlabCI")
+		g.CICommit = os.Getenv("CI_COMMIT_SHA")
+		g.CIBuildName = os.Getenv("CI_PROJECT_NAME")
+		g.CIBranchName = os.Getenv("CI_COMMIT_REF_NAME")
+		return true
+	}
+	return false
 }
