@@ -5,10 +5,14 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
+	"os"
 )
 
 func Push(client docker.Client, dockerfile string) error {
-	currentCI, err := ci.Identify()
+	dir, _ := os.Getwd()
+	currentVCS := vcs.Identify(dir)
+	currentCI, err := ci.Identify(currentVCS)
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,7 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
+	gopkg.in/src-d/go-git.v4 v4.11.0
 )
 
 replace github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.4.1

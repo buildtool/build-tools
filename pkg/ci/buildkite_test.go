@@ -2,6 +2,7 @@ package ci
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"os"
 	"testing"
 )
@@ -12,7 +13,7 @@ func TestIdentify_Buildkite(t *testing.T) {
 	_ = os.Setenv("BUILDKITE_PIPELINE_SLUG", "reponame")
 	_ = os.Setenv("BUILDKITE_BRANCH_NAME", "feature/first test")
 
-	result, err := Identify()
+	result, err := Identify(vcs.Identify("."))
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "abc123", result.Commit())
