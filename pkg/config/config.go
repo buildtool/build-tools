@@ -117,8 +117,10 @@ func (c *Config) CurrentRegistry() (Registry, error) {
 	return nil, errors.New("no Docker registry found")
 }
 
+var abs = filepath.Abs
+
 func parseConfigFiles(dir string, fn func(string) error) error {
-	parent, err := filepath.Abs(dir)
+	parent, err := abs(dir)
 	if err != nil {
 		return err
 	}

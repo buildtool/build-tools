@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
@@ -8,6 +9,18 @@ import (
 	"path/filepath"
 	"testing"
 )
+
+func TestLoad_AbsFail(t *testing.T) {
+	os.Clearenv()
+
+	abs = func(path string) (s string, e error) {
+		return "", errors.New("abs-error")
+	}
+
+	_, err := Load("test")
+	assert.EqualError(t, err, "abs-error")
+	abs = filepath.Abs
+}
 
 func TestLoad_Empty(t *testing.T) {
 	os.Clearenv()
