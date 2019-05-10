@@ -42,13 +42,11 @@ func TestLoad_BrokenYAML(t *testing.T) {
 func TestLoad_UnreadableFile(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	yaml := `ci: []
-`
 	filename := filepath.Join(name, "buildtools.yaml")
-	_ = ioutil.WriteFile(filename, []byte(yaml), 0000)
+	_ = os.Mkdir(filename, 0777)
 
 	cfg, err := Load(name)
-	assert.EqualError(t, err, fmt.Sprintf("open %s: permission denied", filename))
+	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "", cfg.CI.Selected)
