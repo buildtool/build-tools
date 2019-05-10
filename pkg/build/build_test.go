@@ -12,18 +12,21 @@ import (
 )
 
 func TestBuild_BrokenConfig(t *testing.T) {
+	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	yaml := `ci: []
 `
 	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
 
-	_ = os.Chdir(name)
+	err := os.Chdir(name)
+	assert.NoError(t, err)
+	defer os.Chdir(oldPwd)
 
 	os.Clearenv()
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err = Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
