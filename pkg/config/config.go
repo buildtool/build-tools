@@ -118,7 +118,12 @@ func (c *Config) CurrentRegistry() (Registry, error) {
 }
 
 func parseConfigFiles(dir string, fn func(string) error) error {
-	parent, _ := filepath.Abs(dir)
+	parent, err := filepath.Abs(dir)
+	if err != nil {
+		fmt.Printf("Error getting abs-path: %v\n", err)
+		return err
+	}
+	fmt.Printf("Parent abs-path: %s\n", parent)
 	var files []string
 	for parent != "/" {
 		filename := filepath.Join(parent, "buildtools.yaml")
