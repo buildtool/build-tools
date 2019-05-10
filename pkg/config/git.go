@@ -1,10 +1,10 @@
-package vcs
+package config
 
 import (
 	"fmt"
 	git2 "gopkg.in/src-d/go-git.v4"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 type git struct {
@@ -13,7 +13,7 @@ type git struct {
 }
 
 func (v *git) identify(dir string) bool {
-	if _, err := os.Stat(path.Join(dir, ".git")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
 		return false
 	}
 	repo, err := git2.PlainOpen(dir)

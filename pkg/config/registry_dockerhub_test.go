@@ -1,4 +1,4 @@
-package registry
+package config
 
 import (
 	"fmt"
@@ -14,14 +14,17 @@ func TestDockerhub_Identify(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
-	registry := Identify()
+	cfg, err := Load(".")
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
 	assert.NotNil(t, registry)
 	assert.Equal(t, "repo", registry.RegistryUrl())
 }
 
 func TestDockerhub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &dockerhub{repository: "repo", username: "user", password: "pass"}
+	registry := &DockerhubRegistry{Repository: "repo", Username: "user", Password: "pass"}
 	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
@@ -31,19 +34,19 @@ func TestDockerhub_LoginSuccess(t *testing.T) {
 
 func TestDockerhub_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
-	registry := &dockerhub{}
+	registry := &DockerhubRegistry{}
 	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
 }
 
 func TestDockerhub_GetAuthInfo(t *testing.T) {
-	registry := &dockerhub{repository: "repo", username: "user", password: "pass"}
+	registry := &DockerhubRegistry{Repository: "repo", Username: "user", Password: "pass"}
 	auth := registry.GetAuthInfo()
 	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InBhc3MifQ==", auth)
 }
 
 func TestDockerhub_Create(t *testing.T) {
-	registry := &dockerhub{}
+	registry := &DockerhubRegistry{}
 	err := registry.Create("repo")
 	assert.Nil(t, err)
 }

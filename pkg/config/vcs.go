@@ -1,4 +1,4 @@
-package vcs
+package config
 
 type VCS interface {
 	identify(dir string) bool

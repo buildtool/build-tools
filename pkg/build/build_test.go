@@ -7,8 +7,27 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
+
+func TestBuild_BrokenConfig(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer os.RemoveAll(name)
+	yaml := `ci: []
+`
+	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+
+	_ = os.Chdir(name)
+
+	os.Clearenv()
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+}
 
 func TestBuild_NoCI(t *testing.T) {
 	os.Clearenv()
@@ -22,7 +41,6 @@ func TestBuild_NoCI(t *testing.T) {
 
 func TestBuild_NoRegistry(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
@@ -37,7 +55,6 @@ func TestBuild_NoRegistry(t *testing.T) {
 
 func TestBuild_LoginError(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
@@ -55,7 +72,6 @@ func TestBuild_LoginError(t *testing.T) {
 
 func TestBuild_BuildError(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
@@ -73,7 +89,6 @@ func TestBuild_BuildError(t *testing.T) {
 
 func TestBuild_FeatureBranch(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
@@ -96,7 +111,6 @@ func TestBuild_FeatureBranch(t *testing.T) {
 
 func TestBuild_MasterBranch(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")

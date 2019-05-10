@@ -1,24 +1,24 @@
 package push
 
 import (
-	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
+	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
-	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"os"
 )
 
 func Push(client docker.Client, dockerfile string) error {
 	dir, _ := os.Getwd()
-	currentVCS := vcs.Identify(dir)
-	currentCI, err := ci.Identify(currentVCS)
+	cfg, err := config.Load(dir)
 	if err != nil {
 		return err
 	}
-	currentRegistry := registry.Identify()
-	if currentRegistry == nil {
-		return fmt.Errorf("no Docker registry found")
+	currentCI, err := cfg.CurrentCI()
+	if err != nil {
+		return err
+	}
+	currentRegistry, err := cfg.CurrentRegistry()
+	if err != nil {
+		return err
 	}
 
 	if err := currentRegistry.Login(client); err != nil {
@@ -42,7 +42,7 @@ func Push(client docker.Client, dockerfile string) error {
 	}
 
 	for _, tag := range tags {
-		if err := registry.PushImage(client, auth, tag); err != nil {
+		if err := currentRegistry.PushImage(client, auth, tag); err != nil {
 			return err
 		}
 	}

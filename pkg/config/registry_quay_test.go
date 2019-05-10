@@ -1,4 +1,4 @@
-package registry
+package config
 
 import (
 	"fmt"
@@ -14,14 +14,17 @@ func TestQuay_Identify(t *testing.T) {
 	_ = os.Setenv("QUAY_USERNAME", "user")
 	_ = os.Setenv("QUAY_PASSWORD", "pass")
 
-	result := Identify()
-	assert.NotNil(t, result)
-	assert.Equal(t, "quay.io/repo", result.RegistryUrl())
+	cfg, err := Load(".")
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, "quay.io/repo", registry.RegistryUrl())
 }
 
 func TestQuay_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &quay{url: "quay.io/group", username: "user", password: "pass"}
+	registry := &QuayRegistry{Repository: "group", Username: "user", Password: "pass"}
 	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
@@ -31,19 +34,19 @@ func TestQuay_LoginSuccess(t *testing.T) {
 
 func TestQuay_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
-	registry := &quay{}
+	registry := &QuayRegistry{}
 	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
 }
 
 func TestQuay_GetAuthInfo(t *testing.T) {
-	registry := &quay{url: "quay.io/group", username: "user", password: "pass"}
+	registry := &QuayRegistry{Repository: "repo", Username: "user", Password: "pass"}
 	auth := registry.GetAuthInfo()
 	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InBhc3MiLCJzZXJ2ZXJhZGRyZXNzIjoicXVheS5pbyJ9", auth)
 }
 
 func TestQuay_Create(t *testing.T) {
-	registry := &quay{}
+	registry := &QuayRegistry{}
 	err := registry.Create("repo")
 	assert.Nil(t, err)
 }

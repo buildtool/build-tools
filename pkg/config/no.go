@@ -1,4 +1,4 @@
-package vcs
+package config
 
 type no struct {
 	vcs

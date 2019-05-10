@@ -6,6 +6,7 @@ require (
 	docker.io/go-docker v1.0.0
 	github.com/Sirupsen/logrus v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-sdk-go v1.19.25
+	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -18,6 +19,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
 	gopkg.in/src-d/go-git.v4 v4.11.0
+	gopkg.in/yaml.v2 v2.2.2
 )
 
 replace github.com/Sirupsen/logrus => github.com/sirupsen/logrus v1.4.1

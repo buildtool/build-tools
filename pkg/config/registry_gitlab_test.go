@@ -1,4 +1,4 @@
-package registry
+package config
 
 import (
 	"fmt"
@@ -10,40 +10,43 @@ import (
 
 func TestGitlab_Identify(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("CI_REGISTRY_IMAGE", "image")
-	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com/group/image")
+	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
+	_ = os.Setenv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")
 	_ = os.Setenv("CI_BUILD_TOKEN", "token")
 
-	registry := Identify()
+	cfg, err := Load(".")
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
 	assert.NotNil(t, registry)
 	assert.Equal(t, "registry.gitlab.com/group", registry.RegistryUrl())
 }
 
 func TestGitlab_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &gitlab{url: "registry.gitlab.com/group/repo", token: "token"}
+	registry := &GitlabRegistry{Registry: "registry.gitlab.com", Repository: "registry.gitlab.com/group/repo", Token: "token"}
 	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "gitlab-ci-token", client.Username)
 	assert.Equal(t, "token", client.Password)
-	assert.Equal(t, "registry.gitlab.com/group/repo", client.ServerAddress)
+	assert.Equal(t, "registry.gitlab.com", client.ServerAddress)
 }
 
 func TestGitlab_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
-	registry := &gitlab{}
+	registry := &GitlabRegistry{}
 	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
 }
 
 func TestGitlab_GetAuthInfo(t *testing.T) {
-	registry := &gitlab{url: "registry.gitlab.com/group/repo", token: "token"}
+	registry := &GitlabRegistry{Registry: "registry.gitlab.com", Repository: "registry.gitlab.com/group/repo", Token: "token"}
 	auth := registry.GetAuthInfo()
-	assert.Equal(t, "eyJ1c2VybmFtZSI6ImdpdGxhYi1jaS10b2tlbiIsInBhc3N3b3JkIjoidG9rZW4iLCJzZXJ2ZXJhZGRyZXNzIjoicmVnaXN0cnkuZ2l0bGFiLmNvbS9ncm91cC9yZXBvIn0=", auth)
+	assert.Equal(t, "eyJ1c2VybmFtZSI6ImdpdGxhYi1jaS10b2tlbiIsInBhc3N3b3JkIjoidG9rZW4iLCJzZXJ2ZXJhZGRyZXNzIjoicmVnaXN0cnkuZ2l0bGFiLmNvbSJ9", auth)
 }
 
 func TestGitlab_Create(t *testing.T) {
-	registry := &gitlab{}
+	registry := &GitlabRegistry{}
 	err := registry.Create("repo")
 	assert.Nil(t, err)
 }

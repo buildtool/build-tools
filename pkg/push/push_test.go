@@ -4,9 +4,28 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
+
+func TestPush_BrokenConfig(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer os.RemoveAll(name)
+	yaml := `ci: []
+`
+	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+
+	_ = os.Chdir(name)
+
+	os.Clearenv()
+	client := &docker.MockDocker{}
+	err := Push(client, "Dockerfile")
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+}
 
 func TestPush_NoCI(t *testing.T) {
 	os.Clearenv()
