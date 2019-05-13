@@ -11,9 +11,10 @@ import (
 )
 
 type Config struct {
-	VCS      *VCSConfig      `yaml:"vcs"`
-	CI       *CIConfig       `yaml:"ci"`
-	Registry *RegistryConfig `yaml:"registry"`
+	VCS          *VCSConfig      `yaml:"vcs"`
+	CI           *CIConfig       `yaml:"ci"`
+	Registry     *RegistryConfig `yaml:"registry"`
+	Environments []Environment   `yaml:"environments"`
 }
 
 type VCSConfig struct {
@@ -34,6 +35,12 @@ type RegistryConfig struct {
 	ECR       *ECRRegistry       `yaml:"ecr"`
 	Gitlab    *GitlabRegistry    `yaml:"gitlab"`
 	Quay      *QuayRegistry      `yaml:"quay"`
+}
+
+type Environment struct {
+	Name      string `yaml:"name"`
+	Context   string `yaml:"context"`
+	Namespace string `yaml:"namespace"`
 }
 
 func Load(dir string) (*Config, error) {
@@ -115,6 +122,15 @@ func (c *Config) CurrentRegistry() (Registry, error) {
 		}
 	}
 	return nil, errors.New("no Docker registry found")
+}
+
+func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
+	for _, env := range c.Environments {
+		if env.Name == environment {
+			return &env, nil
+		}
+	}
+	return nil, fmt.Errorf("no environment matching %s found", environment)
 }
 
 var abs = filepath.Abs

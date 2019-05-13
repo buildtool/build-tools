@@ -70,7 +70,10 @@ func TestLoad_UnreadableFile(t *testing.T) {
 func TestLoad_YAML(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	yaml := `ci:
+	yaml := `
+vcs:
+  selected: gitlab
+ci:
   selected: gitlab
 registry:
   selected: quay
@@ -88,6 +91,12 @@ registry:
     repository: repo
     username: user
     password: pass
+environments:
+  - name: local
+    context: docker-desktop
+  - name: dev
+    context: docker-desktop
+    namespace: dev
 `
 	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
 
@@ -102,6 +111,16 @@ registry:
 	assert.Equal(t, &ECRRegistry{Url: "1234.ecr", Region: "eu-west-1"}, cfg.Registry.ECR)
 	assert.Equal(t, &GitlabRegistry{Repository: "registry.gitlab.com/group/project", Token: "token-value"}, cfg.Registry.Gitlab)
 	assert.Equal(t, &QuayRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Quay)
+	assert.Equal(t, 2, len(cfg.Environments))
+	assert.Equal(t, Environment{"local", "docker-desktop", ""}, cfg.Environments[0])
+	devEnv := Environment{"dev", "docker-desktop", "dev"}
+	assert.Equal(t, devEnv, cfg.Environments[1])
+
+	currentEnv, err := cfg.CurrentEnvironment("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentEnvironment("missing")
+	assert.EqualError(t, err, "no environment matching missing found")
 }
 
 func TestLoad_YAML_DirStructure(t *testing.T) {
