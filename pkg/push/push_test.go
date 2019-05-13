@@ -16,7 +16,7 @@ func TestPush_BrokenConfig(t *testing.T) {
 	defer os.RemoveAll(name)
 	yaml := `ci: []
 `
-	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)

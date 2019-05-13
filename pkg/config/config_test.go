@@ -41,7 +41,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 	defer os.RemoveAll(name)
 	yaml := `ci: []
 `
-	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	cfg, err := Load(name)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
@@ -55,7 +55,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 func TestLoad_UnreadableFile(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	filename := filepath.Join(name, "buildtools.yaml")
+	filename := filepath.Join(name, ".buildtools.yaml")
 	_ = os.Mkdir(filename, 0777)
 
 	cfg, err := Load(name)
@@ -98,7 +98,7 @@ environments:
     context: docker-desktop
     namespace: dev
 `
-	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	cfg, err := Load(name)
 	assert.NoError(t, err)
@@ -132,13 +132,13 @@ func TestLoad_YAML_DirStructure(t *testing.T) {
 registry:
   selected: quay
 `
-	_ = ioutil.WriteFile(filepath.Join(name, "buildtools.yaml"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 	subdir := "sub"
 	_ = os.Mkdir(filepath.Join(name, subdir), 0777)
 	yaml2 := `ci:
   selected: buildkite
 `
-	_ = ioutil.WriteFile(filepath.Join(name, subdir, "buildtools.yaml"), []byte(yaml2), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
 
 	cfg, err := Load(filepath.Join(name, subdir))
 	assert.NoError(t, err)

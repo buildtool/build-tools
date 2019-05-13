@@ -142,7 +142,7 @@ func parseConfigFiles(dir string, fn func(string) error) error {
 	}
 	var files []string
 	for parent != "/" {
-		filename := filepath.Join(parent, "buildtools.yaml")
+		filename := filepath.Join(parent, ".buildtools.yaml")
 		if _, err := os.Stat(filename); !os.IsNotExist(err) {
 			files = append(files, filename)
 		}
