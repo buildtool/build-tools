@@ -18,6 +18,7 @@ func processDir(dir, commit, timestamp string, client kubectl.Kubectl) error {
 	env := client.Environment()
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
+			fmt.Printf("Processing %s\n", info.Name())
 			if info.Name() == env.Name && info.IsDir() {
 				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, client); err != nil {
 					return err

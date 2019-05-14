@@ -11,22 +11,38 @@ import (
 	"testing"
 )
 
-func TestBuild_BrokenConfig(t *testing.T) {
+var name string
+
+func TestMain(m *testing.M) {
+	oldPwd, tempDir := setup()
+	code := m.Run()
+	teardown(oldPwd, tempDir)
+	os.Exit(code)
+}
+
+func setup() (string, string) {
 	oldPwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
-	yaml := `ci: []
-`
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
-
-	err := os.Chdir(name)
-	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
-
+	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
+	_ = os.Chdir(name)
 	os.Clearenv()
+
+	return oldPwd, name
+}
+
+func teardown(oldPwd, tempDir string) {
+	_ = os.RemoveAll(tempDir)
+	_ = os.Chdir(oldPwd)
+}
+
+func TestBuild_BrokenConfig(t *testing.T) {
+	yaml := `ci: [] `
+	file := filepath.Join(name, ".buildtools.yaml")
+	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
+	defer os.Remove(file)
+
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err = Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")

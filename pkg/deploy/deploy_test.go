@@ -75,7 +75,7 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf("read %s/deployment_files/deploy.yaml: is a directory", name))
 }
 
-func TestDeploy_FileWithNoPermissions(t *testing.T) {
+func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
 	}
@@ -83,19 +83,14 @@ func TestDeploy_FileWithNoPermissions(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	_ = os.MkdirAll(filepath.Join(name, "deployment_files"), 0777)
-	yaml := `
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dummy
-`
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
-	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0000)
-	_ = os.Chmod(deployFile, 0000)
+	deployFile := filepath.Join(name, "deployment_files", "ns.yaml")
+	_ = ioutil.WriteFile(deployFile, []byte("test"), 0777)
+	_ = os.Symlink(deployFile, filepath.Join(name, "deployment_files", "deploy.yaml"))
+	_ = os.Remove(deployFile)
 
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
-	assert.EqualError(t, err, fmt.Sprintf("open %s/deployment_files/deploy.yaml: permission denied", name))
+	assert.EqualError(t, err, fmt.Sprintf("open %s/deployment_files/deploy.yaml: no such file or directory", name))
 }
 
 func TestDeploy_EnvSpecificFilesInSubDirectory(t *testing.T) {
