@@ -36,7 +36,7 @@ func TestIdentify_Azure(t *testing.T) {
 
 	cfg, err := Load(".")
 	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
+	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "abc123", result.Commit())
@@ -56,7 +56,7 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 
 	cfg, err := Load(dir)
 	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
+	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "master", result.Branch())
@@ -73,7 +73,7 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 
 	cfg, err := Load(dir)
 	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
+	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())

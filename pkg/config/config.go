@@ -84,27 +84,29 @@ func (c *Config) CurrentVCS() (VCS, error) {
 	return *c.VCS.VCS, nil
 }
 
-func (c *Config) CurrentCI() (CI, error) {
+func (c *Config) CurrentCI() CI {
 	switch c.CI.Selected {
 	case "azure":
 		c.CI.Azure.setVCS(*c)
-		return c.CI.Azure, nil
+		return c.CI.Azure
 	case "buildkite":
 		c.CI.Buildkite.setVCS(*c)
-		return c.CI.Buildkite, nil
+		return c.CI.Buildkite
 	case "gitlab":
 		c.CI.Gitlab.setVCS(*c)
-		return c.CI.Gitlab, nil
+		return c.CI.Gitlab
 	case "":
 		vals := []CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab}
 		for _, ci := range vals {
 			if len(ci.BuildName()) > 0 {
 				ci.setVCS(*c)
-				return ci, nil
+				return ci
 			}
 		}
 	}
-	return nil, errors.New("no CI found")
+	ci := &noOpCI{ci: &ci{}}
+	ci.setVCS(*c)
+	return ci
 }
 
 func (c *Config) CurrentRegistry() (Registry, error) {
@@ -125,9 +127,9 @@ func (c *Config) CurrentRegistry() (Registry, error) {
 }
 
 func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
-	for _, env := range c.Environments {
-		if env.Name == environment {
-			return &env, nil
+	for _, e := range c.Environments {
+		if e.Name == environment {
+			return &e, nil
 		}
 	}
 	return nil, fmt.Errorf("no environment matching %s found", environment)

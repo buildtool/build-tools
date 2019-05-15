@@ -48,16 +48,6 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 }
 
-func TestBuild_NoCI(t *testing.T) {
-	os.Clearenv()
-	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
-
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "no CI found")
-}
-
 func TestBuild_NoRegistry(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")

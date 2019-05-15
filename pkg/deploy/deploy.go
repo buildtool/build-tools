@@ -45,9 +45,8 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 	} else {
 		env := client.Environment()
 		content := string(bytes)
-		content = strings.ReplaceAll(content, "${COMMIT}", commit)
-		content = strings.ReplaceAll(content, "${TIMESTAMP}", timestamp)
-		if err := client.Apply(strings.NewReader(content), "apply", "--context", env.Context, "--namespace", env.Namespace, "-f", "-"); err != nil {
+		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
+		if err := client.Apply(strings.NewReader(r.Replace(content)), "apply", "--context", env.Context, "--namespace", env.Namespace, "-f", "-"); err != nil {
 			return err
 		}
 		return nil

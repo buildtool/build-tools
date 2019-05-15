@@ -7,27 +7,27 @@ import (
 	"testing"
 )
 
-func TestIdentify_Gitlab(t *testing.T) {
+func TestNoOp(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
+	_ = os.Setenv("CI", "")
 
-	cfg, err := Load(".")
+	dir, _ := ioutil.TempDir("", "build-tools")
+	defer os.RemoveAll(dir)
+
+	InitRepoWithCommit(dir)
+
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, "abc123", result.Commit())
-	assert.Equal(t, "reponame", result.BuildName())
-	assert.Equal(t, "feature/first test", result.Branch())
-	assert.Equal(t, "feature_first_test", result.BranchReplaceSlash())
+	assert.Equal(t, "", result.BuildName())
+	assert.Equal(t, "master", result.BranchReplaceSlash())
 }
 
-func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
+func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("CI", "")
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
@@ -42,9 +42,9 @@ func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 	assert.Equal(t, "master", result.Branch())
 }
 
-func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
+func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("CI", "")
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)

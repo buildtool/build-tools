@@ -12,10 +12,7 @@ func Push(client docker.Client, dockerfile string) error {
 	if err != nil {
 		return err
 	}
-	currentCI, err := cfg.CurrentCI()
-	if err != nil {
-		return err
-	}
+	currentCI := cfg.CurrentCI()
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		return err

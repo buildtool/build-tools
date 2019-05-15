@@ -1,10 +1,12 @@
 package kubectl
 
 import (
+	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"io"
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	"os"
+	"strings"
 )
 
 type Kubectl interface {
@@ -27,7 +29,8 @@ func New(environment *config.Environment) Kubectl {
 }
 
 func (kubectl) Apply(input io.Reader, args ...string) error {
-	c := cmd.NewDefaultKubectlCommandWithArgs(nil, args, input, os.Stdout, os.Stderr)
+	fmt.Printf("Running 'kubectl %s'\n", strings.Join(args, " "))
+	c := cmd.NewKubectlCommand(input, os.Stdout, os.Stderr)
 	c.SetArgs(args)
 	return c.Execute()
 }

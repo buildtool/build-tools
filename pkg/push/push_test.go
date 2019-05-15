@@ -46,15 +46,6 @@ func TestPush_BrokenConfig(t *testing.T) {
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 }
 
-func TestPush_NoCI(t *testing.T) {
-	os.Clearenv()
-	client := &docker.MockDocker{}
-
-	err := Push(client, "Dockerfile")
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "no CI found")
-}
-
 func TestPush_NoRegistry(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("GITLAB_CI", "1")
