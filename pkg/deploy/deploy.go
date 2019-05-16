@@ -18,7 +18,6 @@ func processDir(dir, commit, timestamp string, client kubectl.Kubectl) error {
 	env := client.Environment()
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
-			fmt.Printf("Processing %s\n", info.Name())
 			if info.Name() == env.Name && info.IsDir() {
 				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, client); err != nil {
 					return err
@@ -43,10 +42,9 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 	if bytes, err := ioutil.ReadAll(file); err != nil {
 		return err
 	} else {
-		env := client.Environment()
 		content := string(bytes)
 		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
-		if err := client.Apply(strings.NewReader(r.Replace(content)), "apply", "--context", env.Context, "--namespace", env.Namespace, "-f", "-"); err != nil {
+		if err := client.Apply(r.Replace(content)); err != nil {
 			return err
 		}
 		return nil

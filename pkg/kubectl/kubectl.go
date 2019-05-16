@@ -1,42 +1,55 @@
 package kubectl
 
 import (
-	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
-	"io"
+	"io/ioutil"
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	"os"
-	"strings"
+	"path/filepath"
 )
 
 type Kubectl interface {
-	Apply(input io.Reader, args ...string) error
+	Apply(input string) error
 	Environment() *config.Environment
+	Cleanup()
 }
 
 type kubectl struct {
 	context     string
 	namespace   string
 	environment *config.Environment
+	tempDir     string
 }
+
+var newKubectlCmd = cmd.NewKubectlCommand
 
 func New(environment *config.Environment) Kubectl {
 	ns := environment.Namespace
 	if len(ns) == 0 {
 		ns = "default"
 	}
-	return &kubectl{environment.Context, ns, environment}
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	return &kubectl{context: environment.Context, namespace: ns, environment: environment, tempDir: name}
 }
 
-func (kubectl) Apply(input io.Reader, args ...string) error {
-	fmt.Printf("Running 'kubectl %s'\n", strings.Join(args, " "))
-	c := cmd.NewKubectlCommand(input, os.Stdout, os.Stderr)
+func (k kubectl) Apply(input string) error {
+	file := filepath.Join(k.tempDir, "content.yaml")
+	err := ioutil.WriteFile(file, []byte(input), 0777)
+	if err != nil {
+		return err
+	}
+	args := []string{"apply", "--context", k.environment.Context, "--namespace", k.environment.Namespace, "-f", file}
+	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)
 	return c.Execute()
 }
 
 func (k kubectl) Environment() *config.Environment {
 	return k.environment
+}
+
+func (k kubectl) Cleanup() {
+	_ = os.RemoveAll(k.tempDir)
 }
 
 var _ Kubectl = &kubectl{}

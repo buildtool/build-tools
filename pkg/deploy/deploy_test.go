@@ -15,7 +15,8 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
 	}
-
+	defer client.Cleanup()
+	
 	err := Deploy(".", "abc123", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, "open deployment_files: no such file or directory")
@@ -33,7 +34,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 0, len(client.Calls))
+	assert.Equal(t, 0, len(client.Inputs))
 }
 
 func TestDeploy_NoEnvSpecificFiles(t *testing.T) {
@@ -56,8 +57,7 @@ metadata:
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Calls))
-	assert.Equal(t, []string{"apply", "--context", "dummy", "--namespace", "default", "-f", "-"}, client.Calls[0])
+	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 }
 
@@ -113,8 +113,7 @@ metadata:
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Calls))
-	assert.Equal(t, []string{"apply", "--context", "dummy", "--namespace", "default", "-f", "-"}, client.Calls[0])
+	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 }
 
@@ -138,8 +137,7 @@ metadata:
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Calls))
-	assert.Equal(t, []string{"apply", "--context", "dummy", "--namespace", "default", "-f", "-"}, client.Calls[0])
+	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 }
 
@@ -165,8 +163,7 @@ metadata:
 	err := Deploy(name, "abc123", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Calls))
-	assert.Equal(t, []string{"apply", "--context", "dummy", "--namespace", "default", "-f", "-"}, client.Calls[0])
+	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 }
 
@@ -236,8 +233,7 @@ metadata:
 	err := Deploy(name, "abc123", "2019-05-13T17:22:36Z01:00", client)
 
 	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Calls))
-	assert.Equal(t, []string{"apply", "--context", "dummy", "--namespace", "default", "-f", "-"}, client.Calls[0])
+	assert.Equal(t, 1, len(client.Inputs))
 	expectedInput := `
 apiVersion: v1
 kind: Namespace
