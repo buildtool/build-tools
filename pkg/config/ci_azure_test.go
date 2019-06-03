@@ -52,7 +52,9 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
+	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
+	defer os.Chdir(oldPwd)
 
 	cfg, err := Load(dir)
 	assert.NoError(t, err)

@@ -14,7 +14,9 @@ func TestNoOp(t *testing.T) {
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
+	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
+	defer os.Chdir(oldPwd)
 
 	InitRepoWithCommit(dir)
 
