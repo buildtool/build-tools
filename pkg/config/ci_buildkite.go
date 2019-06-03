@@ -18,7 +18,10 @@ func (c BuildkiteCI) BranchReplaceSlash() string {
 }
 
 func (c BuildkiteCI) BuildName() string {
-	return c.CIBuildName
+	if c.CIBuildName != "" {
+		return c.CIBuildName
+	}
+	return c.ci.BuildName()
 }
 
 func (c BuildkiteCI) Branch() string {
@@ -33,4 +36,8 @@ func (c BuildkiteCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c BuildkiteCI) configured() bool {
+	return c.CIBuildName != ""
 }

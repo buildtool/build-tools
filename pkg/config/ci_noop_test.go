@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -13,6 +14,7 @@ func TestNoOp(t *testing.T) {
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
+	_ = os.Chdir(dir)
 
 	InitRepoWithCommit(dir)
 
@@ -21,8 +23,9 @@ func TestNoOp(t *testing.T) {
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
-	assert.Equal(t, "", result.BuildName())
+	assert.Equal(t, filepath.Base(dir), result.BuildName())
 	assert.Equal(t, "master", result.BranchReplaceSlash())
+	assert.False(t, result.configured())
 }
 
 func TestBranch_VCS_Fallback_NoOp(t *testing.T) {

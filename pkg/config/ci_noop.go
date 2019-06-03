@@ -15,7 +15,7 @@ func (c noOpCI) BranchReplaceSlash() string {
 }
 
 func (c noOpCI) BuildName() string {
-	return ""
+	return c.ci.BuildName()
 }
 
 func (c noOpCI) Branch() string {
@@ -24,4 +24,8 @@ func (c noOpCI) Branch() string {
 
 func (c noOpCI) Commit() string {
 	return c.VCS.Commit()
+}
+
+func (c noOpCI) configured() bool {
+	return false
 }

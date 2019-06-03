@@ -47,7 +47,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/errors v0.8.1 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/sirupsen/logrus v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.3

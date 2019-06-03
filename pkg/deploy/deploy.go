@@ -9,9 +9,20 @@ import (
 	"strings"
 )
 
-func Deploy(dir, commit, timestamp string, client kubectl.Kubectl) error {
+func Deploy(dir, commit, buildName, timestamp string, client kubectl.Kubectl) error {
 	deploymentFiles := filepath.Join(dir, "deployment_files")
-	return processDir(deploymentFiles, commit, timestamp, client)
+	if err := processDir(deploymentFiles, commit, timestamp, client); err != nil {
+		return err
+	}
+
+	if client.DeploymentExists(buildName) {
+		if !client.RolloutStatus(buildName) {
+			fmt.Println("Rollout failed. Fetching events.")
+			fmt.Println(client.DeploymentEvents(buildName))
+			fmt.Println(client.PodEvents(buildName))
+		}
+	}
+	return nil
 }
 
 func processDir(dir, commit, timestamp string, client kubectl.Kubectl) error {

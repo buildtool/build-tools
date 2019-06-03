@@ -18,7 +18,10 @@ func (c AzureCI) BranchReplaceSlash() string {
 }
 
 func (c AzureCI) BuildName() string {
-	return c.CIBuildName
+	if c.CIBuildName != "" {
+		return c.CIBuildName
+	}
+	return c.ci.BuildName()
 }
 
 func (c AzureCI) Branch() string {
@@ -33,4 +36,8 @@ func (c AzureCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c AzureCI) configured() bool {
+	return c.CIBuildName != ""
 }

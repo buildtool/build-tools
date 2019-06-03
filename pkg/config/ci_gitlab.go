@@ -18,7 +18,10 @@ func (c GitlabCI) BranchReplaceSlash() string {
 }
 
 func (c GitlabCI) BuildName() string {
-	return c.CIBuildName
+	if c.CIBuildName != "" {
+		return c.CIBuildName
+	}
+	return c.ci.BuildName()
 }
 
 func (c GitlabCI) Branch() string {
@@ -33,4 +36,8 @@ func (c GitlabCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c GitlabCI) configured() bool {
+	return c.CIBuildName != ""
 }

@@ -49,7 +49,7 @@ func main() {
 				tstamp := time.Now().Format(time.RFC3339)
 				client := kubectl.New(env)
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, ci.Commit(), tstamp, client); err != nil {
+				if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, client); err != nil {
 					fmt.Println(err.Error())
 				}
 			}

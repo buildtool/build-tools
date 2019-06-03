@@ -98,7 +98,7 @@ func (c *Config) CurrentCI() CI {
 	case "":
 		vals := []CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab}
 		for _, ci := range vals {
-			if len(ci.BuildName()) > 0 {
+			if ci.configured() {
 				ci.setVCS(*c)
 				return ci
 			}

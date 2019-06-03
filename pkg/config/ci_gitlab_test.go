@@ -4,6 +4,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -23,6 +24,22 @@ func TestIdentify_Gitlab(t *testing.T) {
 	assert.Equal(t, "reponame", result.BuildName())
 	assert.Equal(t, "feature/first test", result.Branch())
 	assert.Equal(t, "feature_first_test", result.BranchReplaceSlash())
+}
+
+func TestBuildName_Fallback_Gitlab(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI", "gitlab")
+
+	dir, _ := ioutil.TempDir("", "build-tools")
+	defer os.RemoveAll(dir)
+	_ = os.Chdir(dir)
+
+	cfg, err := Load(dir)
+	assert.NoError(t, err)
+	result := cfg.CurrentCI()
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.Equal(t, filepath.Base(dir), result.BuildName())
 }
 
 func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {

@@ -16,8 +16,8 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 		Responses: []error{nil},
 	}
 	defer client.Cleanup()
-	
-	err := Deploy(".", "abc123", "20190513-17:22:36", client)
+
+	err := Deploy(".", "abc123", "image", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, "open deployment_files: no such file or directory")
 }
@@ -31,7 +31,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 	defer os.RemoveAll(name)
 	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
@@ -54,7 +54,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -70,7 +70,7 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	defer os.RemoveAll(name)
 	_ = os.MkdirAll(filepath.Join(name, "deployment_files", "deploy.yaml"), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, fmt.Sprintf("read %s/deployment_files/deploy.yaml: is a directory", name))
 }
@@ -88,7 +88,7 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	_ = os.Symlink(deployFile, filepath.Join(name, "deployment_files", "deploy.yaml"))
 	_ = os.Remove(deployFile)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, fmt.Sprintf("open %s/deployment_files/deploy.yaml: no such file or directory", name))
 }
@@ -110,7 +110,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "dummy", "ns.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -134,7 +134,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "ns-dummy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -160,7 +160,7 @@ metadata:
 	_ = ioutil.WriteFile(filepath.Join(name, "deployment_files", "ns-prod.yaml"), []byte(yaml), 0777)
 	_ = ioutil.WriteFile(filepath.Join(name, "deployment_files", "other-dummy.sh"), []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -184,7 +184,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, "apply failed")
 }
@@ -206,7 +206,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "dummy", "ns.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "20190513-17:22:36", client)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
 
 	assert.EqualError(t, err, "apply failed")
 }
@@ -230,7 +230,7 @@ metadata:
 	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	err := Deploy(name, "abc123", "2019-05-13T17:22:36Z01:00", client)
+	err := Deploy(name, "abc123", "image", "2019-05-13T17:22:36Z01:00", client)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -243,4 +243,55 @@ metadata:
   timestamp: 2019-05-13T17:22:36Z01:00
 `
 	assert.Equal(t, expectedInput, client.Inputs[0])
+}
+
+func TestDeploy_DeploymentExists(t *testing.T) {
+	client := &kubectl.MockKubectl{
+		Responses:  []error{nil},
+		Deployment: true,
+	}
+
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer os.RemoveAll(name)
+	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	yaml := `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dummy
+`
+	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
+
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(client.Inputs))
+	assert.Equal(t, yaml, client.Inputs[0])
+}
+
+func TestDeploy_RolloutStatusFail(t *testing.T) {
+	client := &kubectl.MockKubectl{
+		Responses:  []error{nil},
+		Deployment: true,
+		Status:     false,
+	}
+
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer os.RemoveAll(name)
+	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	yaml := `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dummy
+`
+	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
+
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(client.Inputs))
+	assert.Equal(t, yaml, client.Inputs[0])
 }

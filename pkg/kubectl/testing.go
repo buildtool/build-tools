@@ -7,8 +7,10 @@ import (
 )
 
 type MockKubectl struct {
-	Inputs    []string
-	Responses []error
+	Inputs     []string
+	Responses  []error
+	Deployment bool
+	Status     bool
 }
 
 func (m *MockKubectl) Apply(input string) error {
@@ -21,6 +23,22 @@ func (m *MockKubectl) Environment() *config.Environment {
 }
 
 func (m *MockKubectl) Cleanup() {
+}
+
+func (m *MockKubectl) DeploymentExists(name string) bool {
+	return m.Deployment
+}
+
+func (m *MockKubectl) RolloutStatus(name string) bool {
+	return m.Status
+}
+
+func (m *MockKubectl) DeploymentEvents(name string) string {
+	return "Deployment events"
+}
+
+func (m *MockKubectl) PodEvents(name string) string {
+	return "Pod events"
 }
 
 var _ Kubectl = &MockKubectl{}
