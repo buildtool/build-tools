@@ -5,8 +5,9 @@ import (
 	"docker.io/go-docker/api/types"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"log"
+	"io"
 	"strings"
 )
 
@@ -23,9 +24,9 @@ func (r GitlabRegistry) configured() bool {
 	return len(r.Repository) > 0
 }
 
-func (r GitlabRegistry) Login(client docker.Client) error {
+func (r GitlabRegistry) Login(client docker.Client, out io.Writer) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}); err == nil {
-		log.Println(ok.Status)
+		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
 		return err
@@ -39,7 +40,14 @@ func (r GitlabRegistry) GetAuthInfo() string {
 }
 
 func (r GitlabRegistry) RegistryUrl() string {
-	return r.Repository[:strings.LastIndex(r.Repository, "/")]
+	if len(r.Repository) != 0 {
+		if strings.Index(r.Repository, "/") != -1 {
+			return r.Repository[:strings.LastIndex(r.Repository, "/")]
+		}
+		return r.Repository
+	}
+
+	return fmt.Sprintf("%s/%s", r.Registry, r.CI.BuildName())
 }
 
 func (r *GitlabRegistry) Create(repository string) error {

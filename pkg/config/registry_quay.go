@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"log"
+	"io"
 )
 
 type QuayRegistry struct {
@@ -23,9 +23,9 @@ func (r *QuayRegistry) configured() bool {
 	return len(r.Repository) > 0
 }
 
-func (r *QuayRegistry) Login(client docker.Client) error {
+func (r *QuayRegistry) Login(client docker.Client, out io.Writer) error {
 	if ok, err := client.RegistryLogin(context.Background(), r.authConfig()); err == nil {
-		log.Println(ok.Status)
+		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
 		return err

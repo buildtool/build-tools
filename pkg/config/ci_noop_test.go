@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -20,7 +21,8 @@ func TestNoOp(t *testing.T) {
 
 	InitRepoWithCommit(dir)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
@@ -28,6 +30,7 @@ func TestNoOp(t *testing.T) {
 	assert.Equal(t, filepath.Base(dir), result.BuildName())
 	assert.Equal(t, "master", result.BranchReplaceSlash())
 	assert.False(t, result.configured())
+	assert.Equal(t, "", out.String())
 }
 
 func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
@@ -39,12 +42,14 @@ func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 
 	InitRepoWithCommit(dir)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "master", result.Branch())
+	assert.Equal(t, "", out.String())
 }
 
 func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
@@ -56,10 +61,12 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 
 	hash, _ := InitRepoWithCommit(dir)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
+	assert.Equal(t, "", out.String())
 }

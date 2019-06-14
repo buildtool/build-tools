@@ -1,6 +1,7 @@
 package kubectl
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
@@ -15,103 +16,141 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	k := New(&config.Environment{Context: "missing", Namespace: "dev", Name: "dummy"})
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	k := New(&config.Environment{Context: "missing", Namespace: "dev", Name: "dummy"}, out, eout)
 
 	assert.Equal(t, "missing", k.(*kubectl).context)
 	assert.Equal(t, "dev", k.(*kubectl).namespace)
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestNew_NoNamespace(t *testing.T) {
-	k := New(&config.Environment{Context: "missing", Namespace: "", Name: "dummy"})
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	k := New(&config.Environment{Context: "missing", Namespace: "", Name: "dummy"}, out, eout)
 
 	assert.Equal(t, "missing", k.(*kubectl).context)
 	assert.Equal(t, "default", k.(*kubectl).namespace)
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_Apply(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, tempDir: tempDir}
+	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, tempDir: tempDir, out: out}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"apply", "--context", "missing", "--namespace", "default", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--timout", "0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_UnableToCreateTempDir(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	newKubectlCmd = mockCmd
 
-	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{}, tempDir: "/missing"}
+	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{}, tempDir: "/missing", out: out}
 
 	err := k.Apply("")
 	assert.EqualError(t, err, "open /missing/content.yaml: no such file or directory")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_Environment(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	env := &config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}
-	k := New(env)
+	k := New(env, out, eout)
 
 	assert.Equal(t, env, k.Environment())
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_DeploymentExistsTrue(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.DeploymentExists("image")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl get deployment image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_DeploymentExistsFalse(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	e := "deployment not found"
 	cmdError = &e
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.DeploymentExists("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl get deployment image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_RolloutStatusSuccess(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_RolloutStatusFailure(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	e := "rollout failed"
 	cmdError = &e
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_RolloutStatusFatal(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	e := "rollout failed"
 	cmdError = &e
@@ -120,30 +159,38 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_DeploymentEvents_Error(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
 	e := "deployment not found"
 	cmdError = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "deployment not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_DeploymentEvents_NoEvents(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -154,15 +201,19 @@ Events:          <none>
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_DeploymentEvents_SomeEvents(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -179,30 +230,38 @@ Events:
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "Events:\n  Type    Reason             Age   From                   Message\n  ----    ------             ----  ----                   -------\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled up replica set gpe-core-5cb459ff7d to 1\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled down replica set gpe-core-7fc44679dc to 0\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled up replica set gpe-core-c8798ff88 to 1\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled down replica set gpe-core-5cb459ff7d to 0\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_PodEvents_Error(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
 	e := "pod not found"
 	cmdError = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "pod not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
+	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_PodEvents_NoEvents(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -213,15 +272,19 @@ Events:          <none>
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
+	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestKubectl_PodEvents_SomeEvents(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -237,12 +300,14 @@ Events:
   Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container`
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"})
+	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "Events:\n  Type     Reason     Age                From                                                 Message\n  ----     ------     ----               ----                                                 -------\n  Normal   Scheduled  61s                default-scheduler                                    Successfully assigned dev/gpe-core-c8798ff88-674tr to some-ip-somewhere\n  Normal   Pulling    10s (x4 over 60s)  kubelet, some-ip-somewhere                           pulling image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Pulled     9s (x4 over 57s)   kubelet, some-ip-somewhere                           Successfully pulled image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Created    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Created container\n  Normal   Started    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Started container\n  Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
+	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 var calls [][]string

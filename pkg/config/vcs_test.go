@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -13,8 +14,10 @@ func TestIdentify(t *testing.T) {
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
 
-	result := Identify(dir)
+	out := &bytes.Buffer{}
+	result := Identify(dir, out)
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
+	assert.Equal(t, "", out.String())
 }

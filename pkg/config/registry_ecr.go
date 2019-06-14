@@ -5,12 +5,13 @@ import (
 	"docker.io/go-docker/api/types"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"log"
+	"io"
 	"strings"
 )
 
@@ -37,7 +38,7 @@ func (r *ECRRegistry) configured() bool {
 	return false
 }
 
-func (r *ECRRegistry) Login(client docker.Client) error {
+func (r *ECRRegistry) Login(client docker.Client, out io.Writer) error {
 	input := &awsecr.GetAuthorizationTokenInput{}
 
 	result, err := r.svc.GetAuthorizationToken(input)
@@ -54,7 +55,7 @@ func (r *ECRRegistry) Login(client docker.Client) error {
 	r.password = parts[1]
 
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}); err == nil {
-		log.Println(ok.Status)
+		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
 		return err

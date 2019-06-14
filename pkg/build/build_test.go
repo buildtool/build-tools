@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/stretchr/testify/assert"
@@ -40,12 +41,18 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
 	defer os.Remove(file)
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
+	cwd, _ := os.Getwd()
+	absPath, _ := filepath.Abs(filepath.Join(cwd, ".buildtools.yaml"))
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", absPath), out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestBuild_NoRegistry(t *testing.T) {
@@ -54,12 +61,16 @@ func TestBuild_NoRegistry(t *testing.T) {
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "no Docker registry found")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestBuild_LoginError(t *testing.T) {
@@ -71,12 +82,16 @@ func TestBuild_LoginError(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "invalid username/password")
+	assert.Equal(t, "Unable to login\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestBuild_BuildError(t *testing.T) {
@@ -88,12 +103,58 @@ func TestBuild_BuildError(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{BuildError: fmt.Errorf("build error")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "build error")
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
+func TestBuild_BuildResponseError(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "build error")
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "Code: 123 Message: build error\n", eout.String())
+}
+
+func TestBuild_BrokenOutput(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{BrokenOutput: true}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "unexpected end of JSON input")
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "Unable to parse response: unexpected end of JSON input\n", eout.String())
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -105,9 +166,11 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
@@ -116,6 +179,8 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions.Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions.ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions.Tags)
+	assert.Equal(t, "Logged in\nBuild successful", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestBuild_MasterBranch(t *testing.T) {
@@ -127,9 +192,11 @@ func TestBuild_MasterBranch(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile")
+	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
@@ -138,4 +205,6 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions.Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions.ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions.Tags)
+	assert.Equal(t, "Logged in\nBuild successful", out.String())
+	assert.Equal(t, "", eout.String())
 }

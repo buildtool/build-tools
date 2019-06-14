@@ -33,7 +33,7 @@ func main() {
 		environment := set.Args()[0]
 		dir, _ := os.Getwd()
 
-		if cfg, err := config.Load(dir); err != nil {
+		if cfg, err := config.Load(dir, os.Stdout); err != nil {
 			fmt.Println(err.Error())
 		} else {
 			if env, err := cfg.CurrentEnvironment(environment); err != nil {
@@ -47,9 +47,9 @@ func main() {
 				}
 				ci := cfg.CurrentCI()
 				tstamp := time.Now().Format(time.RFC3339)
-				client := kubectl.New(env)
+				client := kubectl.New(env, os.Stdout, os.Stderr)
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, client); err != nil {
+				if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, client, os.Stdout, os.Stderr); err != nil {
 					fmt.Println(err.Error())
 				}
 			}

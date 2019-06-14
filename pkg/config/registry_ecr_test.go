@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
@@ -15,12 +16,14 @@ func TestEcr_Identify(t *testing.T) {
 	_ = os.Setenv("ECR_URL", "url")
 	_ = os.Setenv("ECR_REGION", "region")
 
-	cfg, err := Load(".")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
 	assert.NotNil(t, registry)
 	assert.Equal(t, "url", registry.RegistryUrl())
+	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_Identify_BrokenConfig(t *testing.T) {
@@ -29,42 +32,52 @@ func TestEcr_Identify_BrokenConfig(t *testing.T) {
 	_ = os.Setenv("ECR_REGION", "region")
 	_ = os.Setenv("AWS_CA_BUNDLE", "/missing/bundle")
 
-	cfg, err := Load(".")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.EqualError(t, err, "no Docker registry found")
 	assert.Nil(t, registry)
+	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_LoginAuthRequestFailed(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECRRegistry{Url: "ecr-url", Region: "eu-west-1", svc: &MockECR{loginError: fmt.Errorf("auth failure")}}
-	err := registry.Login(client)
+	out := &bytes.Buffer{}
+	err := registry.Login(client, out)
 	assert.EqualError(t, err, "auth failure")
+	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_LoginInvalidAuthData(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECRRegistry{Url: "ecr-url", Region: "eu-west-1", svc: &MockECR{authData: "aaabbb"}}
-	err := registry.Login(client)
+	out := &bytes.Buffer{}
+	err := registry.Login(client, out)
 	assert.EqualError(t, err, "illegal base64 data at input byte 4")
+	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_LoginFailed(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	registry := &ECRRegistry{Url: "ecr-url", Region: "eu-west-1", svc: &MockECR{authData: "QVdTOmFiYzEyMw=="}}
-	err := registry.Login(client)
+	out := &bytes.Buffer{}
+	err := registry.Login(client, out)
 	assert.EqualError(t, err, "invalid username/password")
+	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECRRegistry{Url: "ecr-url", Region: "eu-west-1", svc: &MockECR{authData: "QVdTOmFiYzEyMw=="}}
-	err := registry.Login(client)
+	out := &bytes.Buffer{}
+	err := registry.Login(client, out)
 	assert.Nil(t, err)
 	assert.Equal(t, "AWS", client.Username)
 	assert.Equal(t, "abc123", client.Password)
 	assert.Equal(t, "ecr-url", client.ServerAddress)
+	assert.Equal(t, "Logged in\n", out.String())
 }
 
 func TestEcr_GetAuthInfo(t *testing.T) {

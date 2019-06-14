@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -43,10 +44,10 @@ type Environment struct {
 	Namespace string `yaml:"namespace"`
 }
 
-func Load(dir string) (*Config, error) {
+func Load(dir string, out io.Writer) (*Config, error) {
 	cfg := initEmptyConfig()
 
-	err := parseConfigFiles(dir, func(dir string) error {
+	err := parseConfigFiles(dir, out, func(dir string) error {
 		return parseConfigFile(dir, cfg)
 	})
 	if err != nil {
@@ -55,7 +56,7 @@ func Load(dir string) (*Config, error) {
 
 	err = env.Parse(cfg)
 
-	vcs := Identify(dir)
+	vcs := Identify(dir, out)
 	cfg.VCS.VCS = &vcs
 
 	// TODO: Validate and clean config
@@ -111,10 +112,18 @@ func (c *Config) CurrentCI() CI {
 
 func (c *Config) CurrentRegistry() (Registry, error) {
 	switch c.Registry.Selected {
-	//case "dockerhub":
-	//case "ecr":
-	//case "gitlab":
-	//case "quay":
+	case "dockerhub":
+		c.Registry.Dockerhub.setVCS(*c)
+		return c.Registry.Dockerhub, nil
+	case "ecr":
+		c.Registry.ECR.setVCS(*c)
+		return c.Registry.ECR, nil
+	case "gitlab":
+		c.Registry.Gitlab.setVCS(*c)
+		return c.Registry.Gitlab, nil
+	case "quay":
+		c.Registry.Quay.setVCS(*c)
+		return c.Registry.Quay, nil
 	case "":
 		vals := []Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
 		for _, reg := range vals {
@@ -137,7 +146,7 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 
 var abs = filepath.Abs
 
-func parseConfigFiles(dir string, fn func(string) error) error {
+func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 	parent, err := abs(dir)
 	if err != nil {
 		return err
@@ -152,7 +161,7 @@ func parseConfigFiles(dir string, fn func(string) error) error {
 		parent = filepath.Dir(parent)
 	}
 	for i := len(files) - 1; i >= 0; i-- {
-		fmt.Printf("Parsing config from file: '%s'\n", files[i])
+		_, _ = fmt.Fprintf(out, "Parsing config from file: '%s'\n", files[i])
 		if err := fn(files[i]); err != nil {
 			return err
 		}

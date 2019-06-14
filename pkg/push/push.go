@@ -3,12 +3,13 @@ package push
 import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"io"
 	"os"
 )
 
-func Push(client docker.Client, dockerfile string) error {
+func Push(client docker.Client, dockerfile string, out, eout io.Writer) error {
 	dir, _ := os.Getwd()
-	cfg, err := config.Load(dir)
+	cfg, err := config.Load(dir, out)
 	if err != nil {
 		return err
 	}
@@ -18,7 +19,7 @@ func Push(client docker.Client, dockerfile string) error {
 		return err
 	}
 
-	if err := currentRegistry.Login(client); err != nil {
+	if err := currentRegistry.Login(client, out); err != nil {
 		return err
 	}
 
@@ -39,7 +40,7 @@ func Push(client docker.Client, dockerfile string) error {
 	}
 
 	for _, tag := range tags {
-		if err := currentRegistry.PushImage(client, auth, tag); err != nil {
+		if err := currentRegistry.PushImage(client, auth, tag, out); err != nil {
 			return err
 		}
 	}

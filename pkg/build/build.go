@@ -4,16 +4,26 @@ import (
 	"bufio"
 	"context"
 	"docker.io/go-docker/api/types"
+	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"os"
 )
 
-func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) error {
+type responsetype struct {
+	Stream string `json:"stream"`
+	Error  *struct {
+		Code    int64  `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string, out, eout io.Writer) error {
 	dir, _ := os.Getwd()
-	cfg, err := config.Load(dir)
+	cfg, err := config.Load(dir, out)
 	if err != nil {
 		return err
 	}
@@ -23,7 +33,7 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) 
 		return err
 	}
 
-	if err := currentRegistry.Login(client); err != nil {
+	if err := currentRegistry.Login(client, out); err != nil {
 		return err
 	}
 
@@ -49,7 +59,18 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string) 
 	} else {
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
-			fmt.Println(scanner.Text())
+			r := &responsetype{}
+			if err := json.Unmarshal(scanner.Bytes(), &r); err != nil {
+				_, _ = fmt.Fprintf(eout, "Unable to parse response: %v\n", err)
+				return err
+			} else {
+				if r.Error != nil {
+					_, _ = fmt.Fprintf(eout, "Code: %v Message: %v\n", r.Error.Code, r.Error.Message)
+					return errors.New(r.Error.Message)
+				} else {
+					_, _ = fmt.Fprint(out, r.Stream)
+				}
+			}
 		}
 	}
 

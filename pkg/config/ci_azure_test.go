@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -35,7 +36,8 @@ func TestIdentify_Azure(t *testing.T) {
 	_ = os.Setenv("BUILD_REPOSITORY_NAME", "reponame")
 	_ = os.Setenv("BUILD_SOURCEBRANCHNAME", "feature/first test")
 
-	cfg, err := Load(".")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
@@ -44,6 +46,7 @@ func TestIdentify_Azure(t *testing.T) {
 	assert.Equal(t, "reponame", result.BuildName())
 	assert.Equal(t, "feature/first test", result.Branch())
 	assert.Equal(t, "feature_first_test", result.BranchReplaceSlash())
+	assert.Equal(t, "", out.String())
 }
 
 func TestBuildName_Fallback_Azure(t *testing.T) {
@@ -56,12 +59,14 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 	_ = os.Chdir(dir)
 	defer os.Chdir(oldPwd)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, filepath.Base(dir), result.BuildName())
+	assert.Equal(t, "", out.String())
 }
 
 func TestBranch_VCS_Fallback_Azure(t *testing.T) {
@@ -73,12 +78,14 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 
 	InitRepoWithCommit(dir)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "master", result.Branch())
+	assert.Equal(t, "", out.String())
 }
 
 func TestCommit_VCS_Fallback_Azure(t *testing.T) {
@@ -90,10 +97,12 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 
 	hash, _ := InitRepoWithCommit(dir)
 
-	cfg, err := Load(dir)
+	out := &bytes.Buffer{}
+	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
+	assert.Equal(t, "", out.String())
 }

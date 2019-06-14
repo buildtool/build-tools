@@ -6,6 +6,7 @@ import (
 	"context"
 	"docker.io/go-docker/api/types"
 	"docker.io/go-docker/api/types/registry"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -21,16 +22,24 @@ type MockDocker struct {
 	LoginError    error
 	BuildError    error
 	PushError     error
+	BrokenOutput  bool
+	ResponseError error
 }
 
 func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
 	m.BuildContext = buildContext
 	m.BuildOptions = options
 
-	if m.BuildError != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader("Build error"))}, m.BuildError
+	if m.BrokenOutput {
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, m.BuildError
 	}
-	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader("Build successful"))}, nil
+	if m.ResponseError != nil {
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"error":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
+	}
+	if m.BuildError != nil {
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"error":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError
+	}
+	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"stream":"Build successful"}`))}, nil
 }
 
 func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {

@@ -27,7 +27,7 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	err = push.Push(client, dockerfile)
+	err = push.Push(client, dockerfile, os.Stdout, os.Stderr)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

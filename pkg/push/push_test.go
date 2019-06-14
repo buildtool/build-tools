@@ -1,6 +1,7 @@
 package push
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
@@ -39,11 +40,17 @@ func TestPush_BrokenConfig(t *testing.T) {
 	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
 	defer os.Remove(file)
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
+	cwd, _ := os.Getwd()
+	absPath, _ := filepath.Abs(filepath.Join(cwd, ".buildtools.yaml"))
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", absPath), out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_NoRegistry(t *testing.T) {
@@ -53,11 +60,15 @@ func TestPush_NoRegistry(t *testing.T) {
 	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "no Docker registry found")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_LoginFailure(t *testing.T) {
@@ -68,11 +79,15 @@ func TestPush_LoginFailure(t *testing.T) {
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
 	_ = os.Setenv("ECR_URL", "ecr_url")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "MissingRegion: could not find region configuration")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_PushError(t *testing.T) {
@@ -85,11 +100,15 @@ func TestPush_PushError(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{PushError: fmt.Errorf("unable to push layer")}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "unable to push layer")
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_PushFeatureBranch(t *testing.T) {
@@ -102,11 +121,15 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.Images)
+	assert.Equal(t, "Logged in\nPush successful\nPush successful\n", out.String())
+	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_PushMasterBranch(t *testing.T) {
@@ -119,9 +142,13 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := Push(client, "Dockerfile")
+	err := Push(client, "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
+	assert.Equal(t, "Logged in\nPush successful\nPush successful\nPush successful\n", out.String())
+	assert.Equal(t, "", eout.String())
 }

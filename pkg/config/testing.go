@@ -13,6 +13,7 @@ func InitRepo(dir string) *git2.Repository {
 	repo, _ := git2.PlainInit(dir, false)
 	return repo
 }
+
 func InitRepoWithCommit(dir string) (plumbing.Hash, *git2.Repository) {
 	repo := InitRepo(dir)
 	tree, _ := repo.Worktree()

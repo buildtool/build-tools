@@ -5,8 +5,9 @@ import (
 	"docker.io/go-docker/api/types"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"log"
+	"io"
 )
 
 type DockerhubRegistry struct {
@@ -22,12 +23,12 @@ func (r DockerhubRegistry) configured() bool {
 	return len(r.Repository) > 0
 }
 
-func (r DockerhubRegistry) Login(client docker.Client) error {
+func (r DockerhubRegistry) Login(client docker.Client, out io.Writer) error {
 	if ok, err := client.RegistryLogin(context.Background(), r.authConfig()); err == nil {
-		log.Println(ok.Status)
+		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
-		log.Println("Unable to login")
+		_, _ = fmt.Fprintln(out, "Unable to login")
 		return err
 	}
 }

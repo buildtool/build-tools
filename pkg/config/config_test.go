@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +18,10 @@ func TestLoad_AbsFail(t *testing.T) {
 		return "", errors.New("abs-error")
 	}
 
-	_, err := Load("test")
+	out := &bytes.Buffer{}
+	_, err := Load("test", out)
 	assert.EqualError(t, err, "abs-error")
+	assert.Equal(t, "", out.String())
 	abs = filepath.Abs
 }
 
@@ -27,13 +30,15 @@ func TestLoad_Empty(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 
-	cfg, err := Load(name)
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
 }
 
 func TestLoad_BrokenYAML(t *testing.T) {
@@ -43,13 +48,15 @@ func TestLoad_BrokenYAML(t *testing.T) {
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
-	cfg, err := Load(name)
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "", cfg.Registry.Selected)
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
 }
 
 func TestLoad_UnreadableFile(t *testing.T) {
@@ -58,13 +65,15 @@ func TestLoad_UnreadableFile(t *testing.T) {
 	filename := filepath.Join(name, ".buildtools.yaml")
 	_ = os.Mkdir(filename, 0777)
 
-	cfg, err := Load(name)
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
 	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "", cfg.Registry.Selected)
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
 }
 
 func TestLoad_YAML(t *testing.T) {
@@ -100,7 +109,8 @@ environments:
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
-	cfg, err := Load(name)
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
@@ -121,6 +131,7 @@ environments:
 	assert.Equal(t, &devEnv, currentEnv)
 	_, err = cfg.CurrentEnvironment("missing")
 	assert.EqualError(t, err, "no environment matching missing found")
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
 }
 
 func TestLoad_YAML_DirStructure(t *testing.T) {
@@ -140,23 +151,94 @@ registry:
 `
 	_ = ioutil.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
 
-	cfg, err := Load(filepath.Join(name, subdir))
+	out := &bytes.Buffer{}
+	cfg, err := Load(filepath.Join(name, subdir), out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "buildkite", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "quay", cfg.Registry.Selected)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\nParsing config from file: '%s/sub/.buildtools.yaml'\n", name, name), out.String())
 }
 
 func TestLoad_ENV(t *testing.T) {
 	_ = os.Setenv("CI", "gitlab")
 	_ = os.Setenv("REGISTRY", "quay")
-	cfg, err := Load(".")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "quay", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_Registry_Dockerhub(t *testing.T) {
+	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, "gitlab", cfg.CI.Selected)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, "dockerhub", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_Registry_ECR(t *testing.T) {
+	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("REGISTRY", "ecr")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, "gitlab", cfg.CI.Selected)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, "ecr", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_Registry_Gitlab(t *testing.T) {
+	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("REGISTRY", "gitlab")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, "gitlab", cfg.CI.Selected)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, "gitlab", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_Registry_Quay(t *testing.T) {
+	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("REGISTRY", "quay")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, "gitlab", cfg.CI.Selected)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.NotNil(t, registry)
+	assert.Equal(t, "quay", cfg.Registry.Selected)
+	assert.Equal(t, "", out.String())
 }
