@@ -69,7 +69,7 @@ kubernetes:deploy() {
 
   if [[ $(${KUBECTL_CMD} get deployment ${IMAGE_NAME} 2> /dev/null) ]]; then
     OK=0
-    ${KUBECTL_CMD} rollout status deployment --timeout=1m ${IMAGE_NAME} || OK=$? && true
+    ${KUBECTL_CMD} rollout status deployment --timeout=2m ${IMAGE_NAME} || OK=$? && true
 
     if [[ "${OK}" != "0" ]]; then
       ${KUBECTL_CMD} describe deployment ${IMAGE_NAME} --show-events=true | grep -A20 Events:
