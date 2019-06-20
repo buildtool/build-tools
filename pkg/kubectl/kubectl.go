@@ -73,7 +73,7 @@ func (k kubectl) DeploymentExists(name string) bool {
 }
 
 func (k kubectl) RolloutStatus(name string) bool {
-	args := []string{"rollout", "status", "deployment", "--timeout=1m", name, "--context", k.environment.Context, "--namespace", k.environment.Namespace}
+	args := []string{"rollout", "status", "deployment", "--timeout=2m", name, "--context", k.environment.Context, "--namespace", k.environment.Namespace}
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)

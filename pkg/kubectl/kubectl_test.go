@@ -125,8 +125,8 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	result := k.RolloutStatus("image")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -143,8 +143,8 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -164,8 +164,8 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "1m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=1m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
+	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
