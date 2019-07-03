@@ -46,3 +46,12 @@ ci:commit() {
   : ${COMMIT:?"COMMIT cannot be determined"}
   echo $COMMIT
 }
+
+
+ci:badges() {
+	true
+}
+
+ci:webhook() {
+	true
+}
