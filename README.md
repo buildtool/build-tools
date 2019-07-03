@@ -95,7 +95,7 @@ If `CI` is set to `buildkite` the following variables are required:
 | BUILDKITE_ORG | The organization name in Buildkite where the build-pipeline will be created |
 
 #### GitlabCI
-If `CI` or `VCS` is set to `buildkite` the following variables are required:
+If `CI` or `VCS` is set to `gitlab` the following variables are required:
 
 | Variable | Value |
 |----------|-------|
