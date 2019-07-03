@@ -47,7 +47,7 @@ func (r GitlabRegistry) RegistryUrl() string {
 		return r.Repository
 	}
 
-	return fmt.Sprintf("%s/%s", r.Registry, r.CI.BuildName())
+	return r.Registry
 }
 
 func (r *GitlabRegistry) Create(repository string) error {
