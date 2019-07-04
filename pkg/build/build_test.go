@@ -2,6 +2,7 @@ package build
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/stretchr/testify/assert"
@@ -154,7 +155,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "unexpected end of JSON input")
 	assert.Equal(t, "Logged in\n", out.String())
-	assert.Equal(t, "Unable to parse response: unexpected end of JSON input\n", eout.String())
+	assert.Equal(t, "Unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -207,4 +208,14 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions.Tags)
 	assert.Equal(t, "Logged in\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
+}
+
+func TestBuild_ParseError(t *testing.T) {
+	response := `{"errorDetail":{"code":1,"message":"The command '/bin/sh -c yarn install  --frozen-lockfile' returned a non-zero code: 1"},"error":"The command '/bin/sh -c yarn install  --frozen-lockfile' returned a non-zero code: 1"}`
+	r := &responsetype{}
+
+	err := json.Unmarshal([]byte(response), &r)
+
+	assert.NoError(t, err)
+
 }

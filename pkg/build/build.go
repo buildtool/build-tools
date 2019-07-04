@@ -14,11 +14,12 @@ import (
 )
 
 type responsetype struct {
-	Stream string `json:"stream"`
-	Error  *struct {
+	Stream      string `json:"stream"`
+	ErrorDetail *struct {
 		Code    int64  `json:"code"`
 		Message string `json:"message"`
-	} `json:"error"`
+	} `json:"errorDetail"`
+	Error string `json:"error"`
 }
 
 func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string, out, eout io.Writer) error {
@@ -60,13 +61,14 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string, 
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
 			r := &responsetype{}
-			if err := json.Unmarshal(scanner.Bytes(), &r); err != nil {
-				_, _ = fmt.Fprintf(eout, "Unable to parse response: %v\n", err)
+			response := scanner.Bytes()
+			if err := json.Unmarshal(response, &r); err != nil {
+				_, _ = fmt.Fprintf(eout, "Unable to parse response: %s, Error: %v\n", string(response), err)
 				return err
 			} else {
-				if r.Error != nil {
-					_, _ = fmt.Fprintf(eout, "Code: %v Message: %v\n", r.Error.Code, r.Error.Message)
-					return errors.New(r.Error.Message)
+				if r.ErrorDetail != nil {
+					_, _ = fmt.Fprintf(eout, "Code: %v Message: %v\n", r.ErrorDetail.Code, r.ErrorDetail.Message)
+					return errors.New(r.ErrorDetail.Message)
 				} else {
 					_, _ = fmt.Fprint(out, r.Stream)
 				}

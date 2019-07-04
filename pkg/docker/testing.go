@@ -34,10 +34,10 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, m.BuildError
 	}
 	if m.ResponseError != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"error":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
 	}
 	if m.BuildError != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"error":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError
 	}
 	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"stream":"Build successful"}`))}, nil
 }
