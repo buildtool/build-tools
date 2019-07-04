@@ -7,7 +7,6 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -62,7 +61,7 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
 	assert.NotNil(t, registry)
-	assert.Equal(t, fmt.Sprintf("registry.gitlab.com/%s", filepath.Base(dir)), registry.RegistryUrl())
+	assert.Equal(t, "registry.gitlab.com", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
 }
 
