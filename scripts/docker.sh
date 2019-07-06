@@ -18,8 +18,13 @@ docker:build() {
   (
   registry:login
 
-  OPTIONS=f:
-  LONGOPTS=file:
+  local ARGUMENT_LIST=(
+  "file"
+  "build-arg"
+  )
+
+  OPTIONS="f:a:"
+  LONGOPTS="$(printf "%s:," "${ARGUMENT_LIST[@]}")"
   ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
   if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     # e.g. return value is 1
