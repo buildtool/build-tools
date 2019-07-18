@@ -22,6 +22,7 @@ type MockDocker struct {
 	LoginError    error
 	BuildError    error
 	PushError     error
+	PushOutput    *string
 	BrokenOutput  bool
 	ResponseError error
 }
@@ -49,7 +50,7 @@ func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.
 		return ioutil.NopCloser(strings.NewReader("Push error")), m.PushError
 	}
 
-	return ioutil.NopCloser(strings.NewReader("Push successful")), nil
+	return ioutil.NopCloser(strings.NewReader(*m.PushOutput)), nil
 }
 
 func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error) {

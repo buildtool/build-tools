@@ -40,7 +40,7 @@ func Push(client docker.Client, dockerfile string, out, eout io.Writer) error {
 	}
 
 	for _, tag := range tags {
-		if err := currentRegistry.PushImage(client, auth, tag, out); err != nil {
+		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
 			return err
 		}
 	}
