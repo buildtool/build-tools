@@ -38,15 +38,22 @@ func Build(client docker.Client, buildContext io.ReadCloser, dockerfile string, 
 		return err
 	}
 
+	commit := currentCI.Commit()
+	branch := currentCI.BranchReplaceSlash()
 	tags := []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch),
 	}
 	if currentCI.Branch() == "master" {
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
 	}
+	args := map[string]*string{
+		"CI_COMMIT": &commit,
+		"CI_BRANCH": &branch,
+	}
 	// TODO: Parse Dockerfile and build and tag each stage for caching?
 	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
+		BuildArgs:  args,
 		Dockerfile: dockerfile,
 		Memory:     3 * 1024 * 1024 * 1024,
 		MemorySwap: -1,

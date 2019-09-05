@@ -175,6 +175,9 @@ func TestBuild_FeatureBranch(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
+	assert.Equal(t, 2, len(client.BuildOptions.BuildArgs))
+	assert.Equal(t, "abc123", *client.BuildOptions.BuildArgs["CI_COMMIT"])
+	assert.Equal(t, "feature1", *client.BuildOptions.BuildArgs["CI_BRANCH"])
 	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions.Memory)
 	assert.Equal(t, int64(-1), client.BuildOptions.MemorySwap)
 	assert.Equal(t, true, client.BuildOptions.Remove)
