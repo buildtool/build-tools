@@ -19,6 +19,6 @@ RUN groupadd -f -g 117 docker && \
 
 WORKDIR /usr/local/bin
 
-COPY build deploy push service-setup ./
+COPY build deploy kubecmd push service-setup ./
 
 ENV BUILD_TOOLS_PATH=/usr/local/bin

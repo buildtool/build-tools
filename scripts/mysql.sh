@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source ${SCRIPT_DIR}/kubernetes.sh
 
 # Creates a user for a service in a mysql database running inside kubernetes
 # A secret with the credentials will also be created.
@@ -11,7 +9,7 @@ source ${SCRIPT_DIR}/kubernetes.sh
 mysql:create_database_user() {
   local SERVICE_NAME="${1}"
   local ENVIRONMENT="${2}"
-  local KUBECTL_CMD=$(kubernetes:get_command ${ENVIRONMENT})
+  local KUBECTL_CMD=$(kubecmd ${ENVIRONMENT})
   db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=mysql' --output jsonpath={.items..metadata.name})
 
   ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c "echo \"CREATE USER IF NOT EXISTS ${SERVICE_NAME} IDENTIFIED BY '${SERVICE_NAME}';CREATE DATABASE IF NOT EXISTS ${SERVICE_NAME}; GRANT ALL ON ${SERVICE_NAME}.* TO ${SERVICE_NAME};\" | mysql -u root -p\"password\""
@@ -34,7 +32,7 @@ mysql:load_data() {
   local ENVIRONMENT="$2"
   local FILE="$3"
 
-  local KUBECTL_CMD=$(kubernetes:get_command ${ENVIRONMENT})
+  local KUBECTL_CMD=$(kubecmd ${ENVIRONMENT})
   db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=mysql' --output jsonpath={.items..metadata.name})
 
   cat "$FILE" | ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c "mysql -u $SERVICE_NAME -p\"$SERVICE_NAME\" $SERVICE_NAME"

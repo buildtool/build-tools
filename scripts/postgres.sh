@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source ${SCRIPT_DIR}/kubernetes.sh
 
 # Creates a user for a service in a postgres database (postgresql) running inside kubernetes
 # A secret with the credentials will also be created.
@@ -11,7 +9,7 @@ source ${SCRIPT_DIR}/kubernetes.sh
 postgres:create_database_user() {
   local SERVICE_NAME="${1}"
   local ENVIRONMENT="${2}"
-  local KUBECTL_CMD=$(kubernetes:get_command ${ENVIRONMENT})
+  local KUBECTL_CMD=$(kubecmd ${ENVIRONMENT})
   local db_pod_name=$(${KUBECTL_CMD} get pods --selector 'app=postgresql' --output jsonpath={.items..metadata.name})
   local db_cmd="CREATE USER \\\"${SERVICE_NAME}\\\" WITH PASSWORD '${SERVICE_NAME}';CREATE DATABASE \\\"${SERVICE_NAME}\\\" WITH OWNER \\\"${SERVICE_NAME}\\\" ENCODING utf8"
   ${KUBECTL_CMD} exec -it ${db_pod_name} -- bash -c " echo \"${db_cmd}\" | psql -U postgres -f -"
