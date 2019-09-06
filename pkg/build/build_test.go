@@ -16,24 +16,21 @@ import (
 var name string
 
 func TestMain(m *testing.M) {
-	oldPwd, tempDir := setup()
+	tempDir := setup()
 	code := m.Run()
-	teardown(oldPwd, tempDir)
+	teardown(tempDir)
 	os.Exit(code)
 }
 
-func setup() (string, string) {
-	oldPwd, _ := os.Getwd()
+func setup() string {
 	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
-	_ = os.Chdir(name)
 	os.Clearenv()
 
-	return oldPwd, name
+	return name
 }
 
-func teardown(oldPwd, tempDir string) {
+func teardown(tempDir string) {
 	_ = os.RemoveAll(tempDir)
-	_ = os.Chdir(oldPwd)
 }
 
 func TestBuild_BrokenConfig(t *testing.T) {
@@ -46,10 +43,9 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
-	cwd, _ := os.Getwd()
-	absPath, _ := filepath.Abs(filepath.Join(cwd, ".buildtools.yaml"))
+	absPath, _ := filepath.Abs(filepath.Join(name, ".buildtools.yaml"))
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", absPath), out.String())
@@ -66,7 +62,7 @@ func TestBuild_NoRegistry(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "no Docker registry found")
@@ -87,7 +83,7 @@ func TestBuild_LoginError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "invalid username/password")
@@ -108,7 +104,7 @@ func TestBuild_BuildError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{BuildError: fmt.Errorf("build error")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "build error")
@@ -129,7 +125,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "build error")
@@ -150,7 +146,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{BrokenOutput: true}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "unexpected end of JSON input")
@@ -171,7 +167,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
@@ -200,7 +196,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := Build(client, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
 	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
@@ -220,5 +216,31 @@ func TestBuild_ParseError(t *testing.T) {
 	err := json.Unmarshal([]byte(response), &r)
 
 	assert.NoError(t, err)
+}
 
+func TestBuild_BadDockerHost(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("DOCKER_HOST", "abc-123")
+	out := bytes.Buffer{}
+	eout := bytes.Buffer{}
+	exitCode := 0
+	DoBuild(name, &out, &eout, func(code int) {
+		exitCode = code
+	})
+	assert.Equal(t, -1, exitCode)
+	assert.Equal(t, "unable to parse docker host `abc-123`\n", out.String())
+}
+
+func TestBuild_UnreadableDockerignore(t *testing.T) {
+	filename := filepath.Join(name, ".dockerignore")
+	_ = os.Mkdir(filename, 0777)
+	os.Clearenv()
+	out := bytes.Buffer{}
+	eout := bytes.Buffer{}
+	exitCode := 0
+	DoBuild(name, &out, &eout, func(code int) {
+		exitCode = code
+	})
+	assert.Equal(t, -2, exitCode)
+	assert.Equal(t, fmt.Sprintf("read %s: is a directory\n", filename), out.String())
 }

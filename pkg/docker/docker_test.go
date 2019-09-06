@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -9,64 +10,48 @@ import (
 )
 
 func TestParseDockerignore_FileMissing(t *testing.T) {
-	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
-	err := os.Chdir(name)
-	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.RemoveAll(name) }()
 
 	var empty []string
-	result, err := ParseDockerignore()
+	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
 	assert.Equal(t, empty, result)
 }
 
 func TestParseDockerignore_EmptyFile(t *testing.T) {
-	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
-	err := os.Chdir(name)
-	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.RemoveAll(name) }()
 
 	content := ``
 	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
 	var empty []string
-	result, err := ParseDockerignore()
+	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
 	assert.Equal(t, empty, result)
 }
 
 func TestParseDockerignore_UnreadableFile(t *testing.T) {
-	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
-	err := os.Chdir(name)
-	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".dockerignore")
 	_ = os.Mkdir(filename, 0777)
 
-	_, err = ParseDockerignore()
-	assert.EqualError(t, err, "read .dockerignore: is a directory")
+	_, err := ParseDockerignore(name)
+	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
 }
 
 func TestParseDockerignore(t *testing.T) {
-	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
-	err := os.Chdir(name)
-	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.RemoveAll(name) }()
 
 	content := `
 node_modules
 *.swp`
 	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
-	result, err := ParseDockerignore()
+	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"node_modules", "*.swp"}, result)
 }

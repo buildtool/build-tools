@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type Client interface {
@@ -25,12 +26,13 @@ func Tag(registry, image, tag string) string {
 	return fmt.Sprintf("%s/%s:%s", registry, image, tag)
 }
 
-func ParseDockerignore() ([]string, error) {
+func ParseDockerignore(dir string) ([]string, error) {
 	var empty []string
-	if _, err := os.Stat(".dockerignore"); os.IsNotExist(err) {
+	filePath := filepath.Join(dir, ".dockerignore")
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return empty, nil
 	}
-	if file, err := ioutil.ReadFile(".dockerignore"); err != nil {
+	if file, err := ioutil.ReadFile(filePath); err != nil {
 		return empty, err
 	} else {
 		var result []string
