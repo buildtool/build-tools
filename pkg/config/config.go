@@ -19,7 +19,10 @@ type Config struct {
 }
 
 type VCSConfig struct {
-	Selected string `yaml:"selected"`
+	Selected string     `yaml:"selected" env:"VCS"`
+	Azure    *AzureVCS  `yaml:"azure"`
+	Github   *GithubVCS `yaml:"github"`
+	Gitlab   *GitlabVCS `yaml:"gitlab"`
 	VCS      *VCS
 }
 
@@ -66,7 +69,11 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 func initEmptyConfig() *Config {
 	return &Config{
-		VCS: &VCSConfig{},
+		VCS: &VCSConfig{
+			Azure:  &AzureVCS{},
+			Github: &GithubVCS{},
+			Gitlab: &GitlabVCS{},
+		},
 		CI: &CIConfig{
 			Azure:     &AzureCI{ci: &ci{}},
 			Buildkite: &BuildkiteCI{ci: &ci{}},
@@ -81,8 +88,16 @@ func initEmptyConfig() *Config {
 	}
 }
 
-func (c *Config) CurrentVCS() (VCS, error) {
-	return *c.VCS.VCS, nil
+func (c *Config) CurrentVCS() VCS {
+	switch c.VCS.Selected {
+	case "azure":
+		return c.VCS.Azure
+	case "github":
+		return c.VCS.Github
+	case "gitlab":
+		return c.VCS.Gitlab
+	}
+	return *c.VCS.VCS
 }
 
 func (c *Config) CurrentCI() CI {

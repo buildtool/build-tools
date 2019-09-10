@@ -26,6 +26,10 @@ type ECRRegistry struct {
 
 var _ Registry = &ECRRegistry{}
 
+func (r *ECRRegistry) Name() string {
+	return "ECR"
+}
+
 func (r *ECRRegistry) configured() bool {
 	if len(r.Url) > 0 {
 		sess, err := session.NewSession(&aws.Config{Region: &r.Region})

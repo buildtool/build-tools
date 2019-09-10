@@ -17,6 +17,7 @@ func TestIdentify(t *testing.T) {
 	out := &bytes.Buffer{}
 	result := Identify(dir, out)
 	assert.NotNil(t, result)
+	assert.Equal(t, "none", result.Name())
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
 	assert.Equal(t, "", out.String())

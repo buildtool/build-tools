@@ -19,6 +19,10 @@ type DockerhubRegistry struct {
 
 var _ Registry = &DockerhubRegistry{}
 
+func (r DockerhubRegistry) Name() string {
+	return "Dockerhub"
+}
+
 func (r DockerhubRegistry) configured() bool {
 	return len(r.Repository) > 0
 }

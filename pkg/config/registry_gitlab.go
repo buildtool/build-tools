@@ -20,6 +20,10 @@ type GitlabRegistry struct {
 
 var _ Registry = &GitlabRegistry{}
 
+func (r GitlabRegistry) Name() string {
+	return "Gitlab"
+}
+
 func (r GitlabRegistry) configured() bool {
 	return len(r.Repository) > 0
 }

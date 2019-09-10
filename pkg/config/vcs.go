@@ -6,8 +6,10 @@ import (
 
 type VCS interface {
 	identify(dir string, out io.Writer) bool
+	Name() string
 	Branch() string
 	Commit() string
+	Scaffold(name string) string
 }
 
 var systems = []VCS{&git{}}

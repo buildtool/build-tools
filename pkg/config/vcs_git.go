@@ -33,3 +33,13 @@ func (v *git) identify(dir string, out io.Writer) bool {
 
 	return true
 }
+
+func (v *git) Name() string {
+	return "git"
+}
+
+func (v *git) Scaffold(name string) string {
+	return ""
+}
+
+var _ VCS = &git{}

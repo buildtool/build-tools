@@ -13,6 +13,10 @@ type GitlabCI struct {
 
 var _ CI = &GitlabCI{}
 
+func (c GitlabCI) Name() string {
+	return "Gitlab"
+}
+
 func (c GitlabCI) BranchReplaceSlash() string {
 	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
 }
@@ -36,6 +40,10 @@ func (c GitlabCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c GitlabCI) Scaffold(name, repository string) *string {
+	return nil
 }
 
 func (c GitlabCI) configured() bool {

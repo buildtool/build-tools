@@ -26,6 +26,20 @@ func TestGitlab_Identify(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestGitlab_Name(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
+	_ = os.Setenv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")
+	_ = os.Setenv("CI_BUILD_TOKEN", "token")
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.Equal(t, "Gitlab", registry.Name())
+}
+
 func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")

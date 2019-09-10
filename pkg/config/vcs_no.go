@@ -14,3 +14,13 @@ func (v no) identify(dir string, out io.Writer) bool {
 
 	return true
 }
+
+func (v no) Name() string {
+	return "none"
+}
+
+func (v no) Scaffold(name string) string {
+	return ""
+}
+
+var _ VCS = &no{}

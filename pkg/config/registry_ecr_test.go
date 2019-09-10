@@ -26,6 +26,19 @@ func TestEcr_Identify(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestEcr_Name(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("ECR_URL", "url")
+	_ = os.Setenv("ECR_REGION", "region")
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.Equal(t, "ECR", registry.Name())
+}
+
 func TestEcr_Identify_BrokenConfig(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("ECR_URL", "url")

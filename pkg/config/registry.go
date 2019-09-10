@@ -12,13 +12,12 @@ import (
 
 type Registry interface {
 	configured() bool
+	Name() string
 	Login(client docker.Client, out io.Writer) error
 	GetAuthInfo() string
 	RegistryUrl() string
 	Create(repository string) error
 	PushImage(client docker.Client, auth, image string, out, eout io.Writer) error
-	// TODO: Uncomment when implementing service-setup
-	//Validate() bool
 }
 
 type responsetype struct {

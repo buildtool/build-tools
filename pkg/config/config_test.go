@@ -179,6 +179,51 @@ func TestLoad_ENV(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestLoad_Selected_VCS_Azure(t *testing.T) {
+	_ = os.Setenv("CI", "azure")
+	_ = os.Setenv("VCS", "azure")
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.VCS)
+	assert.Equal(t, "azure", cfg.VCS.Selected)
+	vcs := cfg.CurrentVCS()
+	assert.Equal(t, "Azure", vcs.Name())
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_VCS_Github(t *testing.T) {
+	_ = os.Setenv("CI", "buildkite")
+	_ = os.Setenv("VCS", "github")
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.VCS)
+	assert.Equal(t, "github", cfg.VCS.Selected)
+	vcs := cfg.CurrentVCS()
+	assert.Equal(t, "Github", vcs.Name())
+	assert.Equal(t, "", out.String())
+}
+
+func TestLoad_Selected_VCS_Gitlab(t *testing.T) {
+	_ = os.Setenv("CI", "gitlab")
+	_ = os.Setenv("VCS", "gitlab")
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.VCS)
+	assert.Equal(t, "gitlab", cfg.VCS.Selected)
+	vcs := cfg.CurrentVCS()
+	assert.Equal(t, "Gitlab", vcs.Name())
+	assert.Equal(t, "", out.String())
+}
+
 func TestLoad_Selected_Registry_Dockerhub(t *testing.T) {
 	_ = os.Setenv("CI", "gitlab")
 	_ = os.Setenv("REGISTRY", "dockerhub")

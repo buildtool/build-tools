@@ -13,6 +13,10 @@ type BuildkiteCI struct {
 
 var _ CI = &BuildkiteCI{}
 
+func (c BuildkiteCI) Name() string {
+	return "Buildkite"
+}
+
 func (c BuildkiteCI) BranchReplaceSlash() string {
 	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
 }
@@ -36,6 +40,10 @@ func (c BuildkiteCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c BuildkiteCI) Scaffold(name, repository string) *string {
+	return nil
 }
 
 func (c BuildkiteCI) configured() bool {

@@ -25,6 +25,20 @@ func TestDockerhub_Identify(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestDockerhub_Name(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.Equal(t, "Dockerhub", registry.Name())
+}
+
 func TestDockerhub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &DockerhubRegistry{Repository: "repo", Username: "user", Password: "pass"}

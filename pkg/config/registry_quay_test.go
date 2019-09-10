@@ -25,6 +25,20 @@ func TestQuay_Identify(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestQuay_Name(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("QUAY_REPOSITORY", "repo")
+	_ = os.Setenv("QUAY_USERNAME", "user")
+	_ = os.Setenv("QUAY_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(".", out)
+	assert.NoError(t, err)
+	registry, err := cfg.CurrentRegistry()
+	assert.NoError(t, err)
+	assert.Equal(t, "Quay.io", registry.Name())
+}
+
 func TestQuay_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &QuayRegistry{Repository: "group", Username: "user", Password: "pass"}

@@ -13,6 +13,10 @@ type AzureCI struct {
 
 var _ CI = &AzureCI{}
 
+func (c AzureCI) Name() string {
+	return "Azure"
+}
+
 func (c AzureCI) BranchReplaceSlash() string {
 	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
 }
@@ -36,6 +40,10 @@ func (c AzureCI) Commit() string {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
+}
+
+func (c AzureCI) Scaffold(name, repository string) *string {
+	return nil
 }
 
 func (c AzureCI) configured() bool {

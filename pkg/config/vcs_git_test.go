@@ -18,6 +18,7 @@ func TestGit_Identify(t *testing.T) {
 	out := &bytes.Buffer{}
 	result := Identify(dir, out)
 	assert.NotNil(t, result)
+	assert.Equal(t, "git", result.Name())
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "master", result.Branch())
 	assert.Equal(t, "", out.String())

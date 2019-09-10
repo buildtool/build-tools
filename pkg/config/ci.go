@@ -6,13 +6,12 @@ import (
 )
 
 type CI interface {
-	// TODO: Uncomment when implementing service-setup
-	//Validate() bool
-	//Scaffold() error
+	Name() string
 	BuildName() string
 	Branch() string
 	BranchReplaceSlash() string
 	Commit() string
+	Scaffold(name, repository string) *string
 	setVCS(cfg Config)
 	configured() bool
 }
@@ -22,9 +21,7 @@ type ci struct {
 }
 
 func (c *ci) setVCS(cfg Config) {
-	if v, e := cfg.CurrentVCS(); e == nil {
-		c.VCS = v
-	}
+	c.VCS = cfg.CurrentVCS()
 }
 
 func (c *ci) BuildName() string {
