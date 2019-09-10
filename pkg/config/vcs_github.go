@@ -13,26 +13,46 @@ type GithubVCS struct {
 	Token        string `yaml:"Token" env:"GITHUB_TOKEN"`
 	Organisation string `yaml:"Organisation" env:"GITHUB_ORG"`
 	Public       bool   `yaml:"Public"`
+	repoOwner    string
 }
 
-func (v GithubVCS) Name() string {
+func (v *GithubVCS) Name() string {
 	return "Github"
 }
 
-func (v GithubVCS) Scaffold(name string) (string, error) {
-	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: v.Token},
-	)))
-
-	return v.scaffold(client.Repositories, name)
+func (v *GithubVCS) Scaffold(name string) (string, error) {
+	return v.scaffold(v.client().Repositories, name)
 }
 
-func (v GithubVCS) Webhook(name, url string) {
+func (v *GithubVCS) Webhook(name, url string) {
+	hook := &github.Hook{
+		URL: wrapString(url),
+		Events: []string{
+			"push",
+			"pull_request",
+			"deployment",
+		},
+		Config: map[string]interface{}{
+			"url":          url,
+			"content_type": "json",
+		},
+		Active: wrapBool(true),
+	}
+
+	createHook, response, err := v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
+
 }
 
 var _ VCS = &GithubVCS{}
 
-func (v GithubVCS) scaffold(repositoriesService RepositoriesService, name string) (string, error) {
+func (v *GithubVCS) client() *github.Client {
+	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: v.Token},
+	)))
+	return client
+}
+
+func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name string) (string, error) {
 	repo := &github.Repository{
 		Name:     wrapString(name),
 		Private:  wrapBool(v.Public),
@@ -41,6 +61,11 @@ func (v GithubVCS) scaffold(repositoriesService RepositoriesService, name string
 	repo, resp, err := repositoriesService.Create(context.Background(), v.Organisation, repo)
 	if err != nil {
 		return "", err
+	}
+
+	v.repoOwner = v.Organisation
+	if v.repoOwner == "" {
+		v.repoOwner = *repo.Owner.Login
 	}
 	switch resp.StatusCode {
 	case http.StatusCreated:
@@ -51,12 +76,8 @@ func (v GithubVCS) scaffold(repositoriesService RepositoriesService, name string
 			},
 			EnforceAdmins: true,
 		}
-		owner := v.Organisation
-		if owner == "" {
-			owner = *repo.Owner.Login
-		}
 
-		_, response, err := repositoriesService.UpdateBranchProtection(context.Background(), owner, *repo.Name, "master", preq)
+		_, response, err := repositoriesService.UpdateBranchProtection(context.Background(), v.repoOwner, *repo.Name, "master", preq)
 		if err != nil || response.StatusCode != http.StatusOK {
 			return "", fmt.Errorf("failed to set repository branch protection %s", response.Status)
 		}
