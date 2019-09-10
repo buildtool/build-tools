@@ -45,4 +45,9 @@ func (v *git) Scaffold(name string) (string, error) {
 func (v *git) Webhook(name, url string) {
 }
 
+func (v *git) Clone(name, url string, out io.Writer) error {
+	_, err := git2.PlainClone(name, false, &git2.CloneOptions{URL: url, Progress: out})
+	return err
+}
+
 var _ VCS = &git{}

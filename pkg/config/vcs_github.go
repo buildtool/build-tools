@@ -39,7 +39,7 @@ func (v *GithubVCS) Webhook(name, url string) {
 		Active: wrapBool(true),
 	}
 
-	createHook, response, err := v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
+	_, _, _ = v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
 
 }
 

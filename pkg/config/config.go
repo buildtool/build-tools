@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/caarlos0/env"
+	"github.com/liamg/tml"
+	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -158,6 +160,55 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 	}
 	return nil, fmt.Errorf("no environment matching %s found", environment)
 }
+
+func (c *Config) Scaffold(name string, stack stack.Stack, out io.Writer, exit func(code int)) {
+	vcs := c.CurrentVCS()
+	ci := c.CurrentCI()
+	if registry, err := c.CurrentRegistry(); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		exit(-2)
+	} else {
+		if err := validate(); err != nil {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+			exit(-3)
+		} else {
+			_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
+			_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", vcs.Name()))
+			repository, _ := vcs.Scaffold(name)
+			_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository))
+			if err := vcs.Clone(name, repository, out); err != nil {
+				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+				exit(-4)
+			}
+			createDirectories()
+			_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
+			if webhook := ci.Scaffold(name, repository); webhook != nil {
+				vcs.Webhook(name, *webhook)
+			}
+			createDotfiles()
+			createReadme(name)
+			createDeployment(name, registry)
+			if err := stack.Scaffold(name); err != nil {
+				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+				exit(-5)
+			}
+		}
+	}
+}
+
+func validate() error {
+	return nil
+}
+
+func createDirectories() {
+
+}
+
+func createDotfiles() {}
+
+func createReadme(name string) {}
+
+func createDeployment(name string, registry Registry) {}
 
 var abs = filepath.Abs
 
