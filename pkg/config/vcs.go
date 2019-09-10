@@ -9,7 +9,7 @@ type VCS interface {
 	Name() string
 	Branch() string
 	Commit() string
-	Scaffold(name string) string
+	Scaffold(name string) (string, error)
 	Webhook(name, url string)
 }
 

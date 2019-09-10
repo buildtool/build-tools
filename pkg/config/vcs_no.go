@@ -19,8 +19,8 @@ func (v no) Name() string {
 	return "none"
 }
 
-func (v no) Scaffold(name string) string {
-	return ""
+func (v no) Scaffold(name string) (string, error) {
+	return "", nil
 }
 
 func (v no) Webhook(name, url string) {
