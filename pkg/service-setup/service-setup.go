@@ -29,7 +29,7 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 		set.Usage()
 	} else {
 		name := set.Args()[0]
-		if _, exists := stack.Stacks[selectedStack]; exists {
+		if currentStack, exists := stack.Stacks[selectedStack]; exists {
 			if cfg, err := config.Load(dir, out); err != nil {
 				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 				exit(-1)
@@ -50,10 +50,16 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 						_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository))
 						createDirectories()
 						_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-						webhook := ci.Scaffold(name, repository)
-						_, _ = fmt.Fprintf(out, "Webhook: %+v\n", webhook)
-
-						_, _ = fmt.Fprintf(out, "Registry: %s\n", registry.Name())
+						if webhook := ci.Scaffold(name, repository); webhook != nil {
+							vcs.Webhook(name, *webhook)
+						}
+						createDotfiles()
+						createReadme(name)
+						createDeployment(name, registry)
+						if err := currentStack.Scaffold(name); err != nil {
+							_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+							exit(-4)
+						}
 					}
 				}
 			}
@@ -74,3 +80,9 @@ func validate() error {
 func createDirectories() {
 
 }
+
+func createDotfiles() {}
+
+func createReadme(name string) {}
+
+func createDeployment(name string, registry config.Registry) {}

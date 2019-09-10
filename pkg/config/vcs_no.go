@@ -23,4 +23,7 @@ func (v no) Scaffold(name string) string {
 	return ""
 }
 
+func (v no) Webhook(name, url string) {
+}
+
 var _ VCS = &no{}

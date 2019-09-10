@@ -10,6 +10,7 @@ type VCS interface {
 	Branch() string
 	Commit() string
 	Scaffold(name string) string
+	Webhook(name, url string)
 }
 
 var systems = []VCS{&git{}}

@@ -42,4 +42,7 @@ func (v *git) Scaffold(name string) string {
 	return ""
 }
 
+func (v *git) Webhook(name, url string) {
+}
+
 var _ VCS = &git{}

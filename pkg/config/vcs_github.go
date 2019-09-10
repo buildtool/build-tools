@@ -12,4 +12,7 @@ func (v GithubVCS) Scaffold(name string) string {
 	return ""
 }
 
+func (v GithubVCS) Webhook(name, url string) {
+}
+
 var _ VCS = &GithubVCS{}
