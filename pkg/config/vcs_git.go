@@ -42,11 +42,16 @@ func (v *git) Scaffold(name string) (string, error) {
 	return "", nil
 }
 
-func (v *git) Webhook(name, url string) {
+func (v *git) Webhook(name, url string) error {
+	return nil
 }
 
-func (v *git) Clone(name, url string, out io.Writer) error {
-	_, err := git2.PlainClone(name, false, &git2.CloneOptions{URL: url, Progress: out})
+func (v *git) Validate() error {
+	return nil
+}
+
+func (v *git) Clone(dir, name, url string, out io.Writer) error {
+	_, err := git2.PlainClone(filepath.Join(dir, name), false, &git2.CloneOptions{URL: url, Progress: out})
 	return err
 }
 

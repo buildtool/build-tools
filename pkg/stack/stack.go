@@ -1,10 +1,19 @@
 package stack
 
 type Stack interface {
-	Scaffold(name string) error
+	Scaffold(dir, name string, data TemplateData) error
 	Name() string
 }
 
 var Stacks = map[string]Stack{
-	"none": &none{},
+	"none":  &None{},
+	"go":    &Go{},
+	"scala": &Scala{},
+}
+
+type TemplateData struct {
+	ProjectName   string
+	Badges        string
+	Organisation  string
+	RepositoryUrl string
 }

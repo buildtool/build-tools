@@ -11,7 +11,8 @@ type CI interface {
 	Branch() string
 	BranchReplaceSlash() string
 	Commit() string
-	Scaffold(name, repository string) *string
+	Scaffold(dir, name, repository string) (*string, error)
+	Badges() string
 	setVCS(cfg Config)
 	configured() bool
 }

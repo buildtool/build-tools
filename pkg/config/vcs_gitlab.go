@@ -12,7 +12,12 @@ func (v GitlabVCS) Scaffold(name string) (string, error) {
 	return "", nil
 }
 
-func (v GitlabVCS) Webhook(name, url string) {
+func (v GitlabVCS) Webhook(name, url string) error {
+	return nil
+}
+
+func (v GitlabVCS) Validate() error {
+	return nil
 }
 
 var _ VCS = &GitlabVCS{}

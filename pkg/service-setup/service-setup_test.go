@@ -51,7 +51,7 @@ func TestSetup_NonExistingStack(t *testing.T) {
 	}, "-s", "missing", "project")
 
 	assert.Equal(t, 0, exitCode)
-	assert.Equal(t, "\x1b[0m\x1b[31mProvided stack does not exist yet. Available stacks are: \x1b[39m\x1b[97m\x1b[1m(none)\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m", out.String())
+	assert.Equal(t, "\x1b[0m\x1b[31mProvided stack does not exist yet. Available stacks are: \x1b[39m\x1b[97m\x1b[1m(none, go, scala)\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m", out.String())
 }
 
 func TestSetup_BrokenConfig(t *testing.T) {

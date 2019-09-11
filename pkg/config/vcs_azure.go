@@ -12,7 +12,12 @@ func (v AzureVCS) Scaffold(name string) (string, error) {
 	return "", nil
 }
 
-func (v AzureVCS) Webhook(name, url string) {
+func (v AzureVCS) Webhook(name, url string) error {
+	return nil
+}
+
+func (v AzureVCS) Validate() error {
+	return nil
 }
 
 var _ VCS = &AzureVCS{}

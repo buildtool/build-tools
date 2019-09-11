@@ -17,7 +17,7 @@ func TestIdentify_Gitlab(t *testing.T) {
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -36,7 +36,7 @@ func TestName_Gitlab(t *testing.T) {
 	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "Gitlab", result.Name())

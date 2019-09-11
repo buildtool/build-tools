@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
@@ -10,9 +11,9 @@ import (
 
 type GithubVCS struct {
 	git
-	Token        string `yaml:"Token" env:"GITHUB_TOKEN"`
-	Organisation string `yaml:"Organisation" env:"GITHUB_ORG"`
-	Public       bool   `yaml:"Public"`
+	Token        string `yaml:"token" env:"GITHUB_TOKEN"`
+	Organisation string `yaml:"organisation" env:"GITHUB_ORG"`
+	Public       bool   `yaml:"public"`
 	repoOwner    string
 }
 
@@ -24,7 +25,7 @@ func (v *GithubVCS) Scaffold(name string) (string, error) {
 	return v.scaffold(v.client().Repositories, name)
 }
 
-func (v *GithubVCS) Webhook(name, url string) {
+func (v *GithubVCS) Webhook(name, url string) error {
 	hook := &github.Hook{
 		URL: wrapString(url),
 		Events: []string{
@@ -39,8 +40,16 @@ func (v *GithubVCS) Webhook(name, url string) {
 		Active: wrapBool(true),
 	}
 
-	_, _, _ = v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
+	_, _, err := v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
 
+	return err
+}
+
+func (v *GithubVCS) Validate() error {
+	if len(v.Token) == 0 {
+		return errors.New("token is required")
+	}
+	return nil
 }
 
 var _ VCS = &GithubVCS{}
@@ -84,7 +93,7 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 	default:
 		return "", fmt.Errorf("failed to create repository %s, %s", name, resp.Status)
 	}
-	return *repo.CloneURL, nil
+	return *repo.SSHURL, nil
 
 }
 

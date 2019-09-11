@@ -13,20 +13,19 @@ func TestNoOp(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI", "")
 
-	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	// NoOp uses PWD to generate BuildName so have to switch working dir
 	oldPwd, _ := os.Getwd()
-	_ = os.Chdir(dir)
-	defer os.Chdir(oldPwd)
+	_ = os.Chdir(name)
+	defer func() { _ = os.Chdir(oldPwd) }()
 
-	InitRepoWithCommit(dir)
+	InitRepoWithCommit(name)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
-	assert.Equal(t, filepath.Base(dir), result.BuildName())
+	assert.Equal(t, filepath.Base(name), result.BuildName())
 	assert.Equal(t, "master", result.BranchReplaceSlash())
 	assert.False(t, result.configured())
 	assert.Equal(t, "", out.String())
@@ -37,7 +36,7 @@ func TestName_NoOp(t *testing.T) {
 	_ = os.Setenv("CI", "")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "none", result.Name())

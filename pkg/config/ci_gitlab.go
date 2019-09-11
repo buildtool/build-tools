@@ -42,8 +42,12 @@ func (c GitlabCI) Commit() string {
 	return c.CICommit
 }
 
-func (c GitlabCI) Scaffold(name, repository string) *string {
-	return nil
+func (c GitlabCI) Scaffold(dir, name, repository string) (*string, error) {
+	return nil, nil
+}
+
+func (c GitlabCI) Badges() string {
+	return ""
 }
 
 func (c GitlabCI) configured() bool {

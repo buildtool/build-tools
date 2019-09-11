@@ -10,8 +10,9 @@ type VCS interface {
 	Branch() string
 	Commit() string
 	Scaffold(name string) (string, error)
-	Webhook(name, url string)
-	Clone(name, url string, out io.Writer) error
+	Webhook(name, url string) error
+	Clone(dir, name, url string, out io.Writer) error
+	Validate() error
 }
 
 var systems = []VCS{&git{}}

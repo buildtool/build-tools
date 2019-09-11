@@ -9,26 +9,6 @@ import (
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	oldPwd, tempDir := setup()
-	code := m.Run()
-	teardown(oldPwd, tempDir)
-	os.Exit(code)
-}
-
-func setup() (string, string) {
-	oldPwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	_ = os.Chdir(name)
-
-	return oldPwd, name
-}
-
-func teardown(oldPwd, tempDir string) {
-	_ = os.RemoveAll(tempDir)
-	_ = os.Chdir(oldPwd)
-}
-
 func TestIdentify_Azure(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("VSTS_PROCESS_LOOKUP_ID", "1")
@@ -37,7 +17,7 @@ func TestIdentify_Azure(t *testing.T) {
 	_ = os.Setenv("BUILD_SOURCEBRANCHNAME", "feature/first test")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -56,7 +36,7 @@ func TestName_Azure(t *testing.T) {
 	_ = os.Setenv("BUILD_SOURCEBRANCHNAME", "feature/first test")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "Azure", result.Name())

@@ -17,7 +17,7 @@ func TestEcr_Identify(t *testing.T) {
 	_ = os.Setenv("ECR_REGION", "region")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -32,7 +32,7 @@ func TestEcr_Name(t *testing.T) {
 	_ = os.Setenv("ECR_REGION", "region")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -46,7 +46,7 @@ func TestEcr_Identify_BrokenConfig(t *testing.T) {
 	_ = os.Setenv("AWS_CA_BUNDLE", "/missing/bundle")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.EqualError(t, err, "no Docker registry found")

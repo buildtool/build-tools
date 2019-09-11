@@ -16,7 +16,7 @@ func TestIdentify_Buildkite(t *testing.T) {
 	_ = os.Setenv("BUILDKITE_BRANCH_NAME", "feature/first test")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NoError(t, err)

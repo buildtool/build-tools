@@ -16,7 +16,7 @@ func TestDockerhub_Identify(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -32,7 +32,7 @@ func TestDockerhub_Name(t *testing.T) {
 	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)

@@ -42,8 +42,12 @@ func (c AzureCI) Commit() string {
 	return c.CICommit
 }
 
-func (c AzureCI) Scaffold(name, repository string) *string {
-	return nil
+func (c AzureCI) Scaffold(dir, name, repository string) (*string, error) {
+	return nil, nil
+}
+
+func (c AzureCI) Badges() string {
+	return ""
 }
 
 func (c AzureCI) configured() bool {

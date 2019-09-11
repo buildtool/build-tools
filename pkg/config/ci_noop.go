@@ -30,8 +30,12 @@ func (c noOpCI) Commit() string {
 	return c.VCS.Commit()
 }
 
-func (c noOpCI) Scaffold(name, repository string) *string {
-	return nil
+func (c noOpCI) Scaffold(dir, name, repository string) (*string, error) {
+	return nil, nil
+}
+
+func (c noOpCI) Badges() string {
+	return ""
 }
 
 func (c noOpCI) configured() bool {

@@ -17,7 +17,7 @@ func TestGitlab_Identify(t *testing.T) {
 	_ = os.Setenv("CI_BUILD_TOKEN", "token")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestGitlab_Name(t *testing.T) {
 	_ = os.Setenv("CI_BUILD_TOKEN", "token")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -47,7 +47,7 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 	_ = os.Setenv("CI_BUILD_TOKEN", "token")
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
@@ -70,7 +70,7 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	defer os.Chdir(oldPwd)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(".", out)
+	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	registry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)

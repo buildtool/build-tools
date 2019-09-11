@@ -2,6 +2,8 @@ package config
 
 import (
 	"io"
+	"os"
+	"path/filepath"
 )
 
 type no struct {
@@ -23,10 +25,16 @@ func (v no) Scaffold(name string) (string, error) {
 	return "", nil
 }
 
-func (v no) Webhook(name, url string) {
+func (v no) Webhook(name, url string) error {
+	return nil
 }
 
-func (v no) Clone(name, url string, out io.Writer) error {
+func (v no) Validate() error {
+	return nil
+}
+
+func (v no) Clone(dir, name, url string, out io.Writer) error {
+	_ = os.MkdirAll(filepath.Join(dir, name), 0777)
 	return nil
 }
 

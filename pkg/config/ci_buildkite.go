@@ -1,6 +1,9 @@
 package config
 
 import (
+	"gitlab.com/sparetimecoders/build-tools/pkg/file"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -42,8 +45,15 @@ func (c BuildkiteCI) Commit() string {
 	return c.CICommit
 }
 
-func (c BuildkiteCI) Scaffold(name, repository string) *string {
-	return nil
+func (c BuildkiteCI) Scaffold(dir, name, repository string) (*string, error) {
+	if err := os.Mkdir(filepath.Join(dir, ".buildkite"), 0777); err != nil {
+		return nil, err
+	}
+	return nil, file.Append(".dockerignore", ".buildkite")
+}
+
+func (c BuildkiteCI) Badges() string {
+	return ""
 }
 
 func (c BuildkiteCI) configured() bool {

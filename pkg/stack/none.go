@@ -1,13 +1,13 @@
 package stack
 
-type none struct{}
+type None struct{}
 
-func (n *none) Scaffold(name string) error {
+func (n *None) Scaffold(dir, name string, data TemplateData) error {
 	return nil
 }
 
-func (n *none) Name() string {
+func (n *None) Name() string {
 	return "none"
 }
 
-var _ Stack = &none{}
+var _ Stack = &None{}
