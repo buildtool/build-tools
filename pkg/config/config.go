@@ -8,9 +8,11 @@ import (
 	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	stck "gitlab.com/sparetimecoders/build-tools/pkg/stack"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
+	url2 "net/url"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -209,23 +211,30 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exi
 									exit(-9)
 								} else {
 									badges := ci.Badges()
-									data := stck.TemplateData{
-										ProjectName:   name,
-										Badges:        badges,
-										Organisation:  c.Organisation,
-										RepositoryUrl: repository,
-									}
-									if err := createReadme(projectDir, name, data); err != nil {
+									if url, err := url2.Parse(repository); err != nil {
 										_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 										exit(-10)
 									} else {
-										if err := createDeployment(projectDir, name, registry); err != nil {
+										data := templating.TemplateData{
+											ProjectName:    name,
+											Badges:         badges,
+											Organisation:   c.Organisation,
+											RepositoryUrl:  repository,
+											RepositoryHost: url.Host,
+											RepositoryPath: url.Path,
+										}
+										if err := createReadme(projectDir, name, data); err != nil {
 											_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 											exit(-11)
-										}
-										if err := stack.Scaffold(projectDir, name, data); err != nil {
-											_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-											exit(-12)
+										} else {
+											if err := createDeployment(projectDir, name, registry); err != nil {
+												_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+												exit(-12)
+											}
+											if err := stack.Scaffold(projectDir, name, data); err != nil {
+												_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+												exit(-13)
+											}
 										}
 									}
 								}
@@ -277,7 +286,7 @@ README.md
 	return nil
 }
 
-func createReadme(dir, name string, data stck.TemplateData) error {
+func createReadme(dir, name string, data templating.TemplateData) error {
 	content := `
 | README.md
 # {{.ProjectName}}

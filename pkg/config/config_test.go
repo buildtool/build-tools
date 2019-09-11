@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io"
 	"io/ioutil"
 	"os"
@@ -454,13 +455,13 @@ func TestScaffold_StackError(t *testing.T) {
 		exitCode = code
 	})
 
-	assert.Equal(t, -12, exitCode)
+	assert.Equal(t, -13, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
 type errorStack struct{}
 
-func (e errorStack) Scaffold(dir, name string, data stack.TemplateData) error {
+func (e errorStack) Scaffold(dir, name string, data templating.TemplateData) error {
 	return errors.New("error")
 }
 

@@ -7,6 +7,7 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"io"
+	"sort"
 	"strings"
 )
 
@@ -41,6 +42,7 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 			for k := range stack.Stacks {
 				stackNames = append(stackNames, k)
 			}
+			sort.Strings(stackNames)
 			_, _ = fmt.Fprint(out, tml.Sprintf("<red>Provided stack does not exist yet. Available stacks are: </red><white><bold>(%s)</bold></white>\n", strings.Join(stackNames, ", ")))
 		}
 	}
