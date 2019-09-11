@@ -31,7 +31,7 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
 
 	m.EXPECT().
 		Create(context.Background(), orgName, &repository).Return(
@@ -80,7 +80,7 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
 	repositoryResponse.Owner = &github.User{
 		Login: wrapString("user-login"),
 	}
@@ -124,14 +124,19 @@ func TestGithubVCS_Scaffold_RepositoryAlreadyExist(t *testing.T) {
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
 
-	repository := &github.Repository{
+	repository := github.Repository{
 		Name:     wrapString(repoName),
 		AutoInit: wrapBool(true),
 		Private:  wrapBool(false),
 	}
 
+	repositoryResponse := repository
+	repositoryResponse.Owner = &github.User{
+		Login: wrapString("user-login"),
+	}
+
 	m.EXPECT().
-		Create(context.Background(), "", repository).Return(repository,
+		Create(context.Background(), "", &repository).Return(&repositoryResponse,
 		&github.Response{
 			Response: &http.Response{
 				StatusCode: http.StatusUnprocessableEntity,
@@ -186,7 +191,7 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
 	repositoryResponse.Owner = &github.User{
 		Login: wrapString("user-login"),
 	}

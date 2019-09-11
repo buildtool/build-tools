@@ -94,7 +94,6 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 		return "", fmt.Errorf("failed to create repository %s, %s", name, resp.Status)
 	}
 	return *repo.SSHURL, nil
-
 }
 
 type RepositoriesService interface {
