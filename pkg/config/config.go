@@ -170,83 +170,77 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 	return nil, fmt.Errorf("no environment matching %s found", environment)
 }
 
-func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exit func(code int)) {
+func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int {
 	vcs := c.CurrentVCS()
 	ci := c.CurrentCI()
-	if registry, err := c.CurrentRegistry(); err != nil {
+	registry, err := c.CurrentRegistry()
+	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		exit(-2)
-	} else {
-		if err := vcs.Validate(); err != nil {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-			exit(-3)
-		} else {
-			_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
-			_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", vcs.Name()))
-			if repository, err := vcs.Scaffold(name); err != nil {
-				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-				exit(-4)
-			} else {
-				_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
-				if err := vcs.Clone(dir, name, repository.SSHURL, out); err != nil {
-					_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-					exit(-5)
-				} else {
-					projectDir := filepath.Join(dir, name)
-					if err := createDirectories(projectDir); err != nil {
-						_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-						exit(-6)
-					} else {
-						_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-						webhook, err := ci.Scaffold(dir, name, repository.SSHURL)
-						if err != nil {
-							_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-							exit(-7)
-						} else {
-							if err := addWebhook(name, webhook, vcs); err != nil {
-								_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-								exit(-8)
-							} else {
-								if err := createDotfiles(projectDir); err != nil {
-									_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-									exit(-9)
-								} else {
-									badges := ci.Badges()
-									if url, err := url2.Parse(repository.HTTPURL); err != nil {
-										_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-										exit(-10)
-									} else {
-										data := templating.TemplateData{
-											ProjectName:    name,
-											Badges:         badges,
-											Organisation:   c.Organisation,
-											RegistryUrl:    registry.RegistryUrl(),
-											RepositoryUrl:  repository.SSHURL,
-											RepositoryHost: url.Host,
-											RepositoryPath: strings.Replace(url.Path, ".git", "", 1),
-										}
-										if err := createReadme(projectDir, name, data); err != nil {
-											_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-											exit(-11)
-										} else {
-											if err := createDeployment(projectDir, data); err != nil {
-												_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-												exit(-12)
-											}
-											if err := stack.Scaffold(projectDir, name, data); err != nil {
-												_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-												exit(-13)
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+		return -2
 	}
+	if err := vcs.Validate(); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -3
+	}
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", vcs.Name()))
+	repository, err := vcs.Scaffold(name)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -4
+	}
+	_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
+	if err := vcs.Clone(dir, name, repository.SSHURL, out); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -5
+	}
+	projectDir := filepath.Join(dir, name)
+	if err := createDirectories(projectDir); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -6
+	}
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
+	badges := ci.Badges()
+	url, err := url2.Parse(repository.HTTPURL)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -7
+	}
+	data := templating.TemplateData{
+		ProjectName:    name,
+		Badges:         badges,
+		Organisation:   c.Organisation,
+		RegistryUrl:    registry.RegistryUrl(),
+		RepositoryUrl:  repository.SSHURL,
+		RepositoryHost: url.Host,
+		RepositoryPath: strings.Replace(url.Path, ".git", "", 1),
+	}
+	webhook, err := ci.Scaffold(dir, name, repository.SSHURL, data)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -8
+	}
+	if err := addWebhook(name, webhook, vcs); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -9
+	}
+	if err := createDotfiles(projectDir); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -10
+	}
+	if err := createReadme(projectDir, name, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -11
+	}
+	if err := createDeployment(projectDir, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -12
+	}
+	if err := stack.Scaffold(projectDir, name, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -13
+	}
+	return 0
 }
 
 func createDirectories(dir string) error {

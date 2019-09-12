@@ -1,6 +1,7 @@
 package config
 
 import (
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"strings"
 )
 
@@ -30,7 +31,7 @@ func (c noOpCI) Commit() string {
 	return c.VCS.Commit()
 }
 
-func (c noOpCI) Scaffold(dir, name, repository string) (*string, error) {
+func (c noOpCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
 

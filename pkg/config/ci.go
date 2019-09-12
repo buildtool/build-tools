@@ -1,6 +1,7 @@
 package config
 
 import (
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"os"
 	"path/filepath"
 )
@@ -11,7 +12,7 @@ type CI interface {
 	Branch() string
 	BranchReplaceSlash() string
 	Commit() string
-	Scaffold(dir, name, repository string) (*string, error)
+	Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error)
 	Badges() string
 	setVCS(cfg Config)
 	configured() bool

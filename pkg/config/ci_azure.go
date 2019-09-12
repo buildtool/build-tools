@@ -1,6 +1,7 @@
 package config
 
 import (
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"strings"
 )
 
@@ -42,7 +43,7 @@ func (c AzureCI) Commit() string {
 	return c.CICommit
 }
 
-func (c AzureCI) Scaffold(dir, name, repository string) (*string, error) {
+func (c AzureCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
 

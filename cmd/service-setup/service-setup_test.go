@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -19,7 +18,6 @@ func Test(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("REGISTRY", "dockerhub")
 
-	os.Args = []string{"service-setup", "-s", "none", "project"}
+	os.Args = []string{"service-setup"}
 	main()
-	fmt.Println("Done!")
 }

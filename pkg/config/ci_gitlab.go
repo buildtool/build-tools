@@ -1,6 +1,8 @@
 package config
 
 import (
+	"gitlab.com/sparetimecoders/build-tools/pkg/file"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"strings"
 )
 
@@ -42,7 +44,10 @@ func (c GitlabCI) Commit() string {
 	return c.CICommit
 }
 
-func (c GitlabCI) Scaffold(dir, name, repository string) (*string, error) {
+func (c GitlabCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+	if err := file.WriteTemplated(dir, ".gitlab-ci.yml", gitlabCiYml, data); err != nil {
+		return nil, err
+	}
 	return nil, nil
 }
 
@@ -53,3 +58,43 @@ func (c GitlabCI) Badges() string {
 func (c GitlabCI) configured() bool {
 	return c.CIBuildName != ""
 }
+
+var gitlabCiYml = `
+stages:
+  - build
+  - deploy-staging
+  - deploy-prod
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+
+image: registry.gitlab.com/sparetimecoders/build-tools:master
+
+build:
+  stage: build
+  services:
+    - docker:dind
+  script:
+  - build
+  - push
+
+deploy-to-staging:
+  stage: deploy-staging
+  when: on_success
+  script:
+    - echo Deploy {{ .ProjectName }} to staging.
+    - deploy staging
+  environment:
+    name: staging
+
+deploy-to-prod:
+  stage: deploy-prod
+  when: on_success
+  script:
+    - echo Deploy {{ .ProjectName }} to prod.
+    - deploy prod
+  environment:
+    name: prod
+  only:
+    - master
+`

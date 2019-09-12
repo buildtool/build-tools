@@ -35,7 +35,7 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 				exit(-1)
 			} else {
-				cfg.Scaffold(dir, name, currentStack, out, exit)
+				exit(cfg.Scaffold(dir, name, currentStack, out))
 			}
 		} else {
 			var stackNames []string
