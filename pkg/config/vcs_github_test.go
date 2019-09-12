@@ -13,7 +13,8 @@ import (
 
 func TestGithubVCS_Scaffold(t *testing.T) {
 	repoName := "reponame"
-	repoCloneUrl := "cloneurl"
+	repoSSHUrl := "cloneurl"
+	repoCloneUrl := "https://github.com/example/repo"
 	orgName := "org"
 
 	git := GithubVCS{
@@ -31,7 +32,8 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = wrapString(repoSSHUrl)
+	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
 
 	m.EXPECT().
 		Create(context.Background(), orgName, &repository).Return(
@@ -60,12 +62,13 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 
 	res, err := git.scaffold(m, repoName)
 	assert.NoError(t, err)
-	assert.Equal(t, repoCloneUrl, res)
+	assert.Equal(t, &RepositoryInfo{repoSSHUrl, repoCloneUrl}, res)
 }
 
 func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 	repoName := "reponame"
-	repoCloneUrl := "cloneurl"
+	repoSSHUrl := "cloneurl"
+	repoCloneUrl := "https://github.com/example/repo"
 
 	git := GithubVCS{}
 
@@ -80,7 +83,8 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = wrapString(repoSSHUrl)
+	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
 	repositoryResponse.Owner = &github.User{
 		Login: wrapString("user-login"),
 	}
@@ -112,7 +116,7 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 
 	res, err := git.scaffold(m, repoName)
 	assert.NoError(t, err)
-	assert.Equal(t, repoCloneUrl, res)
+	assert.Equal(t, &RepositoryInfo{repoSSHUrl, repoCloneUrl}, res)
 
 }
 

@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,9 +21,25 @@ func Append(name, content string) error {
 	return nil
 }
 
+func AppendTemplated(name, template string, data templating.TemplateData) error {
+	if content, err := templating.Execute(template, data); err != nil {
+		return err
+	} else {
+		return Append(name, content)
+	}
+}
+
 func Write(dir, file, content string) error {
 	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(dir, file), []byte(strings.TrimSpace(content)), 0666)
+	return ioutil.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+}
+
+func WriteTemplated(dir, file, template string, data templating.TemplateData) error {
+	if content, err := templating.Execute(template, data); err != nil {
+		return err
+	} else {
+		return Write(dir, file, content)
+	}
 }

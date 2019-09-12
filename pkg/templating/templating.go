@@ -9,6 +9,7 @@ type TemplateData struct {
 	ProjectName    string
 	Badges         string
 	Organisation   string
+	RegistryUrl    string
 	RepositoryUrl  string
 	RepositoryHost string
 	RepositoryPath string

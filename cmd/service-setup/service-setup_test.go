@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
@@ -20,4 +21,5 @@ func Test(t *testing.T) {
 
 	os.Args = []string{"service-setup", "-s", "none", "project"}
 	main()
+	fmt.Println("Done!")
 }

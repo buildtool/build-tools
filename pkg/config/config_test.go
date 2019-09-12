@@ -533,11 +533,14 @@ func (m mockVcs) Commit() string {
 	panic("implement me")
 }
 
-func (m mockVcs) Scaffold(name string) (string, error) {
+func (m mockVcs) Scaffold(name string) (*RepositoryInfo, error) {
 	if m.scaffoldErr != nil {
-		return "", m.scaffoldErr
+		return nil, m.scaffoldErr
 	}
-	return "file:///tmp", nil
+	return &RepositoryInfo{
+		SSHURL:  "file:///tmp",
+		HTTPURL: "http://github.com/example/repo",
+	}, nil
 }
 
 func (m mockVcs) Webhook(name, url string) error {

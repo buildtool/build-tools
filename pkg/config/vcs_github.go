@@ -21,7 +21,7 @@ func (v *GithubVCS) Name() string {
 	return "Github"
 }
 
-func (v *GithubVCS) Scaffold(name string) (string, error) {
+func (v *GithubVCS) Scaffold(name string) (*RepositoryInfo, error) {
 	return v.scaffold(v.client().Repositories, name)
 }
 
@@ -61,7 +61,7 @@ func (v *GithubVCS) client() *github.Client {
 	return client
 }
 
-func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name string) (string, error) {
+func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name string) (*RepositoryInfo, error) {
 	repo := &github.Repository{
 		Name:     wrapString(name),
 		Private:  wrapBool(v.Public),
@@ -69,7 +69,7 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 	}
 	repo, resp, err := repositoriesService.Create(context.Background(), v.Organisation, repo)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	v.repoOwner = v.Organisation
@@ -88,12 +88,15 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 
 		_, response, err := repositoriesService.UpdateBranchProtection(context.Background(), v.repoOwner, *repo.Name, "master", preq)
 		if err != nil || response.StatusCode != http.StatusOK {
-			return "", fmt.Errorf("failed to set repository branch protection %s", response.Status)
+			return nil, fmt.Errorf("failed to set repository branch protection %s", response.Status)
 		}
 	default:
-		return "", fmt.Errorf("failed to create repository %s, %s", name, resp.Status)
+		return nil, fmt.Errorf("failed to create repository %s, %s", name, resp.Status)
 	}
-	return *repo.SSHURL, nil
+	return &RepositoryInfo{
+		SSHURL:  *repo.SSHURL,
+		HTTPURL: *repo.CloneURL,
+	}, nil
 }
 
 type RepositoriesService interface {

@@ -9,10 +9,15 @@ type VCS interface {
 	Name() string
 	Branch() string
 	Commit() string
-	Scaffold(name string) (string, error)
+	Scaffold(name string) (*RepositoryInfo, error)
 	Webhook(name, url string) error
 	Clone(dir, name, url string, out io.Writer) error
 	Validate() error
+}
+
+type RepositoryInfo struct {
+	SSHURL  string
+	HTTPURL string
 }
 
 var systems = []VCS{&git{}}

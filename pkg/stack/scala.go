@@ -1,13 +1,11 @@
 package stack
 
 import (
-	"bytes"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 )
 
 type Scala struct{}
@@ -35,16 +33,7 @@ func (s Scala) Scaffold(dir, name string, data templating.TemplateData) error {
 		{"src/main/resources/logback.xml", logbackXml},
 	}
 	for _, x := range files {
-		tpl, err := template.New("content").Parse(x.content)
-		if err != nil {
-			return err
-		}
-		buf := bytes.Buffer{}
-		if err := tpl.Execute(&buf, data); err != nil {
-			return err
-		}
-
-		if err := file.Write(dir, x.name, buf.String()); err != nil {
+		if err := file.WriteTemplated(dir, x.name, x.content, data); err != nil {
 			return err
 		}
 	}

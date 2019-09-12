@@ -15,6 +15,7 @@ import (
 	url2 "net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -186,8 +187,8 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exi
 				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 				exit(-4)
 			} else {
-				_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository))
-				if err := vcs.Clone(dir, name, repository, out); err != nil {
+				_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
+				if err := vcs.Clone(dir, name, repository.SSHURL, out); err != nil {
 					_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 					exit(-5)
 				} else {
@@ -197,7 +198,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exi
 						exit(-6)
 					} else {
 						_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-						webhook, err := ci.Scaffold(dir, name, repository)
+						webhook, err := ci.Scaffold(dir, name, repository.SSHURL)
 						if err != nil {
 							_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 							exit(-7)
@@ -211,7 +212,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exi
 									exit(-9)
 								} else {
 									badges := ci.Badges()
-									if url, err := url2.Parse(repository); err != nil {
+									if url, err := url2.Parse(repository.HTTPURL); err != nil {
 										_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 										exit(-10)
 									} else {
@@ -219,15 +220,16 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer, exi
 											ProjectName:    name,
 											Badges:         badges,
 											Organisation:   c.Organisation,
-											RepositoryUrl:  repository,
+											RegistryUrl:    registry.RegistryUrl(),
+											RepositoryUrl:  repository.SSHURL,
 											RepositoryHost: url.Host,
-											RepositoryPath: url.Path,
+											RepositoryPath: strings.Replace(url.Path, ".git", "", 1),
 										}
 										if err := createReadme(projectDir, name, data); err != nil {
 											_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 											exit(-11)
 										} else {
-											if err := createDeployment(projectDir, name, registry); err != nil {
+											if err := createDeployment(projectDir, data); err != nil {
 												_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 												exit(-12)
 											}
@@ -303,10 +305,75 @@ func createReadme(dir, name string, data templating.TemplateData) error {
 	return file.Write(dir, "README.md", buff.String())
 }
 
-func createDeployment(dir, name string, registry Registry) error {
-	return nil
+func createDeployment(dir string, data templating.TemplateData) error {
+	return file.WriteTemplated(dir, filepath.Join("deployment_files", "deploy.yaml"), deployment, data)
 }
 
+var deployment = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .ProjectName }}
+  name: {{ .ProjectName }}
+  annotations:
+    kubernetes.io/change-cause: "${TIMESTAMP} Deployed commit id: ${COMMIT}"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{ .ProjectName }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ .ProjectName }}
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - {{ .ProjectName }}
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: {{ .ProjectName }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+        imagePullPolicy: Always
+        image: {{ .RegistryUrl }}/{{ .ProjectName }}:${COMMIT}
+        ports:
+        - containerPort: 80
+      restartPolicy: Always
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .ProjectName }}
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: {{ .ProjectName }}
+  type: ClusterIP
+`
 var abs = filepath.Abs
 
 func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
@@ -346,78 +413,6 @@ func parseConfig(content []byte, config *Config) error {
 	if err := yaml.UnmarshalStrict(content, &config); err != nil {
 		return err
 	} else {
-		//var missingFields []string
-		//
-		//if err = handleDefaultValues(reflect.ValueOf(config).Elem(), &missingFields, ""); err != nil {
-		//	panic(err)
-		//}
-
-		//if len(missingFields) != 0 {
-		//	return errors.New(fmt.Sprintf("Missing required value for field(s): '%v'\n", missingFields))
-		//}
 		return nil
 	}
 }
-
-//func handleDefaultValues(t reflect.Value, missingFields *[]string, prefix string) error {
-//	refType := t.Type()
-//	for i := 0; i < refType.NumField(); i++ {
-//		name := strings.TrimPrefix(fmt.Sprintf("%s.%s", prefix, refType.Field(i).Name), ".")
-//		value := t.Field(i)
-//		defaultValue := refType.Field(i).Tag.Get("default")
-//		mandatory := refType.Field(i).Tag.Get("optional") != "true"
-//		if value.Kind() == reflect.Struct {
-//			if err := handleDefaultValues(value, missingFields, name); err != nil {
-//				return err
-//			}
-//		} else if value.Kind() == reflect.Ptr && !value.IsNil() {
-//			if err := handleDefaultValues(value.Elem(), missingFields, name); err != nil {
-//				return err
-//			}
-//		} else if isZeroOfUnderlyingType(value) && mandatory {
-//			if defaultValue == "" {
-//				*missingFields = append(*missingFields, name)
-//			} else {
-//				log.Printf("Setting default value for field '%s' = '%s'", name, defaultValue)
-//				if err := set(value, name, defaultValue, missingFields); err != nil {
-//					return err
-//				}
-//			}
-//		}
-//	}
-//
-//	return nil
-//}
-
-//func isZeroOfUnderlyingType(x reflect.Value) bool {
-//	return reflect.DeepEqual(x.Interface(), reflect.Zero(x.Type()).Interface())
-//}
-
-//func set(field reflect.Value, name string, value string, missingFields *[]string) error {
-//	switch field.Kind() {
-//	case reflect.Slice:
-//		arr := strings.Split(value, ",")
-//		field.Set(reflect.ValueOf(arr))
-//	case reflect.Struct:
-//		s := reflect.New(field.Type())
-//		if err := handleDefaultValues(s.Elem(), missingFields, name); err != nil {
-//			return err
-//		}
-//		field.Set(s.Elem())
-//	case reflect.String:
-//		field.SetString(value)
-//	case reflect.Bool:
-//		bvalue, err := strconv.ParseBool(value)
-//		if err != nil {
-//			return err
-//		}
-//		field.SetBool(bvalue)
-//	case reflect.Int:
-//		intValue, err := strconv.ParseInt(value, 10, 32)
-//		if err != nil {
-//			return err
-//		}
-//		field.SetInt(intValue)
-//	}
-//	return nil
-//}

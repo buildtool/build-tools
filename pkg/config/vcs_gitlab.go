@@ -8,8 +8,8 @@ func (v GitlabVCS) Name() string {
 	return "Gitlab"
 }
 
-func (v GitlabVCS) Scaffold(name string) (string, error) {
-	return "", nil
+func (v GitlabVCS) Scaffold(name string) (*RepositoryInfo, error) {
+	return nil, nil
 }
 
 func (v GitlabVCS) Webhook(name, url string) error {

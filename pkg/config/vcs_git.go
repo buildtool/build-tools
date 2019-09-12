@@ -38,8 +38,8 @@ func (v *git) Name() string {
 	return "git"
 }
 
-func (v *git) Scaffold(name string) (string, error) {
-	return "", nil
+func (v *git) Scaffold(name string) (*RepositoryInfo, error) {
+	return nil, nil
 }
 
 func (v *git) Webhook(name, url string) error {
