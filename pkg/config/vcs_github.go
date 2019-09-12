@@ -15,6 +15,7 @@ type GithubVCS struct {
 	Organisation string `yaml:"organisation" env:"GITHUB_ORG"`
 	Public       bool   `yaml:"public"`
 	repoOwner    string
+	repositories RepositoriesService
 }
 
 func (v *GithubVCS) Name() string {
@@ -22,36 +23,12 @@ func (v *GithubVCS) Name() string {
 }
 
 func (v *GithubVCS) Scaffold(name string) (*RepositoryInfo, error) {
-	return v.scaffold(v.client().Repositories, name)
-}
-
-func (v *GithubVCS) Webhook(name, url string) error {
-	return v.webhook(v.client().Repositories, name, url)
-}
-
-func (v *GithubVCS) Validate() error {
-	if len(v.Token) == 0 {
-		return errors.New("token is required")
-	}
-	return nil
-}
-
-var _ VCS = &GithubVCS{}
-
-func (v *GithubVCS) client() *github.Client {
-	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: v.Token},
-	)))
-	return client
-}
-
-func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name string) (*RepositoryInfo, error) {
 	repo := &github.Repository{
 		Name:     wrapString(name),
 		Private:  wrapBool(v.Public),
 		AutoInit: wrapBool(true),
 	}
-	repo, resp, err := repositoriesService.Create(context.Background(), v.Organisation, repo)
+	repo, resp, err := v.repositories.Create(context.Background(), v.Organisation, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +47,7 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 			EnforceAdmins: true,
 		}
 
-		_, response, err := repositoriesService.UpdateBranchProtection(context.Background(), v.repoOwner, *repo.Name, "master", preq)
+		_, response, err := v.repositories.UpdateBranchProtection(context.Background(), v.repoOwner, *repo.Name, "master", preq)
 		if err != nil || response.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to set repository branch protection %s", response.Status)
 		}
@@ -83,7 +60,7 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 	}, nil
 }
 
-func (v *GithubVCS) webhook(repositoriesService RepositoriesService, name, url string) error {
+func (v *GithubVCS) Webhook(name, url string) error {
 	hook := &github.Hook{
 		Events: []string{
 			"push",
@@ -97,13 +74,29 @@ func (v *GithubVCS) webhook(repositoriesService RepositoriesService, name, url s
 		Active: wrapBool(true),
 	}
 
-	_, resp, err := repositoriesService.CreateHook(context.Background(), v.repoOwner, name, hook)
+	_, resp, err := v.repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
 	if err != nil || resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("failed to create webhook %s", resp.Status)
 	}
 
 	return nil
 }
+
+func (v *GithubVCS) Validate() error {
+	if len(v.Token) == 0 {
+		return errors.New("token is required")
+	}
+	return nil
+}
+
+func (v *GithubVCS) configure() {
+	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: v.Token},
+	)))
+	v.repositories = client.Repositories
+}
+
+var _ VCS = &GithubVCS{}
 
 type RepositoriesService interface {
 	Create(ctx context.Context, org string, repo *github.Repository) (*github.Repository, *github.Response, error)

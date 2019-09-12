@@ -17,13 +17,13 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 	repoCloneUrl := "https://github.com/example/repo"
 	orgName := "org"
 
-	git := GithubVCS{
-		Organisation: orgName,
-	}
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
+	git := GithubVCS{
+		Organisation: orgName,
+		repositories: m,
+	}
 
 	repository := github.Repository{
 		Name:     wrapString(repoName),
@@ -50,7 +50,7 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 		}).Return(nil, githubOkResponse, nil).
 		Times(1)
 
-	res, err := git.scaffold(m, repoName)
+	res, err := git.Scaffold(repoName)
 	assert.NoError(t, err)
 	assert.Equal(t, &RepositoryInfo{repoSSHUrl, repoCloneUrl}, res)
 }
@@ -60,11 +60,10 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 	repoSSHUrl := "cloneurl"
 	repoCloneUrl := "https://github.com/example/repo"
 
-	git := GithubVCS{}
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
+	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
 		Name:     wrapString(repoName),
@@ -94,7 +93,7 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 		}).Return(nil, githubOkResponse, nil).
 		Times(1)
 
-	res, err := git.scaffold(m, repoName)
+	res, err := git.Scaffold(repoName)
 	assert.NoError(t, err)
 	assert.Equal(t, &RepositoryInfo{repoSSHUrl, repoCloneUrl}, res)
 
@@ -103,10 +102,10 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 func TestGithubVCS_Scaffold_RepositoryAlreadyExist(t *testing.T) {
 	// TODO In reality we get this error for any response that is not http.StatusCreated
 	repoName := "ALREADY_EXISTS"
-	git := GithubVCS{}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
+	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
 		Name:     wrapString(repoName),
@@ -129,19 +128,20 @@ func TestGithubVCS_Scaffold_RepositoryAlreadyExist(t *testing.T) {
 		}, nil).
 		Times(1)
 
-	_, err := git.scaffold(m, repoName)
+	_, err := git.Scaffold(repoName)
 	assert.EqualError(t, err, "failed to create repository ALREADY_EXISTS, already exists")
 }
 
 func TestGithubVCS_Scaffold_CreateError(t *testing.T) {
 	repoName := "ALREADY_EXISTS"
-	git := GithubVCS{
-		Organisation: "org",
-	}
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
+	git := GithubVCS{
+		Organisation: "org",
+		repositories: m,
+	}
 
 	repository := &github.Repository{
 		Name:     wrapString(repoName),
@@ -154,7 +154,7 @@ func TestGithubVCS_Scaffold_CreateError(t *testing.T) {
 		repository, nil, fmt.Errorf("failed to create repo")).
 		Times(1)
 
-	_, err := git.scaffold(m, repoName)
+	_, err := git.Scaffold(repoName)
 	assert.EqualError(t, err, "failed to create repo")
 }
 
@@ -162,11 +162,10 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 	repoName := "reponame"
 	repoCloneUrl := "cloneurl"
 
-	git := GithubVCS{}
-
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	m := mocks.NewMockRepositoriesService(ctrl)
+	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
 		Name:     wrapString(repoName),
@@ -196,7 +195,7 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 		nil, githubBadRequestResponse, nil).
 		Times(1)
 
-	_, err := git.scaffold(m, repoName)
+	_, err := git.Scaffold(repoName)
 	assert.EqualError(t, err, "failed to set repository branch protection something went wrong")
 }
 
@@ -213,13 +212,14 @@ func TestGithubVCS_SillyTests(t *testing.T) {
 }
 
 func TestGithubVCS_Webhook(t *testing.T) {
-	githubVCS := GithubVCS{
-		repoOwner: "test",
-	}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	m := mocks.NewMockRepositoriesService(ctrl)
+	githubVCS := GithubVCS{
+		repoOwner:    "test",
+		repositories: m,
+	}
 	m.EXPECT().CreateHook(context.Background(), "test", "repo", &github.Hook{
 		Events: []string{
 			"push",
@@ -234,18 +234,19 @@ func TestGithubVCS_Webhook(t *testing.T) {
 	}).Return(nil, githubCreatedResponse, nil).
 		Times(1)
 
-	err := githubVCS.webhook(m, "repo", "https://ab.cd")
+	err := githubVCS.Webhook("repo", "https://ab.cd")
 	assert.NoError(t, err)
 }
 
 func TestGithubVCS_WebhookError(t *testing.T) {
-	githubVCS := GithubVCS{
-		repoOwner: "test",
-	}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	m := mocks.NewMockRepositoriesService(ctrl)
+	githubVCS := GithubVCS{
+		repoOwner:    "test",
+		repositories: m,
+	}
 	m.EXPECT().CreateHook(context.Background(), "test", "repo", &github.Hook{
 		Events: []string{
 			"push",
@@ -260,7 +261,7 @@ func TestGithubVCS_WebhookError(t *testing.T) {
 	}).Return(nil, githubBadRequestResponse, nil).
 		Times(1)
 
-	err := githubVCS.webhook(m, "repo", "https://ab.cd")
+	err := githubVCS.Webhook("repo", "https://ab.cd")
 	assert.EqualError(t, err, "failed to create webhook something went wrong")
 }
 

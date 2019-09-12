@@ -20,4 +20,6 @@ func (v GitlabVCS) Validate() error {
 	return nil
 }
 
+func (v GitlabVCS) configure() {}
+
 var _ VCS = &GitlabVCS{}

@@ -20,4 +20,6 @@ func (v AzureVCS) Validate() error {
 	return nil
 }
 
+func (v AzureVCS) configure() {}
+
 var _ VCS = &AzureVCS{}

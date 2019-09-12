@@ -39,6 +39,8 @@ func (c noOpCI) Badges() string {
 	return ""
 }
 
+func (c noOpCI) configure() {}
+
 func (c noOpCI) configured() bool {
 	return false
 }

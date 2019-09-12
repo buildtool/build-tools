@@ -103,10 +103,13 @@ func initEmptyConfig() *Config {
 func (c *Config) CurrentVCS() VCS {
 	switch c.VCS.Selected {
 	case "azure":
+		c.VCS.Azure.configure()
 		return c.VCS.Azure
 	case "github":
+		c.VCS.Github.configure()
 		return c.VCS.Github
 	case "gitlab":
+		c.VCS.Gitlab.configure()
 		return c.VCS.Gitlab
 	}
 	return c.VCS.VCS
@@ -116,12 +119,15 @@ func (c *Config) CurrentCI() CI {
 	switch c.CI.Selected {
 	case "azure":
 		c.CI.Azure.setVCS(*c)
+		c.CI.Azure.configure()
 		return c.CI.Azure
 	case "buildkite":
 		c.CI.Buildkite.setVCS(*c)
+		c.CI.Buildkite.configure()
 		return c.CI.Buildkite
 	case "gitlab":
 		c.CI.Gitlab.setVCS(*c)
+		c.CI.Gitlab.configure()
 		return c.CI.Gitlab
 	case "":
 		for _, ci := range c.availableCI {

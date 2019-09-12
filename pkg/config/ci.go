@@ -16,6 +16,7 @@ type CI interface {
 	Badges() string
 	setVCS(cfg Config)
 	configured() bool
+	configure()
 }
 
 type ci struct {

@@ -34,6 +34,8 @@ func (v *git) identify(dir string, out io.Writer) bool {
 	return true
 }
 
+func (v *git) configure() {}
+
 func (v *git) Name() string {
 	return "git"
 }

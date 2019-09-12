@@ -51,6 +51,8 @@ func (c AzureCI) Badges() string {
 	return ""
 }
 
+func (c AzureCI) configure() {}
+
 func (c AzureCI) configured() bool {
 	return c.CIBuildName != ""
 }

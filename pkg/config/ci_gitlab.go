@@ -55,6 +55,8 @@ func (c GitlabCI) Badges() string {
 	return ""
 }
 
+func (c GitlabCI) configure() {}
+
 func (c GitlabCI) configured() bool {
 	return c.CIBuildName != ""
 }

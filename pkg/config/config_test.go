@@ -479,6 +479,8 @@ func (m mockCi) Badges() string {
 	return ""
 }
 
+func (m mockCi) configure() {}
+
 func (m mockCi) configured() bool {
 	return true
 }
@@ -495,6 +497,8 @@ type mockVcs struct {
 func (m mockVcs) identify(dir string, out io.Writer) bool {
 	panic("implement me")
 }
+
+func (m mockVcs) configure() {}
 
 func (m mockVcs) Name() string {
 	return "mockVcs"

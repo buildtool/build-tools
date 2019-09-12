@@ -6,6 +6,7 @@ import (
 
 type VCS interface {
 	identify(dir string, out io.Writer) bool
+	configure()
 	Name() string
 	Branch() string
 	Commit() string

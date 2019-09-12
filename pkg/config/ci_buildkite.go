@@ -57,6 +57,8 @@ func (c BuildkiteCI) Badges() string {
 	return ""
 }
 
+func (c BuildkiteCI) configure() {}
+
 func (c BuildkiteCI) configured() bool {
 	return c.CIBuildName != ""
 }

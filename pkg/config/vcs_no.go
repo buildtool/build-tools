@@ -17,6 +17,8 @@ func (v no) identify(dir string, out io.Writer) bool {
 	return true
 }
 
+func (v no) configure() {}
+
 func (v no) Name() string {
 	return "none"
 }
