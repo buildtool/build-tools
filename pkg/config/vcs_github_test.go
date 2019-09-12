@@ -37,12 +37,7 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 
 	m.EXPECT().
 		Create(context.Background(), orgName, &repository).Return(
-		&repositoryResponse,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusCreated,
-			},
-		}, nil).
+		&repositoryResponse, githubCreatedResponse, nil).
 		Times(1)
 
 	m.EXPECT().
@@ -52,12 +47,7 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 				DismissStaleReviews:          true,
 				RequiredApprovingReviewCount: 1,
 			},
-		}).Return(nil,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusOK,
-			},
-		}, nil).
+		}).Return(nil, githubOkResponse, nil).
 		Times(1)
 
 	res, err := git.scaffold(m, repoName)
@@ -91,12 +81,7 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 
 	m.EXPECT().
 		Create(context.Background(), "", &repository).Return(
-		&repositoryResponse,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusCreated,
-			},
-		}, nil).
+		&repositoryResponse, githubCreatedResponse, nil).
 		Times(1)
 
 	m.EXPECT().
@@ -106,12 +91,7 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 				DismissStaleReviews:          true,
 				RequiredApprovingReviewCount: 1,
 			},
-		}).Return(nil,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusOK,
-			},
-		}, nil).
+		}).Return(nil, githubOkResponse, nil).
 		Times(1)
 
 	res, err := git.scaffold(m, repoName)
@@ -202,12 +182,7 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 
 	m.EXPECT().
 		Create(context.Background(), "", &repository).Return(
-		&repositoryResponse,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusCreated,
-			},
-		}, nil).
+		&repositoryResponse, githubCreatedResponse, nil).
 		Times(1)
 
 	m.EXPECT().
@@ -218,16 +193,92 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 				RequiredApprovingReviewCount: 1,
 			},
 		}).Return(
-		nil,
-		&github.Response{
-			Response: &http.Response{
-				StatusCode: http.StatusBadRequest,
-				Status:     "something went wrong",
-			},
-		}, nil).
+		nil, githubBadRequestResponse, nil).
 		Times(1)
 
 	_, err := git.scaffold(m, repoName)
 	assert.EqualError(t, err, "failed to set repository branch protection something went wrong")
+}
 
+func TestGithubVCS_SillyTests(t *testing.T) {
+	githubVCS := GithubVCS{}
+	assert.EqualErrorf(t, githubVCS.Validate(), "token is required", "")
+	githubVCS.Token = ""
+	assert.EqualErrorf(t, githubVCS.Validate(), "token is required", "")
+
+	githubVCS.Token = "token"
+	assert.NoError(t, githubVCS.Validate())
+
+	assert.Equal(t, githubVCS.Name(), "Github")
+}
+
+func TestGithubVCS_Webhook(t *testing.T) {
+	githubVCS := GithubVCS{
+		repoOwner: "test",
+	}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockRepositoriesService(ctrl)
+	m.EXPECT().CreateHook(context.Background(), "test", "repo", &github.Hook{
+		Events: []string{
+			"push",
+			"pull_request",
+			"deployment",
+		},
+		Config: map[string]interface{}{
+			"url":          "https://ab.cd",
+			"content_type": "json",
+		},
+		Active: wrapBool(true),
+	}).Return(nil, githubCreatedResponse, nil).
+		Times(1)
+
+	err := githubVCS.webhook(m, "repo", "https://ab.cd")
+	assert.NoError(t, err)
+}
+
+func TestGithubVCS_WebhookError(t *testing.T) {
+	githubVCS := GithubVCS{
+		repoOwner: "test",
+	}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	m := mocks.NewMockRepositoriesService(ctrl)
+	m.EXPECT().CreateHook(context.Background(), "test", "repo", &github.Hook{
+		Events: []string{
+			"push",
+			"pull_request",
+			"deployment",
+		},
+		Config: map[string]interface{}{
+			"url":          "https://ab.cd",
+			"content_type": "json",
+		},
+		Active: wrapBool(true),
+	}).Return(nil, githubBadRequestResponse, nil).
+		Times(1)
+
+	err := githubVCS.webhook(m, "repo", "https://ab.cd")
+	assert.EqualError(t, err, "failed to create webhook something went wrong")
+}
+
+var githubOkResponse = &github.Response{
+	Response: &http.Response{
+		StatusCode: http.StatusOK,
+	},
+}
+
+var githubCreatedResponse = &github.Response{
+	Response: &http.Response{
+		StatusCode: http.StatusCreated,
+	},
+}
+
+var githubBadRequestResponse = &github.Response{
+	Response: &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Status:     "something went wrong",
+	},
 }

@@ -279,3 +279,8 @@ Other environment variables that need to be defined (either automatically by the
         name: prod
       only:
         - master
+
+# Developing
+
+## Generate test mocks
+    mockgen -package=mocks -destination=pkg/config/mocks/MockRepositoriesService.go gitlab.com/sparetimecoders/build-tools/pkg/config RepositoriesService

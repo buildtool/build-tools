@@ -50,6 +50,22 @@ func (mr *MockRepositoriesServiceMockRecorder) Create(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockRepositoriesService)(nil).Create), arg0, arg1, arg2)
 }
 
+// CreateHook mocks base method
+func (m *MockRepositoriesService) CreateHook(arg0 context.Context, arg1, arg2 string, arg3 *github.Hook) (*github.Hook, *github.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateHook", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*github.Hook)
+	ret1, _ := ret[1].(*github.Response)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// CreateHook indicates an expected call of CreateHook
+func (mr *MockRepositoriesServiceMockRecorder) CreateHook(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateHook", reflect.TypeOf((*MockRepositoriesService)(nil).CreateHook), arg0, arg1, arg2, arg3)
+}
+
 // UpdateBranchProtection mocks base method
 func (m *MockRepositoriesService) UpdateBranchProtection(arg0 context.Context, arg1, arg2, arg3 string, arg4 *github.ProtectionRequest) (*github.Protection, *github.Response, error) {
 	m.ctrl.T.Helper()

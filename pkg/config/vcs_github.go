@@ -26,23 +26,7 @@ func (v *GithubVCS) Scaffold(name string) (*RepositoryInfo, error) {
 }
 
 func (v *GithubVCS) Webhook(name, url string) error {
-	hook := &github.Hook{
-		URL: wrapString(url),
-		Events: []string{
-			"push",
-			"pull_request",
-			"deployment",
-		},
-		Config: map[string]interface{}{
-			"url":          url,
-			"content_type": "json",
-		},
-		Active: wrapBool(true),
-	}
-
-	_, _, err := v.client().Repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
-
-	return err
+	return v.webhook(v.client().Repositories, name, url)
 }
 
 func (v *GithubVCS) Validate() error {
@@ -99,7 +83,30 @@ func (v *GithubVCS) scaffold(repositoriesService RepositoriesService, name strin
 	}, nil
 }
 
+func (v *GithubVCS) webhook(repositoriesService RepositoriesService, name, url string) error {
+	hook := &github.Hook{
+		Events: []string{
+			"push",
+			"pull_request",
+			"deployment",
+		},
+		Config: map[string]interface{}{
+			"url":          url,
+			"content_type": "json",
+		},
+		Active: wrapBool(true),
+	}
+
+	_, resp, err := repositoriesService.CreateHook(context.Background(), v.repoOwner, name, hook)
+	if err != nil || resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("failed to create webhook %s", resp.Status)
+	}
+
+	return nil
+}
+
 type RepositoriesService interface {
 	Create(ctx context.Context, org string, repo *github.Repository) (*github.Repository, *github.Response, error)
 	UpdateBranchProtection(ctx context.Context, owner, repo, branch string, preq *github.ProtectionRequest) (*github.Protection, *github.Response, error)
+	CreateHook(ctx context.Context, owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
 }
