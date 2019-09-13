@@ -536,7 +536,7 @@ func (m mockVcs) Clone(dir, name, url string, out io.Writer) error {
 	return nil
 }
 
-func (m mockVcs) Validate() error {
+func (m mockVcs) Validate(name string) error {
 	return nil
 }
 

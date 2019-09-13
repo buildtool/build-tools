@@ -13,7 +13,7 @@ type VCS interface {
 	Scaffold(name string) (*RepositoryInfo, error)
 	Webhook(name, url string) error
 	Clone(dir, name, url string, out io.Writer) error
-	Validate() error
+	Validate(name string) error
 }
 
 type RepositoryInfo struct {

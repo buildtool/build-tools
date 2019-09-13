@@ -184,7 +184,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -2
 	}
-	if err := vcs.Validate(); err != nil {
+	if err := vcs.Validate(name); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -3
 	}

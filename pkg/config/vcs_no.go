@@ -31,7 +31,7 @@ func (v no) Webhook(name, url string) error {
 	return nil
 }
 
-func (v no) Validate() error {
+func (v no) Validate(name string) error {
 	return nil
 }
 

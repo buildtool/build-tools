@@ -201,12 +201,12 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 
 func TestGithubVCS_SillyTests(t *testing.T) {
 	githubVCS := GithubVCS{}
-	assert.EqualErrorf(t, githubVCS.Validate(), "token is required", "")
+	assert.EqualErrorf(t, githubVCS.Validate("name"), "token is required", "")
 	githubVCS.Token = ""
-	assert.EqualErrorf(t, githubVCS.Validate(), "token is required", "")
+	assert.EqualErrorf(t, githubVCS.Validate("name"), "token is required", "")
 
 	githubVCS.Token = "token"
-	assert.NoError(t, githubVCS.Validate())
+	assert.NoError(t, githubVCS.Validate("name"))
 
 	assert.Equal(t, githubVCS.Name(), "Github")
 }

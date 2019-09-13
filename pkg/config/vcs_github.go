@@ -82,10 +82,11 @@ func (v *GithubVCS) Webhook(name, url string) error {
 	return nil
 }
 
-func (v *GithubVCS) Validate() error {
+func (v *GithubVCS) Validate(name string) error {
 	if len(v.Token) == 0 {
 		return errors.New("token is required")
 	}
+	// TODO: Check that repository doesn't already exists
 	return nil
 }
 

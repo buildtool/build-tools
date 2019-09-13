@@ -16,7 +16,7 @@ func (v AzureVCS) Webhook(name, url string) error {
 	return nil
 }
 
-func (v AzureVCS) Validate() error {
+func (v AzureVCS) Validate(name string) error {
 	return nil
 }
 

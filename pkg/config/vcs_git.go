@@ -48,7 +48,7 @@ func (v *git) Webhook(name, url string) error {
 	return nil
 }
 
-func (v *git) Validate() error {
+func (v *git) Validate(name string) error {
 	return nil
 }
 
