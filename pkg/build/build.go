@@ -2,6 +2,7 @@ package build
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	dkr "docker.io/go-docker"
 	"docker.io/go-docker/api/types"
@@ -12,7 +13,10 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
 	"io"
+	"regexp"
+	"strings"
 )
 
 type responsetype struct {
@@ -71,34 +75,64 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		return err
+	} else {
+		if err := currentRegistry.Login(client, out); err != nil {
+			return err
+		}
 	}
 
-	if err := currentRegistry.Login(client, out); err != nil {
+	var buf bytes.Buffer
+	tee := io.TeeReader(buildContext, &buf)
+	stages, err := findStages(tee, dockerfile)
+	if err != nil {
 		return err
 	}
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
-	tags := []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch),
-	}
-	if currentCI.Branch() == "master" {
-		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
-	}
+	var caches []string
+
 	args := map[string]*string{
 		"CI_COMMIT": &commit,
 		"CI_BRANCH": &branch,
 	}
-	// TODO: Parse Dockerfile and build and tag each stage for caching?
+	for _, stage := range stages {
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
+		caches = append([]string{tag}, caches...)
+		if err := doBuild(client, &buf, dockerfile, args, []string{tag}, caches, stage, out, eout); err != nil {
+			return err
+		}
+	}
+
+	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
+	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
+	tags := []string{
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+		branchTag,
+	}
+	if currentCI.Branch() == "master" {
+		tags = append(tags, latestTag)
+	}
+
+	caches = append([]string{branchTag, latestTag}, caches...)
+	if err := doBuild(client, &buf, dockerfile, args, tags, caches, "", out, eout); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, out, eout io.Writer) error {
 	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
 		BuildArgs:  args,
+		CacheFrom:  caches,
 		Dockerfile: dockerfile,
 		Memory:     3 * 1024 * 1024 * 1024,
 		MemorySwap: -1,
 		Remove:     true,
 		ShmSize:    256 * 1024 * 1024,
 		Tags:       tags,
+		Target:     target,
 	})
 
 	if err != nil {
@@ -123,4 +157,23 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	}
 
 	return nil
+}
+
+func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
+	content, err := tar.ExtractFileContent(buildContext, dockerfile)
+	if err != nil {
+		return nil, err
+	}
+	var stages []string
+
+	re := regexp.MustCompile(`(?i)^FROM .* AS (.*)$`)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		text := scanner.Text()
+		matches := re.FindStringSubmatch(text)
+		if len(matches) != 0 {
+			stages = append(stages, matches[1])
+		}
+	}
+	return stages, nil
 }

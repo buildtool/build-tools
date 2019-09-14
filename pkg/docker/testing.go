@@ -16,11 +16,12 @@ type MockDocker struct {
 	Username      string
 	Password      string
 	ServerAddress string
-	BuildContext  io.Reader
-	BuildOptions  types.ImageBuildOptions
+	BuildContext  []io.Reader
+	BuildOptions  []types.ImageBuildOptions
 	Images        []string
 	LoginError    error
-	BuildError    error
+	BuildCount    int
+	BuildError    []error
 	PushError     error
 	PushOutput    *string
 	BrokenOutput  bool
@@ -28,17 +29,18 @@ type MockDocker struct {
 }
 
 func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
-	m.BuildContext = buildContext
-	m.BuildOptions = options
+	defer func() { m.BuildCount = m.BuildCount + 1 }()
+	m.BuildContext = append(m.BuildContext, buildContext)
+	m.BuildOptions = append(m.BuildOptions, options)
 
 	if m.BrokenOutput {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, m.BuildError
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, nil
 	}
 	if m.ResponseError != nil {
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
 	}
-	if m.BuildError != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError
+	if len(m.BuildError) > m.BuildCount && m.BuildError[m.BuildCount] != nil {
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
 	}
 	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"stream":"Build successful"}`))}, nil
 }

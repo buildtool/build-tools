@@ -3,10 +3,12 @@ package build
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -37,7 +39,7 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	yaml := `ci: [] `
 	file := filepath.Join(name, ".buildtools.yaml")
 	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
-	defer os.Remove(file)
+	defer func() { _ = os.Remove(file) }()
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -102,7 +104,7 @@ func TestBuild_BuildError(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	client := &docker.MockDocker{BuildError: fmt.Errorf("build error")}
+	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
 	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
@@ -170,15 +172,21 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
-	assert.Equal(t, 2, len(client.BuildOptions.BuildArgs))
-	assert.Equal(t, "abc123", *client.BuildOptions.BuildArgs["CI_COMMIT"])
-	assert.Equal(t, "feature1", *client.BuildOptions.BuildArgs["CI_BRANCH"])
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions.Memory)
-	assert.Equal(t, int64(-1), client.BuildOptions.MemorySwap)
-	assert.Equal(t, true, client.BuildOptions.Remove)
-	assert.Equal(t, int64(256*1024*1024), client.BuildOptions.ShmSize)
-	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions.Tags)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, 2, len(client.BuildOptions[0].BuildArgs))
+	assert.Equal(t, "abc123", *client.BuildOptions[0].BuildArgs["CI_COMMIT"])
+	assert.Equal(t, "feature1", *client.BuildOptions[0].BuildArgs["CI_BRANCH"])
+	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, "Logged in\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -199,12 +207,12 @@ func TestBuild_MasterBranch(t *testing.T) {
 	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "Dockerfile", client.BuildOptions.Dockerfile)
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions.Memory)
-	assert.Equal(t, int64(-1), client.BuildOptions.MemorySwap)
-	assert.Equal(t, true, client.BuildOptions.Remove)
-	assert.Equal(t, int64(256*1024*1024), client.BuildOptions.ShmSize)
-	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions.Tags)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, "Logged in\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -244,3 +252,99 @@ func TestBuild_UnreadableDockerignore(t *testing.T) {
 	assert.Equal(t, -2, exitCode)
 	assert.Equal(t, fmt.Sprintf("read %s: is a directory\n", filename), out.String())
 }
+
+func TestBuild_Unreadable_Dockerfile(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+
+	err := build(client, name, ioutil.NopCloser(&brokenReader{}), "Dockerfile", out, eout)
+
+	assert.EqualError(t, err, "read error")
+}
+
+func TestBuild_HandleCaching(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	dockerfile := `
+FROM scratch as build
+RUN echo apa > file
+FROM scratch as test
+RUN echo cepa > file2
+FROM scratch
+COPY --from=build file .
+COPY --from=test file2 .
+`
+
+	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, 3, len(client.BuildOptions))
+	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].Tags)
+	assert.Equal(t, []string{"repo/reponame:test"}, client.BuildOptions[1].Tags)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[2].Tags)
+	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].CacheFrom)
+	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[1].CacheFrom)
+	assert.Equal(t, []string{"repo/reponame:master", "repo/reponame:latest", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[2].CacheFrom)
+	assert.Equal(t, "Logged in\nBuild successfulBuild successfulBuild successful", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
+func TestBuild_BrokenStage(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
+	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{BuildError: []error{nil, errors.New("build error")}}
+	dockerfile := `
+FROM scratch as build
+RUN echo apa > file
+FROM scratch as test
+RUN echo cepa > file2
+FROM scratch
+COPY --from=build file .
+COPY --from=test file2 .
+`
+
+	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+
+	assert.EqualError(t, err, "build error")
+}
+
+type brokenReader struct{}
+
+func (b brokenReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("read error")
+}
+
+var _ io.Reader = &brokenReader{}
