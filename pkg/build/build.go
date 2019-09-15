@@ -71,7 +71,10 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	if err != nil {
 		return err
 	}
-	currentCI := cfg.CurrentCI()
+	currentCI, err := cfg.CurrentCI()
+	if err != nil {
+		return err
+	}
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		return err

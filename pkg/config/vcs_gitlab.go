@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/xanzy/go-gitlab"
 	"path/filepath"
-	"strings"
 )
 
 type projectsService interface {
@@ -85,9 +84,9 @@ func (v *GitlabVCS) Validate(name string) error {
 		return err
 	}
 	path := filepath.Join(v.Group, name)
-	project, _, err := v.projectsService.GetProject(path, nil)
+	project, response, err := v.projectsService.GetProject(path, nil)
 	if err != nil {
-		if !strings.Contains(err.Error(), "404 Project Not Found") {
+		if response == nil || response.StatusCode != 404 {
 			return err
 		}
 	}

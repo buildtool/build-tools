@@ -50,7 +50,7 @@ func TestLoad_AbsFail(t *testing.T) {
 func TestLoad_Empty(t *testing.T) {
 	os.Clearenv()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() { _ = os.RemoveAll(name) }()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -65,7 +65,7 @@ func TestLoad_Empty(t *testing.T) {
 
 func TestLoad_BrokenYAML(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
@@ -83,7 +83,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 
 func TestLoad_UnreadableFile(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".buildtools.yaml")
 	_ = os.Mkdir(filename, 0777)
 
@@ -100,7 +100,7 @@ func TestLoad_UnreadableFile(t *testing.T) {
 
 func TestLoad_YAML(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 vcs:
   selected: gitlab
@@ -159,7 +159,7 @@ environments:
 func TestLoad_YAML_DirStructure(t *testing.T) {
 	os.Clearenv()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci:
   selected: gitlab
 registry:
@@ -320,7 +320,7 @@ func TestScaffold_Registry_Error(t *testing.T) {
 	out := &bytes.Buffer{}
 
 	code := cfg.Scaffold(name, "project", &stack.None{}, out)
-	assert.Equal(t, -2, code)
+	assert.Equal(t, -3, code)
 	assert.Equal(t, "\x1b[0m\x1b[31mno Docker registry found\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -336,7 +336,7 @@ func TestScaffold_Validate_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -3, exitCode)
+	assert.Equal(t, -4, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[31mtoken is required\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -351,7 +351,7 @@ func TestScaffold_VcsScaffold_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -4, exitCode)
+	assert.Equal(t, -5, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -366,7 +366,7 @@ func TestScaffold_VcsClone_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -5, exitCode)
+	assert.Equal(t, -6, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -382,7 +382,7 @@ func TestScaffold_CreateDirectories_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, -7, exitCode)
 	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mmkdir %s: no such file or directory\x1b[39m\x1b[0m\n", filepath.Join(name, "project", "deployment_files")), out.String())
 }
 
@@ -398,7 +398,7 @@ func TestScaffold_CiScaffold_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -9, exitCode)
+	assert.Equal(t, -10, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -414,7 +414,7 @@ func TestScaffold_Webhook_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -10, exitCode)
+	assert.Equal(t, -11, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -429,7 +429,7 @@ func TestScaffold_StackError(t *testing.T) {
 	out := &bytes.Buffer{}
 
 	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
-	assert.Equal(t, -14, exitCode)
+	assert.Equal(t, -15, exitCode)
 
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
@@ -468,6 +468,10 @@ func (m mockCi) Commit() string {
 	panic("implement me")
 }
 
+func (m mockCi) Validate(name string) error {
+	return nil
+}
+
 func (m mockCi) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	if m.scaffoldErr != nil {
 		return nil, m.scaffoldErr
@@ -479,7 +483,9 @@ func (m mockCi) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (m mockCi) configure() {}
+func (m mockCi) configure() error {
+	return nil
+}
 
 func (m mockCi) configured() bool {
 	return true

@@ -19,7 +19,8 @@ func TestIdentify_Azure(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "abc123", result.Commit())
 	assert.Equal(t, "reponame", result.BuildName())
@@ -38,7 +39,8 @@ func TestName_Azure(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.Equal(t, "Azure", result.Name())
 }
 
@@ -55,7 +57,8 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, filepath.Base(dir), result.BuildName())
 	assert.Equal(t, "", out.String())
@@ -73,7 +76,8 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "master", result.Branch())
 	assert.Equal(t, "", out.String())
@@ -91,7 +95,8 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "", out.String())

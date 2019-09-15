@@ -43,6 +43,10 @@ func (c AzureCI) Commit() string {
 	return c.CICommit
 }
 
+func (c AzureCI) Validate(name string) error {
+	return nil
+}
+
 func (c AzureCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
@@ -51,7 +55,9 @@ func (c AzureCI) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (c AzureCI) configure() {}
+func (c AzureCI) configure() error {
+	return nil
+}
 
 func (c AzureCI) configured() bool {
 	return c.CIBuildName != ""

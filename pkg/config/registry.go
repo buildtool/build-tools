@@ -40,7 +40,7 @@ type dockerRegistry struct {
 }
 
 func (r *dockerRegistry) setVCS(cfg Config) {
-	r.CI = cfg.CurrentCI()
+	//r.CI, err := cfg.CurrentCI()
 }
 
 func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eout io.Writer) error {

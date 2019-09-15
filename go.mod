@@ -9,7 +9,9 @@ require (
 	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/Sirupsen/logrus v0.0.0-00010101000000-000000000000 // indirect
 	github.com/aws/aws-sdk-go v1.19.25
+	github.com/buildkite/go-buildkite v2.2.0+incompatible
 	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect

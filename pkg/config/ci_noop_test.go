@@ -23,7 +23,8 @@ func TestNoOp(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, filepath.Base(name), result.BuildName())
 	assert.Equal(t, "master", result.BranchReplaceSlash())
@@ -38,7 +39,8 @@ func TestName_NoOp(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.Equal(t, "none", result.Name())
 }
 
@@ -47,14 +49,15 @@ func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 	_ = os.Setenv("CI", "")
 
 	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, "master", result.Branch())
 	assert.Equal(t, "", out.String())
@@ -65,14 +68,15 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	_ = os.Setenv("CI", "")
 
 	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
 	assert.NoError(t, err)
-	result := cfg.CurrentCI()
+	result, err := cfg.CurrentCI()
+	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "", out.String())

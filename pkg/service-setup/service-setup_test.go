@@ -80,14 +80,14 @@ func TestSetup_NoRegistry(t *testing.T) {
 		exitCode = code
 	}, "project")
 
-	assert.Equal(t, -2, exitCode)
+	assert.Equal(t, -3, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[31mno Docker registry found\x1b[39m\x1b[0m\n", out.String())
 }
 
 func TestSetup_BasicArgs(t *testing.T) {
 	yaml := `
 ci:
-  selected: buildkite
+  selected: azure
 registry:
   selected: dockerhub
 `

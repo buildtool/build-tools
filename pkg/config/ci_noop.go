@@ -31,6 +31,10 @@ func (c noOpCI) Commit() string {
 	return c.VCS.Commit()
 }
 
+func (c noOpCI) Validate(name string) error {
+	return nil
+}
+
 func (c noOpCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
@@ -39,7 +43,9 @@ func (c noOpCI) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (c noOpCI) configure() {}
+func (c noOpCI) configure() error {
+	return nil
+}
 
 func (c noOpCI) configured() bool {
 	return false

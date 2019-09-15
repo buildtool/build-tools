@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/xanzy/go-gitlab"
+	"net/http"
 	"testing"
 )
 
@@ -60,6 +61,9 @@ func TestGitlabVCS_Validate_Ok(t *testing.T) {
 		Group:         "group/sub",
 		groupsService: &mockGroups{},
 		projectsService: &mockProjects{
+			response: &gitlab.Response{
+				Response: &http.Response{StatusCode: 404},
+			},
 			getErr: errors.New("404 Project Not Found"),
 		},
 	}
@@ -162,6 +166,7 @@ func TestGitlabVCS_Webhook_Add_Error(t *testing.T) {
 }
 
 type mockProjects struct {
+	response   *gitlab.Response
 	getErr     error
 	createErr  error
 	hookErr    error
@@ -173,18 +178,18 @@ type mockProjects struct {
 
 func (m *mockProjects) GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error) {
 	m.pid = pid
-	return m.project, nil, m.getErr
+	return m.project, m.response, m.getErr
 }
 
 func (m *mockProjects) CreateProject(opt *gitlab.CreateProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error) {
 	m.createOpts = opt
-	return m.project, nil, m.createErr
+	return m.project, m.response, m.createErr
 }
 
 func (m *mockProjects) AddProjectHook(pid interface{}, opt *gitlab.AddProjectHookOptions, options ...gitlab.OptionFunc) (*gitlab.ProjectHook, *gitlab.Response, error) {
 	m.pid = pid
 	m.hookOpts = opt
-	return nil, nil, m.hookErr
+	return nil, m.response, m.hookErr
 }
 
 var _ projectsService = &mockProjects{}

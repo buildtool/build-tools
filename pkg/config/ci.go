@@ -12,11 +12,12 @@ type CI interface {
 	Branch() string
 	BranchReplaceSlash() string
 	Commit() string
+	Validate(name string) error
 	Scaffold(dir string, data templating.TemplateData) (*string, error)
 	Badges(name string) ([]templating.Badge, error)
 	setVCS(cfg Config)
 	configured() bool
-	configure()
+	configure() error
 }
 
 type ci struct {

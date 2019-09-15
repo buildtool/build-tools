@@ -45,12 +45,16 @@ func main() {
 				if namespace != "" {
 					env.Namespace = namespace
 				}
-				ci := cfg.CurrentCI()
-				tstamp := time.Now().Format(time.RFC3339)
-				client := kubectl.New(env, os.Stdout, os.Stderr)
-				defer client.Cleanup()
-				if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, client, os.Stdout, os.Stderr); err != nil {
+				ci, err := cfg.CurrentCI()
+				if err != nil {
 					fmt.Println(err.Error())
+				} else {
+					tstamp := time.Now().Format(time.RFC3339)
+					client := kubectl.New(env, os.Stdout, os.Stderr)
+					defer client.Cleanup()
+					if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, client, os.Stdout, os.Stderr); err != nil {
+						fmt.Println(err.Error())
+					}
 				}
 			}
 		}

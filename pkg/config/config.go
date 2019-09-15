@@ -115,31 +115,40 @@ func (c *Config) CurrentVCS() VCS {
 	return c.VCS.VCS
 }
 
-func (c *Config) CurrentCI() CI {
+func (c *Config) CurrentCI() (CI, error) {
 	switch c.CI.Selected {
 	case "azure":
 		c.CI.Azure.setVCS(*c)
-		c.CI.Azure.configure()
-		return c.CI.Azure
+		if err := c.CI.Azure.configure(); err != nil {
+			return nil, err
+		}
+		return c.CI.Azure, nil
 	case "buildkite":
 		c.CI.Buildkite.setVCS(*c)
-		c.CI.Buildkite.configure()
-		return c.CI.Buildkite
+		if err := c.CI.Buildkite.configure(); err != nil {
+			return nil, err
+		}
+		return c.CI.Buildkite, nil
 	case "gitlab":
 		c.CI.Gitlab.setVCS(*c)
-		c.CI.Gitlab.configure()
-		return c.CI.Gitlab
+		if err := c.CI.Gitlab.configure(); err != nil {
+			return nil, err
+		}
+		return c.CI.Gitlab, nil
 	case "":
 		for _, ci := range c.availableCI {
 			if ci.configured() {
 				ci.setVCS(*c)
-				return ci
+				return ci, nil
 			}
 		}
 	}
 	ci := &noOpCI{ci: &ci{}}
 	ci.setVCS(*c)
-	return ci
+	if err := ci.configure(); err != nil {
+		return nil, err
+	}
+	return ci, nil
 }
 
 func (c *Config) CurrentRegistry() (Registry, error) {
@@ -178,43 +187,47 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 
 func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int {
 	vcs := c.CurrentVCS()
-	ci := c.CurrentCI()
-	registry, err := c.CurrentRegistry()
+	ci, err := c.CurrentCI()
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -2
 	}
-	if err := vcs.Validate(name); err != nil {
+	registry, err := c.CurrentRegistry()
+	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -3
+	}
+	if err := validate(name, vcs, ci); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -4
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", vcs.Name()))
 	repository, err := vcs.Scaffold(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -4
+		return -5
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
 	if err := vcs.Clone(dir, name, repository.SSHURL, out); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -5
+		return -6
 	}
 	projectDir := filepath.Join(dir, name)
 	if err := createDirectories(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -6
+		return -7
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
 	badges, err := ci.Badges(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -7
+		return -8
 	}
 	url, err := url2.Parse(repository.HTTPURL)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -8
+		return -9
 	}
 	data := templating.TemplateData{
 		ProjectName:    name,
@@ -228,29 +241,36 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 	webhook, err := ci.Scaffold(dir, data)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -9
+		return -10
 	}
 	if err := addWebhook(name, webhook, vcs); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -10
+		return -11
 	}
 	if err := createDotfiles(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -11
-	}
-	if err := createReadme(projectDir, name, data); err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -12
 	}
-	if err := createDeployment(projectDir, data); err != nil {
+	if err := createReadme(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -13
 	}
-	if err := stack.Scaffold(projectDir, name, data); err != nil {
+	if err := createDeployment(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -14
 	}
+	if err := stack.Scaffold(projectDir, name, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -15
+	}
 	return 0
+}
+
+func validate(name string, vcs VCS, ci CI) error {
+	if err := vcs.Validate(name); err != nil {
+		return err
+	}
+	return ci.Validate(name)
 }
 
 func createDirectories(dir string) error {
@@ -292,7 +312,7 @@ README.md
 	return nil
 }
 
-func createReadme(dir, name string, data templating.TemplateData) error {
+func createReadme(dir string, data templating.TemplateData) error {
 	content := `
 | README.md
 # {{.ProjectName}}

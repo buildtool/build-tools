@@ -53,6 +53,10 @@ func (c *GitlabCI) Commit() string {
 	return c.CICommit
 }
 
+func (c *GitlabCI) Validate(name string) error {
+	panic("implement me")
+}
+
 func (c *GitlabCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	if err := file.WriteTemplated(dir, ".gitlab-ci.yml", gitlabCiYml, data); err != nil {
 		return nil, err
@@ -84,9 +88,10 @@ func (c *GitlabCI) Badges(name string) ([]templating.Badge, error) {
 	return result, nil
 }
 
-func (c *GitlabCI) configure() {
+func (c *GitlabCI) configure() error {
 	git := gitlab.NewClient(nil, c.Token)
 	c.badgesService = git.ProjectBadges
+	return nil
 }
 
 func (c *GitlabCI) configured() bool {
