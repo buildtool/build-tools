@@ -149,9 +149,9 @@ func TestBadges(t *testing.T) {
 	badges, err := ci.Badges("project")
 	assert.NoError(t, err)
 	expected := []templating.Badge{
-		{"Build status", "https://buildimg", "https://buildlink"},
-		{"Coverage report", "https://coverimg", "https://coverlink"},
-		{"", "https://otherimg", "https://otherlink"},
+		{Title: "Build status", ImageUrl: "https://buildimg", LinkUrl: "https://buildlink"},
+		{Title: "Coverage report", ImageUrl: "https://coverimg", LinkUrl: "https://coverlink"},
+		{ImageUrl: "https://otherimg", LinkUrl: "https://otherlink"},
 	}
 	assert.Equal(t, expected, badges)
 }
