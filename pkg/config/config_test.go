@@ -398,7 +398,7 @@ func TestScaffold_CiScaffold_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -8, exitCode)
+	assert.Equal(t, -9, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -414,7 +414,7 @@ func TestScaffold_Webhook_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -9, exitCode)
+	assert.Equal(t, -10, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -429,7 +429,7 @@ func TestScaffold_StackError(t *testing.T) {
 	out := &bytes.Buffer{}
 
 	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
-	assert.Equal(t, -13, exitCode)
+	assert.Equal(t, -14, exitCode)
 
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
@@ -468,15 +468,15 @@ func (m mockCi) Commit() string {
 	panic("implement me")
 }
 
-func (m mockCi) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+func (m mockCi) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	if m.scaffoldErr != nil {
 		return nil, m.scaffoldErr
 	}
 	return m.webhookUrl, nil
 }
 
-func (m mockCi) Badges() string {
-	return ""
+func (m mockCi) Badges(name string) ([]templating.Badge, error) {
+	return nil, nil
 }
 
 func (m mockCi) configure() {}

@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-type ProjectsService interface {
+type projectsService interface {
 	GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error)
 	CreateProject(opt *gitlab.CreateProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error)
 	AddProjectHook(pid interface{}, opt *gitlab.AddProjectHookOptions, options ...gitlab.OptionFunc) (*gitlab.ProjectHook, *gitlab.Response, error)
 }
 
-type GroupsService interface {
+type groupsService interface {
 	GetGroup(gid interface{}, options ...gitlab.OptionFunc) (*gitlab.Group, *gitlab.Response, error)
 }
 
@@ -23,8 +23,8 @@ type GitlabVCS struct {
 	Group           string `yaml:"group" env:"GITLAB_GROUP"`
 	Token           string `yaml:"token" env:"GITLAB_TOKEN"`
 	Visibility      string `yaml:"visibility"`
-	projectsService ProjectsService
-	groupsService   GroupsService
+	projectsService projectsService
+	groupsService   groupsService
 }
 
 func (v *GitlabVCS) Name() string {

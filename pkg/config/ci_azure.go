@@ -43,12 +43,12 @@ func (c AzureCI) Commit() string {
 	return c.CICommit
 }
 
-func (c AzureCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+func (c AzureCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
 
-func (c AzureCI) Badges() string {
-	return ""
+func (c AzureCI) Badges(name string) ([]templating.Badge, error) {
+	return nil, nil
 }
 
 func (c AzureCI) configure() {}

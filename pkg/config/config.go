@@ -206,11 +206,15 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		return -6
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-	badges := ci.Badges()
-	url, err := url2.Parse(repository.HTTPURL)
+	badges, err := ci.Badges(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -7
+	}
+	url, err := url2.Parse(repository.HTTPURL)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -8
 	}
 	data := templating.TemplateData{
 		ProjectName:    name,
@@ -221,30 +225,30 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		RepositoryHost: url.Host,
 		RepositoryPath: strings.Replace(url.Path, ".git", "", 1),
 	}
-	webhook, err := ci.Scaffold(dir, name, repository.SSHURL, data)
+	webhook, err := ci.Scaffold(dir, data)
 	if err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -8
-	}
-	if err := addWebhook(name, webhook, vcs); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -9
 	}
-	if err := createDotfiles(projectDir); err != nil {
+	if err := addWebhook(name, webhook, vcs); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -10
 	}
-	if err := createReadme(projectDir, name, data); err != nil {
+	if err := createDotfiles(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -11
 	}
-	if err := createDeployment(projectDir, data); err != nil {
+	if err := createReadme(projectDir, name, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -12
 	}
-	if err := stack.Scaffold(projectDir, name, data); err != nil {
+	if err := createDeployment(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -13
+	}
+	if err := stack.Scaffold(projectDir, name, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -14
 	}
 	return 0
 }
@@ -292,7 +296,7 @@ func createReadme(dir, name string, data templating.TemplateData) error {
 	content := `
 | README.md
 # {{.ProjectName}}
-{{.Badges}}
+{{range .Badges}}[![{{.Title}}]({{.ImageUrl}})]({{.LinkUrl}}){{end}}
 `
 	tpl, err := template.New("readme").Parse(content)
 	if err != nil {

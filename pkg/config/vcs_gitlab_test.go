@@ -187,7 +187,7 @@ func (m *mockProjects) AddProjectHook(pid interface{}, opt *gitlab.AddProjectHoo
 	return nil, nil, m.hookErr
 }
 
-var _ ProjectsService = &mockProjects{}
+var _ projectsService = &mockProjects{}
 
 type mockGroups struct {
 	err   error
@@ -200,4 +200,4 @@ func (m *mockGroups) GetGroup(gid interface{}, options ...gitlab.OptionFunc) (*g
 	return m.group, nil, m.err
 }
 
-var _ GroupsService = &mockGroups{}
+var _ groupsService = &mockGroups{}

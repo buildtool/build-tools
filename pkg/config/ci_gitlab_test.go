@@ -2,7 +2,11 @@ package config
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/xanzy/go-gitlab"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -46,11 +50,11 @@ func TestBuildName_Fallback_Gitlab(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI", "gitlab")
 
-	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
@@ -65,8 +69,8 @@ func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI", "gitlab")
 
-	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepoWithCommit(dir)
 
@@ -83,8 +87,8 @@ func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI", "gitlab")
 
-	dir, _ := ioutil.TempDir("", "build-tools")
-	defer os.RemoveAll(dir)
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
 
@@ -96,3 +100,108 @@ func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "", out.String())
 }
+
+func TestScaffold_Error(t *testing.T) {
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	name := filepath.Join(dir, "dummy")
+	_ = ioutil.WriteFile(name, []byte("abc"), 0666)
+
+	ci := &GitlabCI{}
+
+	_, err := ci.Scaffold(name, templating.TemplateData{})
+	assert.EqualError(t, err, fmt.Sprintf("mkdir %s: not a directory", name))
+}
+
+func TestScaffold(t *testing.T) {
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	ci := &GitlabCI{}
+
+	_, err := ci.Scaffold(dir, templating.TemplateData{ProjectName: "Project"})
+	assert.NoError(t, err)
+
+	buff, err := ioutil.ReadFile(filepath.Join(dir, ".gitlab-ci.yml"))
+	assert.NoError(t, err)
+	assert.Equal(t, expectedGitlabCiYml, string(buff))
+}
+
+func TestBadges_Error(t *testing.T) {
+	ci := &GitlabCI{badgesService: &mockBadges{err: errors.New("badge error")}}
+
+	_, err := ci.Badges("project")
+	assert.EqualError(t, err, "badge error")
+}
+
+func TestBadges(t *testing.T) {
+	ci := &GitlabCI{
+		badgesService: &mockBadges{
+			badges: []*gitlab.ProjectBadge{
+				{ImageURL: "build.svg", RenderedLinkURL: "https://buildlink", RenderedImageURL: "https://buildimg"},
+				{ImageURL: "coverage.svg", RenderedLinkURL: "https://coverlink", RenderedImageURL: "https://coverimg"},
+				{ImageURL: "other.svg", RenderedLinkURL: "https://otherlink", RenderedImageURL: "https://otherimg"},
+			},
+		},
+	}
+
+	badges, err := ci.Badges("project")
+	assert.NoError(t, err)
+	expected := []templating.Badge{
+		{"Build status", "https://buildimg", "https://buildlink"},
+		{"Coverage report", "https://coverimg", "https://coverlink"},
+		{"", "https://otherimg", "https://otherlink"},
+	}
+	assert.Equal(t, expected, badges)
+}
+
+type mockBadges struct {
+	err    error
+	badges []*gitlab.ProjectBadge
+}
+
+func (m mockBadges) ListProjectBadges(pid interface{}, opt *gitlab.ListProjectBadgesOptions, options ...gitlab.OptionFunc) ([]*gitlab.ProjectBadge, *gitlab.Response, error) {
+	return m.badges, nil, m.err
+}
+
+var _ badgesService = &mockBadges{}
+
+var expectedGitlabCiYml = `stages:
+  - build
+  - deploy-staging
+  - deploy-prod
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+
+image: registry.gitlab.com/sparetimecoders/build-tools:master
+
+build:
+  stage: build
+  services:
+    - docker:dind
+  script:
+  - build
+  - push
+
+deploy-to-staging:
+  stage: deploy-staging
+  when: on_success
+  script:
+    - echo Deploy Project to staging.
+    - deploy staging
+  environment:
+    name: staging
+
+deploy-to-prod:
+  stage: deploy-prod
+  when: on_success
+  script:
+    - echo Deploy Project to prod.
+    - deploy prod
+  environment:
+    name: prod
+  only:
+    - master
+`

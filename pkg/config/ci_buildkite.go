@@ -46,15 +46,15 @@ func (c BuildkiteCI) Commit() string {
 	return c.CICommit
 }
 
-func (c BuildkiteCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+func (c BuildkiteCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	if err := os.Mkdir(filepath.Join(dir, ".buildkite"), 0777); err != nil {
 		return nil, err
 	}
 	return nil, file.Append(".dockerignore", ".buildkite")
 }
 
-func (c BuildkiteCI) Badges() string {
-	return ""
+func (c BuildkiteCI) Badges(name string) ([]templating.Badge, error) {
+	return nil, nil
 }
 
 func (c BuildkiteCI) configure() {}

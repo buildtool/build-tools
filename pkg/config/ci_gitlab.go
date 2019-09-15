@@ -1,63 +1,95 @@
 package config
 
 import (
+	"github.com/xanzy/go-gitlab"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"path/filepath"
 	"strings"
 )
 
 type GitlabCI struct {
 	*ci
-	CICommit     string `env:"CI_COMMIT_SHA"`
-	CIBuildName  string `env:"CI_PROJECT_NAME"`
-	CIBranchName string `env:"CI_COMMIT_REF_NAME"`
+	CICommit      string `env:"CI_COMMIT_SHA"`
+	CIBuildName   string `env:"CI_PROJECT_NAME"`
+	CIBranchName  string `env:"CI_COMMIT_REF_NAME"`
+	Group         string `yaml:"group" env:"GITLAB_GROUP"`
+	Token         string `yaml:"token" env:"GITLAB_TOKEN"`
+	badgesService badgesService
+}
+
+type badgesService interface {
+	ListProjectBadges(pid interface{}, opt *gitlab.ListProjectBadgesOptions, options ...gitlab.OptionFunc) ([]*gitlab.ProjectBadge, *gitlab.Response, error)
 }
 
 var _ CI = &GitlabCI{}
 
-func (c GitlabCI) Name() string {
+func (c *GitlabCI) Name() string {
 	return "Gitlab"
 }
 
-func (c GitlabCI) BranchReplaceSlash() string {
+func (c *GitlabCI) BranchReplaceSlash() string {
 	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
 }
 
-func (c GitlabCI) BuildName() string {
+func (c *GitlabCI) BuildName() string {
 	if c.CIBuildName != "" {
 		return c.CIBuildName
 	}
 	return c.ci.BuildName()
 }
 
-func (c GitlabCI) Branch() string {
+func (c *GitlabCI) Branch() string {
 	if len(c.CIBranchName) == 0 && c.VCS != nil {
 		return c.VCS.Branch()
 	}
 	return c.CIBranchName
 }
 
-func (c GitlabCI) Commit() string {
+func (c *GitlabCI) Commit() string {
 	if len(c.CICommit) == 0 && c.VCS != nil {
 		return c.VCS.Commit()
 	}
 	return c.CICommit
 }
 
-func (c GitlabCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+func (c *GitlabCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	if err := file.WriteTemplated(dir, ".gitlab-ci.yml", gitlabCiYml, data); err != nil {
 		return nil, err
 	}
 	return nil, nil
 }
 
-func (c GitlabCI) Badges() string {
-	return ""
+func (c *GitlabCI) Badges(name string) ([]templating.Badge, error) {
+	path := filepath.Join(c.Group, name)
+
+	badges, _, err := c.badgesService.ListProjectBadges(path, nil)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]templating.Badge, len(badges))
+	for i, b := range badges {
+		title := ""
+		if strings.Contains(b.ImageURL, "build") {
+			title = "Build status"
+		} else if strings.Contains(b.ImageURL, "coverage") {
+			title = "Coverage report"
+		}
+		result[i] = templating.Badge{
+			Title:    title,
+			ImageUrl: b.RenderedImageURL,
+			LinkUrl:  b.RenderedLinkURL,
+		}
+	}
+	return result, nil
 }
 
-func (c GitlabCI) configure() {}
+func (c *GitlabCI) configure() {
+	git := gitlab.NewClient(nil, c.Token)
+	c.badgesService = git.ProjectBadges
+}
 
-func (c GitlabCI) configured() bool {
+func (c *GitlabCI) configured() bool {
 	return c.CIBuildName != ""
 }
 

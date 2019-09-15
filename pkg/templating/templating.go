@@ -7,12 +7,18 @@ import (
 
 type TemplateData struct {
 	ProjectName    string
-	Badges         string
+	Badges         []Badge
 	Organisation   string
 	RegistryUrl    string
 	RepositoryUrl  string
 	RepositoryHost string
 	RepositoryPath string
+}
+
+type Badge struct {
+	Title    string
+	ImageUrl string
+	LinkUrl  string
 }
 
 func Execute(content string, data TemplateData) (string, error) {

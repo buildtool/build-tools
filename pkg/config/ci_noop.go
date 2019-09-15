@@ -31,12 +31,12 @@ func (c noOpCI) Commit() string {
 	return c.VCS.Commit()
 }
 
-func (c noOpCI) Scaffold(dir, name, repository string, data templating.TemplateData) (*string, error) {
+func (c noOpCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
 	return nil, nil
 }
 
-func (c noOpCI) Badges() string {
-	return ""
+func (c noOpCI) Badges(name string) ([]templating.Badge, error) {
+	return nil, nil
 }
 
 func (c noOpCI) configure() {}
