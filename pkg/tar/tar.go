@@ -9,17 +9,20 @@ import (
 
 func ExtractFileContent(tarFile io.Reader, filename string) (string, error) {
 	r := tar.NewReader(tarFile)
-
+	var content *string
 	for {
 		header, err := r.Next()
 		switch {
 		case err == io.EOF:
-			return "", fmt.Errorf("file '%s' not found in archive", filename)
+			if content == nil {
+				return "", fmt.Errorf("file '%s' not found in archive", filename)
+			} else {
+				return *content, nil
+			}
 		case err != nil:
 			return "", err
 		}
 
-		fmt.Println(header.Name)
 		switch header.Typeflag {
 		case tar.TypeDir:
 			continue
@@ -28,7 +31,11 @@ func ExtractFileContent(tarFile io.Reader, filename string) (string, error) {
 				continue
 			}
 			buff, err := ioutil.ReadAll(r)
-			return string(buff), err
+			if err != nil {
+				return "", nil
+			}
+			s := string(buff)
+			content = &s
 		}
 	}
 }
