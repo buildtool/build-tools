@@ -1,43 +1,12 @@
-package config
+package registry
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"os"
 	"testing"
 )
-
-func TestQuay_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("QUAY_REPOSITORY", "repo")
-	_ = os.Setenv("QUAY_USERNAME", "user")
-	_ = os.Setenv("QUAY_PASSWORD", "pass")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
-	assert.NotNil(t, registry)
-	assert.Equal(t, "quay.io/repo", registry.RegistryUrl())
-	assert.Equal(t, "", out.String())
-}
-
-func TestQuay_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("QUAY_REPOSITORY", "repo")
-	_ = os.Setenv("QUAY_USERNAME", "user")
-	_ = os.Setenv("QUAY_PASSWORD", "pass")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
-	assert.Equal(t, "Quay.io", registry.Name())
-}
 
 func TestQuay_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg"
+	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
+	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
 	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
@@ -141,10 +143,10 @@ environments:
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "quay", cfg.Registry.Selected)
-	assert.Equal(t, &DockerhubRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Dockerhub)
-	assert.Equal(t, &ECRRegistry{Url: "1234.ecr", Region: "eu-west-1"}, cfg.Registry.ECR)
-	assert.Equal(t, &GitlabRegistry{Repository: "registry.gitlab.com/group/project", Token: "token-value"}, cfg.Registry.Gitlab)
-	assert.Equal(t, &QuayRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Quay)
+	assert.Equal(t, &registry.DockerhubRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Dockerhub)
+	assert.Equal(t, &registry.ECRRegistry{Url: "1234.ecr", Region: "eu-west-1"}, cfg.Registry.ECR)
+	assert.Equal(t, &registry.GitlabRegistry{Repository: "registry.gitlab.com/group/project", Token: "token-value"}, cfg.Registry.Gitlab)
+	assert.Equal(t, &registry.QuayRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Quay)
 	assert.Equal(t, 2, len(cfg.Environments))
 	assert.Equal(t, Environment{"local", "docker-desktop", ""}, cfg.Environments[0])
 	devEnv := Environment{"dev", "docker-desktop", "dev"}
@@ -213,8 +215,8 @@ func TestLoad_Selected_VCS_Azure(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.VCS)
 	assert.Equal(t, "azure", cfg.VCS.Selected)
-	vcs := cfg.CurrentVCS()
-	assert.Equal(t, "Azure", vcs.Name())
+	currentVcs := cfg.CurrentVCS()
+	assert.Equal(t, "Azure", currentVcs.Name())
 	assert.Equal(t, "", out.String())
 }
 
@@ -228,8 +230,8 @@ func TestLoad_Selected_VCS_Github(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.VCS)
 	assert.Equal(t, "github", cfg.VCS.Selected)
-	vcs := cfg.CurrentVCS()
-	assert.Equal(t, "Github", vcs.Name())
+	currentVcs := cfg.CurrentVCS()
+	assert.Equal(t, "Github", currentVcs.Name())
 	assert.Equal(t, "", out.String())
 }
 
@@ -243,8 +245,8 @@ func TestLoad_Selected_VCS_Gitlab(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.VCS)
 	assert.Equal(t, "gitlab", cfg.VCS.Selected)
-	vcs := cfg.CurrentVCS()
-	assert.Equal(t, "Gitlab", vcs.Name())
+	currentVcs := cfg.CurrentVCS()
+	assert.Equal(t, "Gitlab", currentVcs.Name())
 	assert.Equal(t, "", out.String())
 }
 
@@ -377,7 +379,7 @@ func TestScaffold_CreateDirectories_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.VCS = &mockVcs{skipMkdir: true}
-	cfg.availableCI = []CI{&mockCi{scaffoldErr: errors.New("error")}}
+	cfg.availableCI = []ci.CI{&mockCi{scaffoldErr: errors.New("error")}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -393,7 +395,7 @@ func TestScaffold_CiScaffold_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.VCS = &mockVcs{}
-	cfg.availableCI = []CI{&mockCi{scaffoldErr: errors.New("error")}}
+	cfg.availableCI = []ci.CI{&mockCi{scaffoldErr: errors.New("error")}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -409,7 +411,7 @@ func TestScaffold_Webhook_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.VCS = &mockVcs{webhookErr: errors.New("error")}
-	cfg.availableCI = []CI{&mockCi{webhookUrl: pkg.String("https://example.org")}}
+	cfg.availableCI = []ci.CI{&mockCi{webhookUrl: pkg.String("https://example.org")}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -425,7 +427,7 @@ func TestScaffold_StackError(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.VCS = &mockVcs{}
-	cfg.availableCI = []CI{&mockCi{}}
+	cfg.availableCI = []ci.CI{&mockCi{}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -449,7 +451,7 @@ func (e errorStack) Name() string {
 var _ stack.Stack = &errorStack{}
 
 type mockCi struct {
-	ci
+	ci.CommonCI
 	webhookUrl  *string
 	scaffoldErr error
 }
@@ -485,15 +487,15 @@ func (m mockCi) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (m mockCi) configure() error {
+func (m mockCi) Configure() error {
 	return nil
 }
 
-func (m mockCi) configured() bool {
+func (m mockCi) Configured() bool {
 	return true
 }
 
-var _ CI = &mockCi{}
+var _ ci.CI = &mockCi{}
 
 type mockVcs struct {
 	skipMkdir   bool

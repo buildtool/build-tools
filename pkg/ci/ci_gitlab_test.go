@@ -1,7 +1,6 @@
-package config
+package ci
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -13,99 +12,6 @@ import (
 	"path/filepath"
 	"testing"
 )
-
-func TestIdentify_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, "abc123", result.Commit())
-	assert.Equal(t, "reponame", result.BuildName())
-	assert.Equal(t, "feature/first test", result.Branch())
-	assert.Equal(t, "feature_first_test", result.BranchReplaceSlash())
-	assert.Equal(t, "", out.String())
-}
-
-func TestName_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
-	assert.NoError(t, err)
-	assert.Equal(t, "Gitlab", result.Name())
-}
-
-func TestBuildName_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
-
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(dir) }()
-	oldPwd, _ := os.Getwd()
-	_ = os.Chdir(dir)
-	defer func() { _ = os.Chdir(oldPwd) }()
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
-	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, filepath.Base(dir), result.BuildName())
-	assert.Equal(t, "", out.String())
-}
-
-func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
-
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(dir) }()
-
-	InitRepoWithCommit(dir)
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
-	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, "master", result.Branch())
-	assert.Equal(t, "", out.String())
-}
-
-func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
-
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(dir) }()
-
-	hash, _ := InitRepoWithCommit(dir)
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
-	assert.NoError(t, err)
-	result, err := cfg.CurrentCI()
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, hash.String(), result.Commit())
-	assert.Equal(t, "", out.String())
-}
 
 func TestValidate_Gitlab_User_Not_Exist(t *testing.T) {
 	ci := &GitlabCI{usersService: &mockUsersService{err: errors.New("unauthorized")}}

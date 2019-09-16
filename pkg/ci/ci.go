@@ -1,4 +1,4 @@
-package config
+package ci
 
 import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
@@ -16,20 +16,20 @@ type CI interface {
 	Validate(name string) error
 	Scaffold(dir string, data templating.TemplateData) (*string, error)
 	Badges(name string) ([]templating.Badge, error)
-	setVCS(cfg Config)
-	configured() bool
-	configure() error
+	SetVCS(vcs vcs.VCS)
+	Configured() bool
+	Configure() error
 }
 
-type ci struct {
+type CommonCI struct {
 	VCS vcs.VCS
 }
 
-func (c *ci) setVCS(cfg Config) {
-	c.VCS = cfg.CurrentVCS()
+func (c *CommonCI) SetVCS(vcs vcs.VCS) {
+	c.VCS = vcs
 }
 
-func (c *ci) BuildName() string {
+func (c *CommonCI) BuildName() string {
 	dir, _ := os.Getwd()
 	return filepath.Base(dir)
 }

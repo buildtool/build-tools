@@ -1,43 +1,12 @@
-package config
+package registry
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
-	"os"
 	"testing"
 )
-
-func TestDockerhub_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
-	assert.NotNil(t, registry)
-	assert.Equal(t, "repo", registry.RegistryUrl())
-	assert.Equal(t, "", out.String())
-}
-
-func TestDockerhub_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
-	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
-	assert.Equal(t, "Dockerhub", registry.Name())
-}
 
 func TestDockerhub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}

@@ -1,4 +1,4 @@
-package config
+package ci
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 type GitlabCI struct {
-	*ci
+	*CommonCI
 	CICommit        string `env:"CI_COMMIT_SHA"`
 	CIBuildName     string `env:"CI_PROJECT_NAME"`
 	CIBranchName    string `env:"CI_COMMIT_REF_NAME"`
@@ -52,7 +52,7 @@ func (c *GitlabCI) BuildName() string {
 	if c.CIBuildName != "" {
 		return c.CIBuildName
 	}
-	return c.ci.BuildName()
+	return c.CommonCI.BuildName()
 }
 
 func (c *GitlabCI) Branch() string {
@@ -122,7 +122,7 @@ func (c *GitlabCI) Badges(name string) ([]templating.Badge, error) {
 	return result, nil
 }
 
-func (c *GitlabCI) configure() error {
+func (c *GitlabCI) Configure() error {
 	git := gitlab.NewClient(nil, c.Token)
 	c.badgesService = git.ProjectBadges
 	c.usersService = git.Users
@@ -131,7 +131,7 @@ func (c *GitlabCI) configure() error {
 	return nil
 }
 
-func (c *GitlabCI) configured() bool {
+func (c *GitlabCI) Configured() bool {
 	return c.CIBuildName != ""
 }
 

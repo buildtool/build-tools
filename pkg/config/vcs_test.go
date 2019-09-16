@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,7 +17,7 @@ func TestIdentify(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	out := &bytes.Buffer{}
-	result := Identify(dir, out)
+	result := vcs.Identify(dir, out)
 	assert.NotNil(t, result)
 	assert.Equal(t, "none", result.Name())
 	assert.Equal(t, "", result.Commit())
@@ -31,7 +32,7 @@ func TestGit_Identify(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	result := Identify(dir, out)
+	result := vcs.Identify(dir, out)
 	assert.NotNil(t, result)
 	assert.Equal(t, "Git", result.Name())
 	assert.Equal(t, hash.String(), result.Commit())
@@ -46,7 +47,7 @@ func TestGit_MissingRepo(t *testing.T) {
 	_ = os.Mkdir(filepath.Join(dir, ".git"), 0777)
 
 	out := &bytes.Buffer{}
-	result := Identify(dir, out)
+	result := vcs.Identify(dir, out)
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
@@ -60,7 +61,7 @@ func TestGit_NoCommit(t *testing.T) {
 	InitRepo(dir)
 
 	out := &bytes.Buffer{}
-	result := Identify(dir, out)
+	result := vcs.Identify(dir, out)
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())

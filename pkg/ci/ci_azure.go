@@ -1,4 +1,4 @@
-package config
+package ci
 
 import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
@@ -6,7 +6,7 @@ import (
 )
 
 type AzureCI struct {
-	*ci
+	*CommonCI
 	CICommit     string `env:"BUILD_SOURCEVERSION"`
 	CIBuildName  string `env:"BUILD_REPOSITORY_NAME"`
 	CIBranchName string `env:"BUILD_SOURCEBRANCHNAME"`
@@ -26,7 +26,7 @@ func (c AzureCI) BuildName() string {
 	if c.CIBuildName != "" {
 		return c.CIBuildName
 	}
-	return c.ci.BuildName()
+	return c.CommonCI.BuildName()
 }
 
 func (c AzureCI) Branch() string {
@@ -55,10 +55,10 @@ func (c AzureCI) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (c AzureCI) configure() error {
+func (c AzureCI) Configure() error {
 	return nil
 }
 
-func (c AzureCI) configured() bool {
+func (c AzureCI) Configured() bool {
 	return c.CIBuildName != ""
 }

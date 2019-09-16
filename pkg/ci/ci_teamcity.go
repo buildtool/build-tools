@@ -1,4 +1,4 @@
-package config
+package ci
 
 import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
@@ -6,7 +6,7 @@ import (
 )
 
 type TeamCityCI struct {
-	*ci
+	*CommonCI
 	CICommit     string `env:"BUILD_VCS_NUMBER"`
 	CIBuildName  string `env:"TEAMCITY_PROJECT_NAME"`
 	CIBranchName string `env:"BUILD_VCS_BRANCH"`
@@ -26,7 +26,7 @@ func (c TeamCityCI) BuildName() string {
 	if c.CIBuildName != "" {
 		return c.CIBuildName
 	}
-	return c.ci.BuildName()
+	return c.CommonCI.BuildName()
 }
 
 func (c TeamCityCI) Branch() string {
@@ -55,10 +55,10 @@ func (c TeamCityCI) Badges(name string) ([]templating.Badge, error) {
 	return nil, nil
 }
 
-func (c TeamCityCI) configure() error {
+func (c TeamCityCI) Configure() error {
 	return nil
 }
 
-func (c TeamCityCI) configured() bool {
+func (c TeamCityCI) Configured() bool {
 	return c.CIBuildName != ""
 }

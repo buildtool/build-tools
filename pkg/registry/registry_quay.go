@@ -1,4 +1,4 @@
-package config
+package registry
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func (r *QuayRegistry) Name() string {
 	return "Quay.io"
 }
 
-func (r *QuayRegistry) configured() bool {
+func (r *QuayRegistry) Configured() bool {
 	return len(r.Repository) > 0
 }
 

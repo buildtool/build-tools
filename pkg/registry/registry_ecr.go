@@ -1,4 +1,4 @@
-package config
+package registry
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func (r *ECRRegistry) Name() string {
 	return "ECR"
 }
 
-func (r *ECRRegistry) configured() bool {
+func (r *ECRRegistry) Configured() bool {
 	if len(r.Url) > 0 {
 		sess, err := session.NewSession(&aws.Config{Region: r.region()})
 		if err != nil {

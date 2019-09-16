@@ -11,6 +11,12 @@ import (
 	"testing"
 )
 
+func TestGit_Configure(t *testing.T) {
+	vcs := &Git{}
+
+	vcs.Configure()
+}
+
 func TestGit_Scaffold(t *testing.T) {
 	vcs := &Git{}
 

@@ -1,4 +1,4 @@
-package config
+package registry
 
 import (
 	"bufio"
@@ -11,7 +11,7 @@ import (
 )
 
 type Registry interface {
-	configured() bool
+	Configured() bool
 	Name() string
 	Login(client docker.Client, out io.Writer) error
 	GetAuthInfo() string
@@ -35,13 +35,7 @@ type responsetype struct {
 	} `json:"aux"`
 }
 
-type dockerRegistry struct {
-	CI CI
-}
-
-func (r *dockerRegistry) setVCS(cfg Config) {
-	//r.CI, err := cfg.CurrentCI()
-}
+type dockerRegistry struct{}
 
 func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eout io.Writer) error {
 	if out, err := client.ImagePush(context.Background(), image, types.ImagePushOptions{All: true, RegistryAuth: auth}); err != nil {

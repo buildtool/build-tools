@@ -31,3 +31,17 @@ func (v CommonVCS) Branch() string {
 func (v CommonVCS) Commit() string {
 	return v.CurrentCommit
 }
+
+var systems = []VCS{&Git{}}
+
+func Identify(dir string, out io.Writer) VCS {
+	for _, vcs := range systems {
+		if vcs.Identify(dir, out) {
+			return vcs
+		}
+	}
+
+	no := &No{}
+	no.Identify(dir, out)
+	return no
+}

@@ -1,4 +1,4 @@
-package config
+package ci
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ type organizationService interface {
 	Get(slug string) (*buildkite.Organization, *buildkite.Response, error)
 }
 type BuildkiteCI struct {
-	*ci
+	*CommonCI
 	CICommit            string `env:"BUILDKITE_COMMIT"`
 	CIBuildName         string `env:"BUILDKITE_PIPELINE_SLUG"`
 	CIBranchName        string `env:"BUILDKITE_BRANCH_NAME"`
@@ -48,7 +48,7 @@ func (c *BuildkiteCI) BuildName() string {
 	if c.CIBuildName != "" {
 		return c.CIBuildName
 	}
-	return c.ci.BuildName()
+	return c.CommonCI.BuildName()
 }
 
 func (c *BuildkiteCI) Branch() string {
@@ -133,7 +133,7 @@ func (c *BuildkiteCI) Badges(name string) ([]templating.Badge, error) {
 	return badges, nil
 }
 
-func (c *BuildkiteCI) configure() error {
+func (c *BuildkiteCI) Configure() error {
 	config, err := buildkite.NewTokenConfig(c.Token, false)
 	if err != nil {
 		return err
@@ -147,7 +147,7 @@ func (c *BuildkiteCI) configure() error {
 	return nil
 }
 
-func (c *BuildkiteCI) configured() bool {
+func (c *BuildkiteCI) Configured() bool {
 	return c.CIBuildName != ""
 }
 

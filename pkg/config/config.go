@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/liamg/tml"
+	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
+	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
 	stck "gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
@@ -26,7 +28,7 @@ type Config struct {
 	Registry     *RegistryConfig `yaml:"registry"`
 	Environments []Environment   `yaml:"environments"`
 	Organisation string          `yaml:"organisation"`
-	availableCI  []CI
+	availableCI  []ci.CI
 }
 
 type VCSConfig struct {
@@ -38,19 +40,19 @@ type VCSConfig struct {
 }
 
 type CIConfig struct {
-	Selected  string       `yaml:"selected" env:"CI"`
-	Azure     *AzureCI     `yaml:"azure"`
-	Buildkite *BuildkiteCI `yaml:"buildkite"`
-	Gitlab    *GitlabCI    `yaml:"gitlab"`
-	TeamCity  *TeamCityCI  `yaml:"teamcity"`
+	Selected  string          `yaml:"selected" env:"CI"`
+	Azure     *ci.AzureCI     `yaml:"azure"`
+	Buildkite *ci.BuildkiteCI `yaml:"buildkite"`
+	Gitlab    *ci.GitlabCI    `yaml:"gitlab"`
+	TeamCity  *ci.TeamCityCI  `yaml:"teamcity"`
 }
 
 type RegistryConfig struct {
-	Selected  string             `yaml:"selected" env:"REGISTRY"`
-	Dockerhub *DockerhubRegistry `yaml:"dockerhub"`
-	ECR       *ECRRegistry       `yaml:"ecr"`
-	Gitlab    *GitlabRegistry    `yaml:"gitlab"`
-	Quay      *QuayRegistry      `yaml:"quay"`
+	Selected  string                      `yaml:"selected" env:"REGISTRY"`
+	Dockerhub *registry.DockerhubRegistry `yaml:"dockerhub"`
+	ECR       *registry.ECRRegistry       `yaml:"ecr"`
+	Gitlab    *registry.GitlabRegistry    `yaml:"gitlab"`
+	Quay      *registry.QuayRegistry      `yaml:"quay"`
 }
 
 type Environment struct {
@@ -71,7 +73,7 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 	err = env.Parse(cfg)
 
-	identifiedVcs := Identify(dir, out)
+	identifiedVcs := vcs.Identify(dir, out)
 	cfg.VCS.VCS = identifiedVcs
 
 	// TODO: Validate and clean config
@@ -87,19 +89,19 @@ func initEmptyConfig() *Config {
 			Gitlab: &vcs.GitlabVCS{},
 		},
 		CI: &CIConfig{
-			Azure:     &AzureCI{ci: &ci{}},
-			Buildkite: &BuildkiteCI{ci: &ci{}},
-			Gitlab:    &GitlabCI{ci: &ci{}},
-			TeamCity:  &TeamCityCI{ci: &ci{}},
+			Azure:     &ci.AzureCI{CommonCI: &ci.CommonCI{}},
+			Buildkite: &ci.BuildkiteCI{CommonCI: &ci.CommonCI{}},
+			Gitlab:    &ci.GitlabCI{CommonCI: &ci.CommonCI{}},
+			TeamCity:  &ci.TeamCityCI{CommonCI: &ci.CommonCI{}},
 		},
 		Registry: &RegistryConfig{
-			Dockerhub: &DockerhubRegistry{},
-			ECR:       &ECRRegistry{},
-			Gitlab:    &GitlabRegistry{},
-			Quay:      &QuayRegistry{},
+			Dockerhub: &registry.DockerhubRegistry{},
+			ECR:       &registry.ECRRegistry{},
+			Gitlab:    &registry.GitlabRegistry{},
+			Quay:      &registry.QuayRegistry{},
 		},
 	}
-	c.availableCI = []CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
+	c.availableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
 	return c
 }
 
@@ -118,60 +120,56 @@ func (c *Config) CurrentVCS() vcs.VCS {
 	return c.VCS.VCS
 }
 
-func (c *Config) CurrentCI() (CI, error) {
+func (c *Config) CurrentCI() (ci.CI, error) {
 	switch c.CI.Selected {
 	case "azure":
-		c.CI.Azure.setVCS(*c)
-		if err := c.CI.Azure.configure(); err != nil {
+		c.CI.Azure.SetVCS(c.CurrentVCS())
+		if err := c.CI.Azure.Configure(); err != nil {
 			return nil, err
 		}
 		return c.CI.Azure, nil
 	case "buildkite":
-		c.CI.Buildkite.setVCS(*c)
-		if err := c.CI.Buildkite.configure(); err != nil {
+		c.CI.Buildkite.SetVCS(c.CurrentVCS())
+		if err := c.CI.Buildkite.Configure(); err != nil {
 			return nil, err
 		}
 		return c.CI.Buildkite, nil
 	case "gitlab":
-		c.CI.Gitlab.setVCS(*c)
-		if err := c.CI.Gitlab.configure(); err != nil {
+		c.CI.Gitlab.SetVCS(c.CurrentVCS())
+		if err := c.CI.Gitlab.Configure(); err != nil {
 			return nil, err
 		}
 		return c.CI.Gitlab, nil
 	case "":
 		for _, ci := range c.availableCI {
-			if ci.configured() {
-				ci.setVCS(*c)
+			if ci.Configured() {
+				ci.SetVCS(c.CurrentVCS())
 				return ci, nil
 			}
 		}
 	}
-	ci := &noOpCI{ci: &ci{}}
-	ci.setVCS(*c)
-	if err := ci.configure(); err != nil {
+	ci := &ci.NoOpCI{CommonCI: &ci.CommonCI{}}
+	ci.SetVCS(c.CurrentVCS())
+	if err := ci.Configure(); err != nil {
 		return nil, err
 	}
 	return ci, nil
 }
 
-func (c *Config) CurrentRegistry() (Registry, error) {
+func (c *Config) CurrentRegistry() (registry.Registry, error) {
 	switch c.Registry.Selected {
 	case "dockerhub":
-		c.Registry.Dockerhub.setVCS(*c)
 		return c.Registry.Dockerhub, nil
 	case "ecr":
-		c.Registry.ECR.setVCS(*c)
 		return c.Registry.ECR, nil
 	case "gitlab":
-		c.Registry.Gitlab.setVCS(*c)
 		return c.Registry.Gitlab, nil
 	case "quay":
-		c.Registry.Quay.setVCS(*c)
 		return c.Registry.Quay, nil
 	case "":
-		vals := []Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
+		vals := []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
 		for _, reg := range vals {
-			if reg.configured() {
+			if reg.Configured() {
 				return reg, nil
 			}
 		}
@@ -269,7 +267,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 	return 0
 }
 
-func validate(name string, vcs vcs.VCS, ci CI) error {
+func validate(name string, vcs vcs.VCS, ci ci.CI) error {
 	if err := vcs.Validate(name); err != nil {
 		return err
 	}

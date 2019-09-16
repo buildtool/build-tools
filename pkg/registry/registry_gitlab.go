@@ -1,4 +1,4 @@
-package config
+package registry
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func (r GitlabRegistry) Name() string {
 	return "Gitlab"
 }
 
-func (r GitlabRegistry) configured() bool {
+func (r GitlabRegistry) Configured() bool {
 	return len(r.Repository) > 0
 }
 

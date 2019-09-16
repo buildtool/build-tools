@@ -1,4 +1,4 @@
-package config
+package registry
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func (r DockerhubRegistry) Name() string {
 	return "Dockerhub"
 }
 
-func (r DockerhubRegistry) configured() bool {
+func (r DockerhubRegistry) Configured() bool {
 	return len(r.Repository) > 0
 }
 
