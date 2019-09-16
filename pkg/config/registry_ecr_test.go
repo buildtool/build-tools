@@ -131,6 +131,21 @@ func TestEcr_NewRepository(t *testing.T) {
 	assert.Equal(t, &policyText, mock.putLifecyclePolicyInput.LifecyclePolicyText)
 }
 
+func TestEcr_ParseECRUrlIfNoRegionIsSet(t *testing.T) {
+	ecr := ECRRegistry{
+		Url: "12345678.dkr.ecr.eu-west-1.amazonaws.com",
+	}
+	assert.Equal(t, "eu-west-1", *ecr.region())
+}
+
+func TestEcr_UseRegionIfSet(t *testing.T) {
+	ecr := ECRRegistry{
+		Url:    "12345678.dkr.ecr.eu-west-1.amazonaws.com",
+		Region: "region",
+	}
+	assert.Equal(t, "region", *ecr.region())
+}
+
 type MockECR struct {
 	ecriface.ECRAPI
 	loginError                error

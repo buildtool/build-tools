@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
+	"regexp"
 	"strings"
 )
 
@@ -32,7 +33,7 @@ func (r *ECRRegistry) Name() string {
 
 func (r *ECRRegistry) configured() bool {
 	if len(r.Url) > 0 {
-		sess, err := session.NewSession(&aws.Config{Region: &r.Region})
+		sess, err := session.NewSession(&aws.Config{Region: r.region()})
 		if err != nil {
 			return false
 		}
@@ -40,6 +41,16 @@ func (r *ECRRegistry) configured() bool {
 		return true
 	}
 	return false
+}
+
+func (r *ECRRegistry) region() *string {
+	if r.Region == "" {
+		regex := regexp.MustCompile(`.*ecr.(.*).amazonaws.com`)
+		if submatch := regex.FindStringSubmatch(r.Url); submatch != nil && len(submatch) == 2 {
+			return &submatch[1]
+		}
+	}
+	return &r.Region
 }
 
 func (r *ECRRegistry) Login(client docker.Client, out io.Writer) error {
