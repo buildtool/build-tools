@@ -51,5 +51,5 @@ func TestGit_Clone(t *testing.T) {
 	buff := &bytes.Buffer{}
 	err := vcs.Clone(name, "project", fmt.Sprintf("file://%s", dir), buff)
 	assert.NoError(t, err)
-	assert.Equal(t, "\r\x1b[KEnumerating objects: 2, done.\n\r\x1b[KCounting objects:  50% (1/2)\r\r\x1b[KCounting objects: 100% (2/2)\r\r\x1b[KCounting objects: 100% (2/2), done.\nTotal 2 (delta 0), reused 0 (delta 0)\n", buff.String())
+	assert.Contains(t, buff.String(), "Total 2 (delta 0), reused 0 (delta 0)")
 }
