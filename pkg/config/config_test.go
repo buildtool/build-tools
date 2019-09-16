@@ -160,6 +160,54 @@ environments:
 	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
 }
 
+func TestLoad_BrokenYAML_From_Env(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `ci: []
+`
+	_ = os.Setenv("BUILDTOOLS_CONTENT", yaml)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, "", cfg.CI.Selected)
+	assert.NotNil(t, cfg.Registry)
+	assert.Equal(t, "", cfg.Registry.Selected)
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+}
+
+func TestLoad_YAML_From_Env(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+environments:
+  - name: local
+    context: docker-desktop
+  - name: dev
+    context: docker-desktop
+    namespace: dev
+`
+	_ = os.Setenv("BUILDTOOLS_CONTENT", yaml)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, 2, len(cfg.Environments))
+	assert.Equal(t, Environment{"local", "docker-desktop", ""}, cfg.Environments[0])
+	devEnv := Environment{"dev", "docker-desktop", "dev"}
+	assert.Equal(t, devEnv, cfg.Environments[1])
+
+	currentEnv, err := cfg.CurrentEnvironment("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentEnvironment("missing")
+	assert.EqualError(t, err, "no environment matching missing found")
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+}
+
 func TestLoad_YAML_DirStructure(t *testing.T) {
 	os.Clearenv()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")

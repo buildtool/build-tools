@@ -64,14 +64,21 @@ type Environment struct {
 func Load(dir string, out io.Writer) (*Config, error) {
 	cfg := initEmptyConfig()
 
-	err := parseConfigFiles(dir, out, func(dir string) error {
-		return parseConfigFile(dir, cfg)
-	})
-	if err != nil {
-		return cfg, err
+	if content, ok := os.LookupEnv("BUILDTOOLS_CONTENT"); ok {
+		_, _ = fmt.Fprintln(out, "Parsing config from env: BUILDTOOLS_CONTENT")
+		if err := parseConfig([]byte(content), cfg); err != nil {
+			return cfg, err
+		}
+	} else {
+		err := parseConfigFiles(dir, out, func(dir string) error {
+			return parseConfigFile(dir, cfg)
+		})
+		if err != nil {
+			return cfg, err
+		}
 	}
 
-	err = env.Parse(cfg)
+	err := env.Parse(cfg)
 
 	identifiedVcs := vcs.Identify(dir, out)
 	cfg.VCS.VCS = identifiedVcs
