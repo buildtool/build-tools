@@ -64,7 +64,7 @@ func createBuildContext(dir string) (io.ReadCloser, error) {
 	if ignored, err := docker.ParseDockerignore(dir); err != nil {
 		return nil, err
 	} else {
-		return archive.TarWithOptions(".", &archive.TarOptions{ExcludePatterns: ignored})
+		return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 	}
 }
 

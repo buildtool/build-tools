@@ -19,6 +19,7 @@ func ExtractFileContent(tarFile io.Reader, filename string) (string, error) {
 			return "", err
 		}
 
+		fmt.Println(header.Name)
 		switch header.Typeflag {
 		case tar.TypeDir:
 			continue
