@@ -8,6 +8,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -106,6 +107,70 @@ func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestValidate_Gitlab_User_Not_Exist(t *testing.T) {
+	ci := &GitlabCI{usersService: &mockUsersService{err: errors.New("unauthorized")}}
+
+	err := ci.Validate("Project")
+
+	assert.EqualError(t, err, "unauthorized")
+}
+
+func TestValidate_Gitlab_Organisation_Not_Exist(t *testing.T) {
+	ci := &GitlabCI{
+		usersService:  &mockUsersService{},
+		groupsService: &mockGroups{err: errors.New("not found")},
+	}
+
+	err := ci.Validate("Project")
+
+	assert.EqualError(t, err, "not found")
+}
+
+func TestValidate_Gitlab_Error_Getting_Pipeline(t *testing.T) {
+	ci := &GitlabCI{
+		usersService:  &mockUsersService{},
+		groupsService: &mockGroups{},
+		projectsService: &mockProjects{
+			getErr:   errors.New("error"),
+			response: &gitlab.Response{Response: &http.Response{StatusCode: 403}},
+		},
+	}
+
+	err := ci.Validate("Project")
+
+	assert.EqualError(t, err, "error")
+}
+
+func TestValidate_Gitlab_Pipeline_Already_Exists(t *testing.T) {
+	ci := &GitlabCI{
+		Group:         "org",
+		usersService:  &mockUsersService{},
+		groupsService: &mockGroups{},
+		projectsService: &mockProjects{
+			project: &gitlab.Project{},
+		},
+	}
+
+	err := ci.Validate("Project")
+
+	assert.EqualError(t, err, "project named 'org/Project' already exists at Gitlab")
+}
+
+func TestValidate_Gitlab_Ok(t *testing.T) {
+	ci := &GitlabCI{
+		usersService:  &mockUsersService{},
+		groupsService: &mockGroups{},
+		projectsService: &mockProjects{
+			getErr:   errors.New("not found"),
+			response: &gitlab.Response{Response: &http.Response{StatusCode: 404}},
+		},
+	}
+
+	err := ci.Validate("Project")
+
+	assert.NoError(t, err)
+}
+
 func TestScaffold_Error(t *testing.T) {
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -160,6 +225,16 @@ func TestBadges(t *testing.T) {
 	}
 	assert.Equal(t, expected, badges)
 }
+
+type mockUsersService struct {
+	err error
+}
+
+func (m mockUsersService) CurrentUser(options ...gitlab.OptionFunc) (*gitlab.User, *gitlab.Response, error) {
+	return nil, nil, m.err
+}
+
+var _ usersService = &mockUsersService{}
 
 type mockBadges struct {
 	err    error

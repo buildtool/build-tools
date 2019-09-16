@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/xanzy/go-gitlab"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
@@ -10,16 +11,23 @@ import (
 
 type GitlabCI struct {
 	*ci
-	CICommit      string `env:"CI_COMMIT_SHA"`
-	CIBuildName   string `env:"CI_PROJECT_NAME"`
-	CIBranchName  string `env:"CI_COMMIT_REF_NAME"`
-	Group         string `yaml:"group" env:"GITLAB_GROUP"`
-	Token         string `yaml:"token" env:"GITLAB_TOKEN"`
-	badgesService badgesService
+	CICommit        string `env:"CI_COMMIT_SHA"`
+	CIBuildName     string `env:"CI_PROJECT_NAME"`
+	CIBranchName    string `env:"CI_COMMIT_REF_NAME"`
+	Group           string `yaml:"group" env:"GITLAB_GROUP"`
+	Token           string `yaml:"token" env:"GITLAB_TOKEN"`
+	badgesService   badgesService
+	usersService    usersService
+	groupsService   groupsService
+	projectsService projectsService
 }
 
 type badgesService interface {
 	ListProjectBadges(pid interface{}, opt *gitlab.ListProjectBadgesOptions, options ...gitlab.OptionFunc) ([]*gitlab.ProjectBadge, *gitlab.Response, error)
+}
+
+type usersService interface {
+	CurrentUser(options ...gitlab.OptionFunc) (*gitlab.User, *gitlab.Response, error)
 }
 
 var _ CI = &GitlabCI{}
@@ -54,7 +62,25 @@ func (c *GitlabCI) Commit() string {
 }
 
 func (c *GitlabCI) Validate(name string) error {
-	panic("implement me")
+	_, _, err := c.usersService.CurrentUser()
+	if err != nil {
+		return err
+	}
+	_, _, err = c.groupsService.GetGroup(c.Group)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(c.Group, name)
+	project, response, err := c.projectsService.GetProject(path, nil)
+	if err != nil {
+		if response == nil || response.StatusCode != 404 {
+			return err
+		}
+	}
+	if project != nil {
+		return fmt.Errorf("project named '%s/%s' already exists at Gitlab", c.Group, name)
+	}
+	return nil
 }
 
 func (c *GitlabCI) Scaffold(dir string, data templating.TemplateData) (*string, error) {
@@ -91,6 +117,9 @@ func (c *GitlabCI) Badges(name string) ([]templating.Badge, error) {
 func (c *GitlabCI) configure() error {
 	git := gitlab.NewClient(nil, c.Token)
 	c.badgesService = git.ProjectBadges
+	c.usersService = git.Users
+	c.groupsService = git.Groups
+	c.projectsService = git.Projects
 	return nil
 }
 
