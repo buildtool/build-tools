@@ -9,6 +9,7 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	stck "gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -29,11 +30,11 @@ type Config struct {
 }
 
 type VCSConfig struct {
-	Selected string     `yaml:"selected" env:"VCS"`
-	Azure    *AzureVCS  `yaml:"azure"`
-	Github   *GithubVCS `yaml:"github"`
-	Gitlab   *GitlabVCS `yaml:"gitlab"`
-	VCS      VCS
+	Selected string         `yaml:"selected" env:"VCS"`
+	Azure    *vcs.AzureVCS  `yaml:"azure"`
+	Github   *vcs.GithubVCS `yaml:"github"`
+	Gitlab   *vcs.GitlabVCS `yaml:"gitlab"`
+	VCS      vcs.VCS
 }
 
 type CIConfig struct {
@@ -70,8 +71,8 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 	err = env.Parse(cfg)
 
-	vcs := Identify(dir, out)
-	cfg.VCS.VCS = vcs
+	identifiedVcs := Identify(dir, out)
+	cfg.VCS.VCS = identifiedVcs
 
 	// TODO: Validate and clean config
 
@@ -81,9 +82,9 @@ func Load(dir string, out io.Writer) (*Config, error) {
 func initEmptyConfig() *Config {
 	c := &Config{
 		VCS: &VCSConfig{
-			Azure:  &AzureVCS{},
-			Github: &GithubVCS{},
-			Gitlab: &GitlabVCS{},
+			Azure:  &vcs.AzureVCS{},
+			Github: &vcs.GithubVCS{},
+			Gitlab: &vcs.GitlabVCS{},
 		},
 		CI: &CIConfig{
 			Azure:     &AzureCI{ci: &ci{}},
@@ -102,16 +103,16 @@ func initEmptyConfig() *Config {
 	return c
 }
 
-func (c *Config) CurrentVCS() VCS {
+func (c *Config) CurrentVCS() vcs.VCS {
 	switch c.VCS.Selected {
 	case "azure":
-		c.VCS.Azure.configure()
+		c.VCS.Azure.Configure()
 		return c.VCS.Azure
 	case "github":
-		c.VCS.Github.configure()
+		c.VCS.Github.Configure()
 		return c.VCS.Github
 	case "gitlab":
-		c.VCS.Gitlab.configure()
+		c.VCS.Gitlab.Configure()
 		return c.VCS.Gitlab
 	}
 	return c.VCS.VCS
@@ -188,7 +189,7 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 }
 
 func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int {
-	vcs := c.CurrentVCS()
+	currentVcs := c.CurrentVCS()
 	ci, err := c.CurrentCI()
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
@@ -199,19 +200,19 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -3
 	}
-	if err := validate(name, vcs, ci); err != nil {
+	if err := validate(name, currentVcs, ci); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -4
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
-	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", vcs.Name()))
-	repository, err := vcs.Scaffold(name)
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", currentVcs.Name()))
+	repository, err := currentVcs.Scaffold(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -5
 	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
-	if err := vcs.Clone(dir, name, repository.SSHURL, out); err != nil {
+	if err := currentVcs.Clone(dir, name, repository.SSHURL, out); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -6
 	}
@@ -245,7 +246,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -10
 	}
-	if err := addWebhook(name, webhook, vcs); err != nil {
+	if err := addWebhook(name, webhook, currentVcs); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -11
 	}
@@ -268,7 +269,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 	return 0
 }
 
-func validate(name string, vcs VCS, ci CI) error {
+func validate(name string, vcs vcs.VCS, ci CI) error {
 	if err := vcs.Validate(name); err != nil {
 		return err
 	}
@@ -279,7 +280,7 @@ func createDirectories(dir string) error {
 	return os.Mkdir(filepath.Join(dir, "deployment_files"), 0777)
 }
 
-func addWebhook(name string, url *string, vcs VCS) error {
+func addWebhook(name string, url *string, vcs vcs.VCS) error {
 	if url != nil {
 		return vcs.Webhook(name, *url)
 	}

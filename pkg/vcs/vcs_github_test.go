@@ -1,4 +1,4 @@
-package config
+package vcs
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/v28/github"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/sparetimecoders/build-tools/pkg/config/mocks"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs/mocks"
 	"net/http"
 	"testing"
 )
@@ -26,14 +27,14 @@ func TestGithubVCS_Scaffold(t *testing.T) {
 	}
 
 	repository := github.Repository{
-		Name:     wrapString(repoName),
-		AutoInit: wrapBool(true),
-		Private:  wrapBool(false),
+		Name:     pkg.String(repoName),
+		AutoInit: pkg.Bool(true),
+		Private:  pkg.Bool(false),
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.SSHURL = wrapString(repoSSHUrl)
-	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = pkg.String(repoSSHUrl)
+	repositoryResponse.CloneURL = pkg.String(repoCloneUrl)
 
 	m.EXPECT().
 		Create(context.Background(), orgName, &repository).Return(
@@ -66,16 +67,16 @@ func TestGithubVCS_ScaffoldWithoutOrganisation(t *testing.T) {
 	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
-		Name:     wrapString(repoName),
-		AutoInit: wrapBool(true),
-		Private:  wrapBool(false),
+		Name:     pkg.String(repoName),
+		AutoInit: pkg.Bool(true),
+		Private:  pkg.Bool(false),
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.SSHURL = wrapString(repoSSHUrl)
-	repositoryResponse.CloneURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = pkg.String(repoSSHUrl)
+	repositoryResponse.CloneURL = pkg.String(repoCloneUrl)
 	repositoryResponse.Owner = &github.User{
-		Login: wrapString("user-login"),
+		Login: pkg.String("user-login"),
 	}
 
 	m.EXPECT().
@@ -108,14 +109,14 @@ func TestGithubVCS_Scaffold_RepositoryAlreadyExist(t *testing.T) {
 	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
-		Name:     wrapString(repoName),
-		AutoInit: wrapBool(true),
-		Private:  wrapBool(false),
+		Name:     pkg.String(repoName),
+		AutoInit: pkg.Bool(true),
+		Private:  pkg.Bool(false),
 	}
 
 	repositoryResponse := repository
 	repositoryResponse.Owner = &github.User{
-		Login: wrapString("user-login"),
+		Login: pkg.String("user-login"),
 	}
 
 	m.EXPECT().
@@ -144,9 +145,9 @@ func TestGithubVCS_Scaffold_CreateError(t *testing.T) {
 	}
 
 	repository := &github.Repository{
-		Name:     wrapString(repoName),
-		AutoInit: wrapBool(true),
-		Private:  wrapBool(false),
+		Name:     pkg.String(repoName),
+		AutoInit: pkg.Bool(true),
+		Private:  pkg.Bool(false),
 	}
 
 	m.EXPECT().
@@ -168,15 +169,15 @@ func TestGithubVCS_ScaffoldProtectBranchError(t *testing.T) {
 	git := GithubVCS{repositories: m}
 
 	repository := github.Repository{
-		Name:     wrapString(repoName),
-		AutoInit: wrapBool(true),
-		Private:  wrapBool(false),
+		Name:     pkg.String(repoName),
+		AutoInit: pkg.Bool(true),
+		Private:  pkg.Bool(false),
 	}
 
 	repositoryResponse := repository
-	repositoryResponse.SSHURL = wrapString(repoCloneUrl)
+	repositoryResponse.SSHURL = pkg.String(repoCloneUrl)
 	repositoryResponse.Owner = &github.User{
-		Login: wrapString("user-login"),
+		Login: pkg.String("user-login"),
 	}
 
 	m.EXPECT().
@@ -230,7 +231,7 @@ func TestGithubVCS_Webhook(t *testing.T) {
 			"url":          "https://ab.cd",
 			"content_type": "json",
 		},
-		Active: wrapBool(true),
+		Active: pkg.Bool(true),
 	}).Return(nil, githubCreatedResponse, nil).
 		Times(1)
 
@@ -257,7 +258,7 @@ func TestGithubVCS_WebhookError(t *testing.T) {
 			"url":          "https://ab.cd",
 			"content_type": "json",
 		},
-		Active: wrapBool(true),
+		Active: pkg.Bool(true),
 	}).Return(nil, githubBadRequestResponse, nil).
 		Times(1)
 

@@ -1,4 +1,4 @@
-package config
+package vcs
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ type groupsService interface {
 }
 
 type GitlabVCS struct {
-	git
+	Git
 	Group           string `yaml:"group" env:"GITLAB_GROUP"`
 	Token           string `yaml:"token" env:"GITLAB_TOKEN"`
 	Visibility      string `yaml:"visibility"`
@@ -96,10 +96,10 @@ func (v *GitlabVCS) Validate(name string) error {
 	return nil
 }
 
-func (v *GitlabVCS) configure() {
-	git := gitlab.NewClient(nil, v.Token)
-	v.projectsService = git.Projects
-	v.groupsService = git.Groups
+func (v *GitlabVCS) Configure() {
+	client := gitlab.NewClient(nil, v.Token)
+	v.projectsService = client.Projects
+	v.groupsService = client.Groups
 }
 
 var _ VCS = &GitlabVCS{}

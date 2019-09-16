@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"io"
 	"io/ioutil"
 	"os"
@@ -315,7 +317,7 @@ func TestScaffold_Registry_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.Selected = "github"
-	cfg.VCS.Github = &GithubVCS{}
+	cfg.VCS.Github = &vcs.GithubVCS{}
 
 	out := &bytes.Buffer{}
 
@@ -329,7 +331,7 @@ func TestScaffold_Validate_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.Selected = "github"
-	cfg.VCS.Github = &GithubVCS{}
+	cfg.VCS.Github = &vcs.GithubVCS{}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -407,7 +409,7 @@ func TestScaffold_Webhook_Error(t *testing.T) {
 	os.Clearenv()
 	cfg := initEmptyConfig()
 	cfg.VCS.VCS = &mockVcs{webhookErr: errors.New("error")}
-	cfg.availableCI = []CI{&mockCi{webhookUrl: wrapString("https://example.org")}}
+	cfg.availableCI = []CI{&mockCi{webhookUrl: pkg.String("https://example.org")}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -500,11 +502,11 @@ type mockVcs struct {
 	webhookErr  error
 }
 
-func (m mockVcs) identify(dir string, out io.Writer) bool {
+func (m mockVcs) Identify(dir string, out io.Writer) bool {
 	panic("implement me")
 }
 
-func (m mockVcs) configure() {}
+func (m mockVcs) Configure() {}
 
 func (m mockVcs) Name() string {
 	return "mockVcs"
@@ -518,11 +520,11 @@ func (m mockVcs) Commit() string {
 	panic("implement me")
 }
 
-func (m mockVcs) Scaffold(name string) (*RepositoryInfo, error) {
+func (m mockVcs) Scaffold(name string) (*vcs.RepositoryInfo, error) {
 	if m.scaffoldErr != nil {
 		return nil, m.scaffoldErr
 	}
-	return &RepositoryInfo{
+	return &vcs.RepositoryInfo{
 		SSHURL:  "file:///tmp",
 		HTTPURL: "http://github.com/example/repo",
 	}, nil
@@ -546,4 +548,4 @@ func (m mockVcs) Validate(name string) error {
 	return nil
 }
 
-var _ VCS = &mockVcs{}
+var _ vcs.VCS = &mockVcs{}

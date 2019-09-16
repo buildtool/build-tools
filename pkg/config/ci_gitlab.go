@@ -30,6 +30,14 @@ type usersService interface {
 	CurrentUser(options ...gitlab.OptionFunc) (*gitlab.User, *gitlab.Response, error)
 }
 
+type projectsService interface {
+	GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error)
+}
+
+type groupsService interface {
+	GetGroup(gid interface{}, options ...gitlab.OptionFunc) (*gitlab.Group, *gitlab.Response, error)
+}
+
 var _ CI = &GitlabCI{}
 
 func (c *GitlabCI) Name() string {

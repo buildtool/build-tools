@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/buildkite/go-buildkite/buildkite"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"path/filepath"
@@ -153,12 +154,12 @@ func (c *BuildkiteCI) configured() bool {
 func getProviderFromRepositoryHost(host string) buildkite.ProviderSettings {
 	if host == "github.com" {
 		return &buildkite.GitHubSettings{
-			TriggerMode:                wrapString("code"),
-			BuildPullRequests:          wrapBool(true),
-			BuildPullRequestForks:      wrapBool(false),
-			BuildTags:                  wrapBool(false),
-			PublishCommitStatus:        wrapBool(true),
-			PublishCommitStatusPerStep: wrapBool(true),
+			TriggerMode:                pkg.String("code"),
+			BuildPullRequests:          pkg.Bool(true),
+			BuildPullRequestForks:      pkg.Bool(false),
+			BuildTags:                  pkg.Bool(false),
+			PublishCommitStatus:        pkg.Bool(true),
+			PublishCommitStatusPerStep: pkg.Bool(true),
 		}
 	}
 	return nil

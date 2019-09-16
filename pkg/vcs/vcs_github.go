@@ -1,16 +1,17 @@
-package config
+package vcs
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/google/go-github/v28/github"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"golang.org/x/oauth2"
 	"net/http"
 )
 
 type GithubVCS struct {
-	git
+	Git
 	Token        string `yaml:"token" env:"GITHUB_TOKEN"`
 	Organisation string `yaml:"organisation" env:"GITHUB_ORG"`
 	Public       bool   `yaml:"public"`
@@ -24,9 +25,9 @@ func (v *GithubVCS) Name() string {
 
 func (v *GithubVCS) Scaffold(name string) (*RepositoryInfo, error) {
 	repo := &github.Repository{
-		Name:     wrapString(name),
-		Private:  wrapBool(v.Public),
-		AutoInit: wrapBool(true),
+		Name:     pkg.String(name),
+		Private:  pkg.Bool(v.Public),
+		AutoInit: pkg.Bool(true),
 	}
 	repo, resp, err := v.repositories.Create(context.Background(), v.Organisation, repo)
 	if err != nil {
@@ -71,7 +72,7 @@ func (v *GithubVCS) Webhook(name, url string) error {
 			"url":          url,
 			"content_type": "json",
 		},
-		Active: wrapBool(true),
+		Active: pkg.Bool(true),
 	}
 
 	_, resp, err := v.repositories.CreateHook(context.Background(), v.repoOwner, name, hook)
@@ -90,7 +91,7 @@ func (v *GithubVCS) Validate(name string) error {
 	return nil
 }
 
-func (v *GithubVCS) configure() {
+func (v *GithubVCS) Configure() {
 	client := github.NewClient(oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: v.Token},
 	)))

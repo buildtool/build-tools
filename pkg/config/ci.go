@@ -2,6 +2,7 @@ package config
 
 import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"os"
 	"path/filepath"
 )
@@ -21,7 +22,7 @@ type CI interface {
 }
 
 type ci struct {
-	VCS VCS
+	VCS vcs.VCS
 }
 
 func (c *ci) setVCS(cfg Config) {

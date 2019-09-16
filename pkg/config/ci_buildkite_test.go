@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/buildkite/go-buildkite/buildkite"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"net/http"
@@ -245,12 +246,12 @@ func TestScaffold_Buildkite_Create_Github(t *testing.T) {
 			},
 		},
 		ProviderSettings: &buildkite.GitHubSettings{
-			TriggerMode:                wrapString("code"),
-			BuildPullRequests:          wrapBool(true),
-			BuildPullRequestForks:      wrapBool(false),
-			BuildTags:                  wrapBool(false),
-			PublishCommitStatus:        wrapBool(true),
-			PublishCommitStatusPerStep: wrapBool(true),
+			TriggerMode:                pkg.String("code"),
+			BuildPullRequests:          pkg.Bool(true),
+			BuildPullRequestForks:      pkg.Bool(false),
+			BuildTags:                  pkg.Bool(false),
+			PublishCommitStatus:        pkg.Bool(true),
+			PublishCommitStatusPerStep: pkg.Bool(true),
 		},
 		SkipQueuedBranchBuilds:    true,
 		CancelRunningBranchBuilds: true,
@@ -318,9 +319,9 @@ func TestBadges_Buildkite(t *testing.T) {
 
 func pipeline(hookUrl, badgeUrl, webUrl string) *buildkite.Pipeline {
 	return &buildkite.Pipeline{
-		BadgeURL: wrapString(badgeUrl),
-		WebURL:   wrapString(webUrl),
-		Provider: &buildkite.Provider{WebhookURL: wrapString(hookUrl)},
+		BadgeURL: pkg.String(badgeUrl),
+		WebURL:   pkg.String(webUrl),
+		Provider: &buildkite.Provider{WebhookURL: pkg.String(hookUrl)},
 	}
 }
 

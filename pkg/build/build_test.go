@@ -54,6 +54,22 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	assert.Equal(t, "", eout.String())
 }
 
+func TestBuild_CI_Failure(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	_ = os.Setenv("CI", "buildkite")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+
+	assert.EqualError(t, err, "Invalid token, empty string supplied")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
 func TestBuild_NoRegistry(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
@@ -68,7 +84,7 @@ func TestBuild_NoRegistry(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "no Docker registry found")
-	assert.Equal(t, "", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -89,7 +105,7 @@ func TestBuild_LoginError(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "invalid username/password")
-	assert.Equal(t, "Unable to login\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nUnable to login\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -110,7 +126,7 @@ func TestBuild_BuildError(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "build error")
-	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -131,7 +147,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "build error")
-	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
 	assert.Equal(t, "Code: 123 Message: build error\n", eout.String())
 }
 
@@ -152,7 +168,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "unexpected end of JSON input")
-	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
 	assert.Equal(t, "Unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
 }
 
@@ -187,7 +203,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "Logged in\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -213,7 +229,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "Logged in\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\n\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -303,7 +319,7 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:master", "repo/reponame:latest", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[2].CacheFrom)
-	assert.Equal(t, "Logged in\nBuild successfulBuild successfulBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\n\x1b[0m\nBuild successfulBuild successfulBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 

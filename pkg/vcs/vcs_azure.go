@@ -1,7 +1,7 @@
-package config
+package vcs
 
 type AzureVCS struct {
-	git
+	Git
 }
 
 func (v AzureVCS) Name() string {
@@ -20,6 +20,6 @@ func (v AzureVCS) Validate(name string) error {
 	return nil
 }
 
-func (v AzureVCS) configure() {}
+func (v AzureVCS) Configure() {}
 
 var _ VCS = &AzureVCS{}

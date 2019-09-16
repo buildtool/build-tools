@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -80,4 +81,20 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "", out.String())
+}
+
+func TestNoOpCI_Scaffold(t *testing.T) {
+	ci := &noOpCI{}
+
+	hookUrl, err := ci.Scaffold(name, templating.TemplateData{})
+	assert.Nil(t, hookUrl)
+	assert.NoError(t, err)
+}
+
+func TestNoOpCI_Badges(t *testing.T) {
+	ci := &noOpCI{}
+
+	badges, err := ci.Badges(name)
+	assert.Nil(t, badges)
+	assert.NoError(t, err)
 }

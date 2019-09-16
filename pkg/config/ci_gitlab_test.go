@@ -247,6 +247,33 @@ func (m mockBadges) ListProjectBadges(pid interface{}, opt *gitlab.ListProjectBa
 
 var _ badgesService = &mockBadges{}
 
+type mockProjects struct {
+	response *gitlab.Response
+	getErr   error
+	pid      interface{}
+	project  *gitlab.Project
+}
+
+func (m *mockProjects) GetProject(pid interface{}, opt *gitlab.GetProjectOptions, options ...gitlab.OptionFunc) (*gitlab.Project, *gitlab.Response, error) {
+	m.pid = pid
+	return m.project, m.response, m.getErr
+}
+
+var _ projectsService = &mockProjects{}
+
+type mockGroups struct {
+	err   error
+	gid   interface{}
+	group *gitlab.Group
+}
+
+func (m *mockGroups) GetGroup(gid interface{}, options ...gitlab.OptionFunc) (*gitlab.Group, *gitlab.Response, error) {
+	m.gid = gid
+	return m.group, nil, m.err
+}
+
+var _ groupsService = &mockGroups{}
+
 var expectedGitlabCiYml = `stages:
   - build
   - deploy-staging
