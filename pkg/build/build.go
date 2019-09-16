@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
+	"github.com/liamg/tml"
 	"github.com/pkg/errors"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
@@ -75,10 +76,13 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	if err != nil {
 		return err
 	}
+	_ = tml.Printf("Using CI <green>%s</green>\n", currentCI.Name())
+
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		return err
 	} else {
+		_ = tml.Printf("Using registry <green>%s</green>\n", currentRegistry.Name())
 		if err := currentRegistry.Login(client, out); err != nil {
 			return err
 		}
@@ -93,6 +97,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
+	_ = tml.Printf("Using build variables commit <green>%s</green> on branch <green>%s></green>\n", commit, branch)
 	var caches []string
 
 	args := map[string]*string{

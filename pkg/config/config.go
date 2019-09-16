@@ -41,6 +41,7 @@ type CIConfig struct {
 	Azure     *AzureCI     `yaml:"azure"`
 	Buildkite *BuildkiteCI `yaml:"buildkite"`
 	Gitlab    *GitlabCI    `yaml:"gitlab"`
+	TeamCity  *TeamCityCI  `yaml:"teamcity"`
 }
 
 type RegistryConfig struct {
@@ -88,6 +89,7 @@ func initEmptyConfig() *Config {
 			Azure:     &AzureCI{ci: &ci{}},
 			Buildkite: &BuildkiteCI{ci: &ci{}},
 			Gitlab:    &GitlabCI{ci: &ci{}},
+			TeamCity:  &TeamCityCI{ci: &ci{}},
 		},
 		Registry: &RegistryConfig{
 			Dockerhub: &DockerhubRegistry{},
@@ -96,7 +98,7 @@ func initEmptyConfig() *Config {
 			Quay:      &QuayRegistry{},
 		},
 	}
-	c.availableCI = []CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab}
+	c.availableCI = []CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
 	return c
 }
 
