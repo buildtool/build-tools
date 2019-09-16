@@ -43,7 +43,7 @@ func TestGit_MissingRepo(t *testing.T) {
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(dir)
 
-	_ = os.Mkdir(filepath.Join(dir, ".Git"), 0777)
+	_ = os.Mkdir(filepath.Join(dir, ".git"), 0777)
 
 	out := &bytes.Buffer{}
 	result := Identify(dir, out)

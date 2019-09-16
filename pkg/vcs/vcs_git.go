@@ -14,7 +14,7 @@ type Git struct {
 }
 
 func (v *Git) Identify(dir string, out io.Writer) bool {
-	if _, err := os.Stat(filepath.Join(dir, ".Git")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
 		return false
 	}
 	repo, err := git2.PlainOpen(dir)
