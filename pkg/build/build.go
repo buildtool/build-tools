@@ -29,7 +29,7 @@ type responsetype struct {
 	Error string `json:"error"`
 }
 
-func DoBuild(dir string, out, eout io.Writer, exit func(code int), args ...string) int {
+func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 	var dockerfile string
 	const (
 		defaultDockerfile = "Dockerfile"
@@ -43,15 +43,16 @@ func DoBuild(dir string, out, eout io.Writer, exit func(code int), args ...strin
 
 	if client, err := dkr.NewEnvClient(); err != nil {
 		_, _ = fmt.Fprintln(out, err.Error())
-		exit(-1)
+		return -1
 	} else {
 		if buildContext, err := createBuildContext(dir); err != nil {
 			_, _ = fmt.Fprintln(out, err.Error())
-			exit(-2)
+			return -2
 		} else {
 			err = build(client, dir, buildContext, dockerfile, out, eout)
 			if err != nil {
 				fmt.Println(err.Error())
+				return -3
 			}
 		}
 	}
@@ -97,7 +98,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
-	_ = tml.Printf("Using build variables commit <green>%s</green> on branch <green>%s></green>\n", commit, branch)
+	_ = tml.Printf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch)
 	var caches []string
 
 	args := map[string]*string{

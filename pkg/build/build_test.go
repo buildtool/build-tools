@@ -231,10 +231,7 @@ func TestBuild_BadDockerHost(t *testing.T) {
 	_ = os.Setenv("DOCKER_HOST", "abc-123")
 	out := bytes.Buffer{}
 	eout := bytes.Buffer{}
-	exitCode := 0
-	DoBuild(name, &out, &eout, func(code int) {
-		exitCode = code
-	})
+	exitCode := DoBuild(name, &out, &eout)
 	assert.Equal(t, -1, exitCode)
 	assert.Equal(t, "unable to parse docker host `abc-123`\n", out.String())
 }
@@ -245,10 +242,7 @@ func TestBuild_UnreadableDockerignore(t *testing.T) {
 	os.Clearenv()
 	out := bytes.Buffer{}
 	eout := bytes.Buffer{}
-	exitCode := 0
-	DoBuild(name, &out, &eout, func(code int) {
-		exitCode = code
-	})
+	exitCode := DoBuild(name, &out, &eout)
 	assert.Equal(t, -2, exitCode)
 	assert.Equal(t, fmt.Sprintf("read %s: is a directory\n", filename), out.String())
 }
