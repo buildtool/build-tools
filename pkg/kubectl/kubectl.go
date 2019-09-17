@@ -39,7 +39,7 @@ func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 		ns = "default"
 	}
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	return &kubectl{context: environment.Context, namespace: ns, tempDir: name, out: out}
+	return &kubectl{context: environment.Context, namespace: ns, tempDir: name, out: out, eout: eout}
 }
 
 func (k kubectl) defaultArgs() []string {
