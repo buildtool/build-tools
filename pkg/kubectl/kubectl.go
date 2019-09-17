@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"io"
 	"io/ioutil"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"os"
@@ -36,11 +38,11 @@ var newKubectlCmd = cmd.NewKubectlCommand
 func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	arg := argsFromEnvironment(environment, name)
+	arg := argsFromEnvironment(environment, name, out)
 	return &kubectl{args: arg, tempDir: name, out: out, eout: eout}
 }
 
-func argsFromEnvironment(e *config.Environment, tempDir string) map[string]string {
+func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) map[string]string {
 	args := make(map[string]string)
 	if len(e.Context) > 0 {
 		args["context"] = e.Context
@@ -48,18 +50,15 @@ func argsFromEnvironment(e *config.Environment, tempDir string) map[string]strin
 	if len(e.Namespace) > 0 {
 		args["namespace"] = e.Namespace
 	}
-	if len(e.Kubeconfig) > 0 {
-		_, err := os.Stat(e.Kubeconfig)
-		if err != nil {
-			// Not a file, create file from content
-			kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
-			_ = ioutil.WriteFile(kubeconfigFile, []byte(e.Kubeconfig), 0777)
-			args["kubeconfig"] = kubeconfigFile
-		} else {
-			// File, use it
-			args["kubeconfig"] = e.Kubeconfig
-		}
+	if content, exist := os.LookupEnv("KUBECONFIG_CONTENT"); exist {
+		// Not a file, create file from content
+		kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
+		_ = ioutil.WriteFile(kubeconfigFile, []byte(content), 0777)
+		args["kubeconfig"] = kubeconfigFile
+	} else if len(e.Kubeconfig) > 0 {
+		args["kubeconfig"] = e.Kubeconfig
 	}
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args["kubeconfig"]))
 
 	return args
 }

@@ -424,7 +424,7 @@ func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 		parent = filepath.Dir(parent)
 	}
 	for i := len(files) - 1; i >= 0; i-- {
-		_, _ = fmt.Fprintf(out, "Parsing config from file: '%s'\n", files[i])
+		_, _ = fmt.Fprintln(out, tml.Sprintf( "Parsing config from file: <green>'%s'</green>", files[i]))
 		if err := fn(files[i]); err != nil {
 			return err
 		}
