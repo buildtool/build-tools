@@ -11,6 +11,10 @@ import (
 )
 
 func main() {
+	os.Exit(doDeploy())
+}
+
+func doDeploy() int {
 	var context, namespace string
 	const (
 		contextUsage   = "override the context for default environment deployment target"
@@ -26,7 +30,6 @@ func main() {
 	set.StringVar(&namespace, "namespace", "", namespaceUsage)
 	set.StringVar(&namespace, "n", "", namespaceUsage+" (shorthand)")
 	_ = set.Parse(os.Args[1:])
-
 	if set.NArg() < 1 {
 		set.Usage()
 	} else {
@@ -35,6 +38,7 @@ func main() {
 
 		if cfg, err := config.Load(dir, os.Stdout); err != nil {
 			fmt.Println(err.Error())
+			return -1
 		} else {
 			if env, err := cfg.CurrentEnvironment(environment); err != nil {
 				fmt.Println(err.Error())
@@ -48,15 +52,18 @@ func main() {
 				ci, err := cfg.CurrentCI()
 				if err != nil {
 					fmt.Println(err.Error())
+					return -2
 				} else {
 					tstamp := time.Now().Format(time.RFC3339)
 					client := kubectl.New(env, os.Stdout, os.Stderr)
 					defer client.Cleanup()
 					if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, env.Name, client, os.Stdout, os.Stderr); err != nil {
 						fmt.Println(err.Error())
+						return -3
 					}
 				}
 			}
 		}
 	}
+	return 0
 }

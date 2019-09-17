@@ -22,13 +22,15 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 	defer os.Chdir(oldPwd)
 
 	os.Args = []string{"deploy", "dummy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, -1, code)
 }
 
 func TestDeploy_MissingEnvironment(t *testing.T) {
 	os.Clearenv()
 	os.Args = []string{"deploy", "dummy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, 0, code)
 }
 
 func TestDeploy_NoCI(t *testing.T) {
@@ -49,7 +51,8 @@ environments:
 	defer os.Chdir(oldPwd)
 
 	os.Args = []string{"deploy", "dummy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, -3, code)
 }
 
 func TestDeploy_NoEnv(t *testing.T) {
@@ -73,7 +76,8 @@ environments:
 	defer os.Chdir(oldPwd)
 
 	os.Args = []string{"deploy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, 0, code)
 }
 
 func TestDeploy_NoOptions(t *testing.T) {
@@ -97,7 +101,8 @@ environments:
 	defer os.Chdir(oldPwd)
 
 	os.Args = []string{"deploy", "dummy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, -3, code)
 }
 
 func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
@@ -121,5 +126,6 @@ environments:
 	defer os.Chdir(oldPwd)
 
 	os.Args = []string{"deploy", "-c", "other", "-n", "dev", "dummy"}
-	main()
+	code := doDeploy()
+	assert.Equal(t, -3, code)
 }
