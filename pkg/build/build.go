@@ -49,15 +49,9 @@ func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 			_, _ = fmt.Fprintln(out, err.Error())
 			return -2
 		} else {
-			err = build(client, dir, buildContext, dockerfile, out, eout)
-			if err != nil {
-				fmt.Println(err.Error())
-				return -3
-			}
+			return build(client, dir, buildContext, dockerfile, out, eout)
 		}
 	}
-
-	return 0
 }
 
 func createBuildContext(dir string) (io.ReadCloser, error) {
@@ -68,24 +62,29 @@ func createBuildContext(dir string) (io.ReadCloser, error) {
 	}
 }
 
-func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerfile string, out, eout io.Writer) error {
+func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerfile string, out, eout io.Writer) int {
 	cfg, err := config.Load(dir, out)
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, err.Error())
+
+		return -3
 	}
 	currentCI, err := cfg.CurrentCI()
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, err.Error())
+		return -4
 	}
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>\n", currentCI.Name()))
 
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, err.Error())
+		return -5
 	} else {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
 		if err := currentRegistry.Login(client, out); err != nil {
-			return err
+			_, _ = fmt.Fprintln(eout, err.Error())
+			return -6
 		}
 	}
 
@@ -93,7 +92,8 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	tee := io.TeeReader(buildContext, &buf)
 	stages, err := findStages(tee, dockerfile)
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, err.Error())
+		return -7
 	}
 
 	commit := currentCI.Commit()
@@ -109,7 +109,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, []string{tag}, caches, stage, out, eout); err != nil {
-			return err
+			return -8
 		}
 	}
 
@@ -125,10 +125,10 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 	caches = append([]string{branchTag, latestTag}, caches...)
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, tags, caches, "", out, eout); err != nil {
-		return err
+		return -9
 	}
 
-	return nil
+	return 0
 }
 
 func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, out, eout io.Writer) error {
