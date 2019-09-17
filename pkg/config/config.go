@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/caarlos0/env"
@@ -19,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 )
 
 type Config struct {
@@ -132,9 +130,7 @@ func (c *Config) CurrentCI() (ci.CI, error) {
 	switch c.CI.Selected {
 	case "azure":
 		c.CI.Azure.SetVCS(c.CurrentVCS())
-		if err := c.CI.Azure.Configure(); err != nil {
-			return nil, err
-		}
+		_ = c.CI.Azure.Configure()
 		return c.CI.Azure, nil
 	case "buildkite":
 		c.CI.Buildkite.SetVCS(c.CurrentVCS())
@@ -144,24 +140,20 @@ func (c *Config) CurrentCI() (ci.CI, error) {
 		return c.CI.Buildkite, nil
 	case "gitlab":
 		c.CI.Gitlab.SetVCS(c.CurrentVCS())
-		if err := c.CI.Gitlab.Configure(); err != nil {
-			return nil, err
-		}
+		_ = c.CI.Gitlab.Configure()
 		return c.CI.Gitlab, nil
 	case "":
-		for _, ci := range c.availableCI {
-			if ci.Configured() {
-				ci.SetVCS(c.CurrentVCS())
-				return ci, nil
+		for _, x := range c.availableCI {
+			if x.Configured() {
+				x.SetVCS(c.CurrentVCS())
+				return x, nil
 			}
 		}
 	}
-	ci := &ci.NoOpCI{CommonCI: &ci.CommonCI{}}
-	ci.SetVCS(c.CurrentVCS())
-	if err := ci.Configure(); err != nil {
-		return nil, err
-	}
-	return ci, nil
+	x := &ci.NoOpCI{CommonCI: &ci.CommonCI{}}
+	x.SetVCS(c.CurrentVCS())
+	_ = x.Configure()
+	return x, nil
 }
 
 func (c *Config) CurrentRegistry() (registry.Registry, error) {
@@ -196,17 +188,17 @@ func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
 
 func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int {
 	currentVcs := c.CurrentVCS()
-	ci, err := c.CurrentCI()
+	currentCI, err := c.CurrentCI()
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -2
 	}
-	registry, err := c.CurrentRegistry()
+	currentRegistry, err := c.CurrentRegistry()
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -3
 	}
-	if err := validate(name, currentVcs, ci); err != nil {
+	if err := validate(name, currentVcs, currentCI); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -4
 	}
@@ -223,54 +215,50 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		return -6
 	}
 	projectDir := filepath.Join(dir, name)
-	if err := createDirectories(projectDir); err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -7
-	}
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-	badges, err := ci.Badges(name)
+	badges, err := currentCI.Badges(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -8
+		return -7
 	}
 	url, err := url2.Parse(repository.HTTPURL)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -9
+		return -8
 	}
 	data := templating.TemplateData{
 		ProjectName:    name,
 		Badges:         badges,
 		Organisation:   c.Organisation,
-		RegistryUrl:    registry.RegistryUrl(),
+		RegistryUrl:    currentRegistry.RegistryUrl(),
 		RepositoryUrl:  repository.SSHURL,
 		RepositoryHost: url.Host,
 		RepositoryPath: strings.Replace(url.Path, ".git", "", 1),
 	}
-	webhook, err := ci.Scaffold(dir, data)
+	webhook, err := currentCI.Scaffold(dir, data)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -10
+		return -9
 	}
 	if err := addWebhook(name, webhook, currentVcs); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -11
+		return -10
 	}
 	if err := createDotfiles(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -12
+		return -11
 	}
 	if err := createReadme(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -13
+		return -12
 	}
 	if err := createDeployment(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -14
+		return -13
 	}
 	if err := stack.Scaffold(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -15
+		return -14
 	}
 	return 0
 }
@@ -280,10 +268,6 @@ func validate(name string, vcs vcs.VCS, ci ci.CI) error {
 		return err
 	}
 	return ci.Validate(name)
-}
-
-func createDirectories(dir string) error {
-	return os.Mkdir(filepath.Join(dir, "deployment_files"), 0777)
 }
 
 func addWebhook(name string, url *string, vcs vcs.VCS) error {
@@ -327,15 +311,7 @@ func createReadme(dir string, data templating.TemplateData) error {
 # {{.ProjectName}}
 {{range .Badges}}[![{{.Title}}]({{.ImageUrl}})]({{.LinkUrl}}){{end}}
 `
-	tpl, err := template.New("readme").Parse(content)
-	if err != nil {
-		return err
-	}
-	buff := bytes.Buffer{}
-	if err = tpl.Execute(&buff, data); err != nil {
-		return err
-	}
-	return file.Write(dir, "README.md", buff.String())
+	return file.WriteTemplated(dir, "README.md", content, data)
 }
 
 func createDeployment(dir string, data templating.TemplateData) error {

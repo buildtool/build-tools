@@ -53,6 +53,22 @@ func TestPush_BrokenConfig(t *testing.T) {
 	assert.Equal(t, "", eout.String())
 }
 
+func TestPush_CI_Failure(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("REGISTRY", "dockerhub")
+	_ = os.Setenv("CI", "buildkite")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	err := Push(client, "Dockerfile", out, eout)
+
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, "Invalid token, empty string supplied")
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
 func TestPush_NoRegistry(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("GITLAB_CI", "1")

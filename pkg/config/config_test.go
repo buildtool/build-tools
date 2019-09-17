@@ -233,9 +233,9 @@ registry:
 	assert.Equal(t, "buildkite", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "quay", cfg.Registry.Selected)
-	registry, err := cfg.CurrentRegistry()
+	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\nParsing config from file: '%s/sub/.buildtools.yaml'\n", name, name), out.String())
 }
 
@@ -307,9 +307,9 @@ func TestLoad_Selected_Registry_Dockerhub(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
-	registry, err := cfg.CurrentRegistry()
+	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, "dockerhub", cfg.Registry.Selected)
 	assert.Equal(t, "", out.String())
 }
@@ -323,9 +323,9 @@ func TestLoad_Selected_Registry_ECR(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
-	registry, err := cfg.CurrentRegistry()
+	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, "ecr", cfg.Registry.Selected)
 	assert.Equal(t, "", out.String())
 }
@@ -339,9 +339,9 @@ func TestLoad_Selected_Registry_Gitlab(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
-	registry, err := cfg.CurrentRegistry()
+	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, "gitlab", cfg.Registry.Selected)
 	assert.Equal(t, "", out.String())
 }
@@ -355,9 +355,9 @@ func TestLoad_Selected_Registry_Quay(t *testing.T) {
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, "gitlab", cfg.CI.Selected)
-	registry, err := cfg.CurrentRegistry()
+	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, "quay", cfg.Registry.Selected)
 	assert.Equal(t, "", out.String())
 }
@@ -374,6 +374,22 @@ func TestScaffold_Registry_Error(t *testing.T) {
 	code := cfg.Scaffold(name, "project", &stack.None{}, out)
 	assert.Equal(t, -3, code)
 	assert.Equal(t, "\x1b[0m\x1b[31mno Docker registry found\x1b[39m\x1b[0m\n", out.String())
+}
+
+func TestScaffold_CI_Error(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.CI.Selected = "buildkite"
+	cfg.CI.Buildkite = &ci.BuildkiteCI{CommonCI: &ci.CommonCI{}}
+	cfg.VCS.Selected = "github"
+	cfg.VCS.Github = &vcs.GithubVCS{}
+
+	out := &bytes.Buffer{}
+
+	code := cfg.Scaffold(name, "project", &stack.None{}, out)
+	assert.Equal(t, -2, code)
+	assert.Equal(t, "\x1b[0m\x1b[31mInvalid token, empty string supplied\x1b[39m\x1b[0m\n", out.String())
 }
 
 func TestScaffold_Validate_Error(t *testing.T) {
@@ -422,12 +438,12 @@ func TestScaffold_VcsClone_Error(t *testing.T) {
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
-func TestScaffold_CreateDirectories_Error(t *testing.T) {
+func TestScaffold_Badges_Error(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	os.Clearenv()
 	cfg := initEmptyConfig()
-	cfg.VCS.VCS = &mockVcs{skipMkdir: true}
-	cfg.availableCI = []ci.CI{&mockCi{scaffoldErr: errors.New("error")}}
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{badgesErr: errors.New("error")}}
 	cfg.Registry.Selected = "dockerhub"
 
 	out := &bytes.Buffer{}
@@ -435,7 +451,23 @@ func TestScaffold_CreateDirectories_Error(t *testing.T) {
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
 	assert.Equal(t, -7, exitCode)
-	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mmkdir %s: no such file or directory\x1b[39m\x1b[0m\n", filepath.Join(name, "project", "deployment_files")), out.String())
+	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
+}
+
+func TestScaffold_Not_Parsable_Repository_Url(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{httpUrl: "http://192.168.0.%31/"}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
+
+	assert.Equal(t, -8, exitCode)
+	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mparse http://192.168.0.%31/: invalid URL escape \"%31\"\x1b[39m\x1b[0m\n", out.String())
 }
 
 func TestScaffold_CiScaffold_Error(t *testing.T) {
@@ -450,7 +482,7 @@ func TestScaffold_CiScaffold_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -10, exitCode)
+	assert.Equal(t, -9, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
 
@@ -466,8 +498,97 @@ func TestScaffold_Webhook_Error(t *testing.T) {
 
 	exitCode := cfg.Scaffold(name, "project", &stack.None{}, out)
 
-	assert.Equal(t, -11, exitCode)
+	assert.Equal(t, -10, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'none'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
+}
+
+func TestScaffold_Error_Writing_Gitignore(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	filename := filepath.Join(name, "project", ".gitignore")
+	_ = os.MkdirAll(filename, 0777)
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
+	assert.Equal(t, -11, exitCode)
+
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mopen %s: is a directory\x1b[39m\x1b[0m\n", filename), out.String())
+}
+func TestScaffold_Error_Writing_Editorconfig(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	filename := filepath.Join(name, "project", ".editorconfig")
+	_ = os.MkdirAll(filename, 0777)
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
+	assert.Equal(t, -11, exitCode)
+
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mopen %s: is a directory\x1b[39m\x1b[0m\n", filename), out.String())
+}
+
+func TestScaffold_Error_Writing_Dockerignore(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	filename := filepath.Join(name, "project", ".dockerignore")
+	_ = os.MkdirAll(filename, 0777)
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
+	assert.Equal(t, -11, exitCode)
+
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mopen %s: is a directory\x1b[39m\x1b[0m\n", filename), out.String())
+}
+
+func TestScaffold_Error_Writing_Readme(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	filename := filepath.Join(name, "project", "README.md")
+	_ = os.MkdirAll(filename, 0777)
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
+	assert.Equal(t, -12, exitCode)
+
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mopen %s: is a directory\x1b[39m\x1b[0m\n", filename), out.String())
+}
+
+func TestScaffold_Error_Writing_Deployment(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	os.Clearenv()
+	cfg := initEmptyConfig()
+	cfg.VCS.VCS = &mockVcs{}
+	cfg.availableCI = []ci.CI{&mockCi{}}
+	cfg.Registry.Selected = "dockerhub"
+
+	filename := filepath.Join(name, "project", "deployment_files", "deploy.yaml")
+	_ = os.MkdirAll(filename, 0777)
+	out := &bytes.Buffer{}
+
+	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
+	assert.Equal(t, -13, exitCode)
+
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31mopen %s: is a directory\x1b[39m\x1b[0m\n", filename), out.String())
 }
 
 func TestScaffold_StackError(t *testing.T) {
@@ -481,7 +602,7 @@ func TestScaffold_StackError(t *testing.T) {
 	out := &bytes.Buffer{}
 
 	exitCode := cfg.Scaffold(name, "project", &errorStack{}, out)
-	assert.Equal(t, -15, exitCode)
+	assert.Equal(t, -14, exitCode)
 
 	assert.Equal(t, "\x1b[0m\x1b[94mCreating new service \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m \x1b[94musing stack \x1b[39m\x1b[97m\x1b[1m'error-stack'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating repository at \x1b[39m\x1b[97m\x1b[1m'mockVcs'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[32mCreated repository \x1b[39m\x1b[97m\x1b[1m'file:///tmp'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[94mCreating build pipeline for \x1b[39m\x1b[97m\x1b[1m'project'\x1b[0m\x1b[97m\x1b[39m\n\x1b[0m\x1b[0m\x1b[31merror\x1b[39m\x1b[0m\n", out.String())
 }
@@ -501,6 +622,7 @@ var _ stack.Stack = &errorStack{}
 type mockCi struct {
 	ci.CommonCI
 	webhookUrl  *string
+	badgesErr   error
 	scaffoldErr error
 }
 
@@ -532,7 +654,7 @@ func (m mockCi) Scaffold(dir string, data templating.TemplateData) (*string, err
 }
 
 func (m mockCi) Badges(name string) ([]templating.Badge, error) {
-	return nil, nil
+	return nil, m.badgesErr
 }
 
 func (m mockCi) Configure() error {
@@ -550,6 +672,7 @@ type mockVcs struct {
 	scaffoldErr error
 	cloneErr    error
 	webhookErr  error
+	httpUrl     string
 }
 
 func (m mockVcs) Identify(dir string, out io.Writer) bool {
@@ -576,7 +699,7 @@ func (m mockVcs) Scaffold(name string) (*vcs.RepositoryInfo, error) {
 	}
 	return &vcs.RepositoryInfo{
 		SSHURL:  "file:///tmp",
-		HTTPURL: "http://github.com/example/repo",
+		HTTPURL: m.httpUrl,
 	}, nil
 }
 
