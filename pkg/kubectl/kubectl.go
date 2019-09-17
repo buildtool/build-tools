@@ -35,20 +35,18 @@ var newKubectlCmd = cmd.NewKubectlCommand
 
 func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 	ns := environment.Namespace
-	if len(ns) == 0 {
-		ns = "default"
-	}
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	return &kubectl{context: environment.Context, namespace: ns, tempDir: name, out: out, eout: eout}
 }
 
-func (k kubectl) defaultArgs() []string {
-	return []string{
-		"--context",
-		k.context,
-		"--namespace",
-		k.namespace,
+func (k kubectl) defaultArgs() (args []string) {
+	if len(k.context) > 0 {
+		args = append(args, "--context", k.context)
 	}
+	if len(k.namespace) > 0 {
+		args = append(args, "--namespace", k.namespace)
+	}
+	return
 }
 
 func (k kubectl) Apply(input string) error {
