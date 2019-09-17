@@ -195,11 +195,14 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 func TestKubectl_KubeconfigSet(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	k := New(&config.Environment{Name: "dummy", Kubeconfig: `contexts:
+	yaml := `contexts:
 - context:
     cluster: k8s.prod
     user: user@example.org
-`}, out, eout)
+`
+	_ = os.Setenv("KUBECONFIG_CONTENT", yaml)
+	defer func() { _ = os.Unsetenv("KUBECONFIG_CONTENT") }()
+	k := New(&config.Environment{Name: "dummy"}, out, eout)
 
 	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
 	fileContent, err := ioutil.ReadFile(kubeConfigFile)
@@ -210,6 +213,7 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
 }
 
 func TestKubectl_KubeconfigExistingFile(t *testing.T) {
+
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	name, _ := ioutil.TempFile(os.TempDir(), "kubecontent")
@@ -373,6 +377,7 @@ func mockCmd(in io.Reader, out, err io.Writer) *cobra.Command {
 	var timeout *time.Duration
 	var showEvents *bool
 	var selector *string
+	var kubeconfig *string
 
 	cmd := cobra.Command{
 		Use: "kubectl",
@@ -380,6 +385,9 @@ func mockCmd(in io.Reader, out, err io.Writer) *cobra.Command {
 			var call = args
 			if *ctx != "" {
 				call = append(call, "--context", *ctx)
+			}
+			if *kubeconfig != "" {
+				call = append(call, "--kubeconfig", *kubeconfig)
 			}
 			if *ns != "" {
 				call = append(call, "--namespace", *ns)
@@ -419,6 +427,7 @@ func mockCmd(in io.Reader, out, err io.Writer) *cobra.Command {
 	timeout = cmd.Flags().DurationP("timeout", "t", 0*time.Second, "")
 	showEvents = cmd.Flags().BoolP("show-events", "", false, "")
 	selector = cmd.Flags().StringP("selector", "l", "", "")
+	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 
 	return &cmd
 }

@@ -50,7 +50,7 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	absPath, _ := filepath.Abs(filepath.Join(name, ".buildtools.yaml"))
 	assert.NotNil(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", absPath), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", absPath), out.String())
 	assert.Equal(t, "", eout.String())
 }
 

@@ -58,7 +58,9 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) m
 	} else if len(e.Kubeconfig) > 0 {
 		args["kubeconfig"] = e.Kubeconfig
 	}
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args["kubeconfig"]))
+	if _, exists := args["kubeconfig"]; exists {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args["kubeconfig"]))
+	}
 
 	return args
 }

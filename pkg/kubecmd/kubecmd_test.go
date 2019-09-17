@@ -28,7 +28,7 @@ func TestKubecmd_BrokenConfig(t *testing.T) {
 	out := bytes.Buffer{}
 	cmd := Kubecmd(name, &out, "dummy")
 	assert.Nil(t, cmd)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\nyaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig\n", filePath), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\nyaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig\n", filePath), out.String())
 }
 
 func TestKubecmd_MissingEnvironment(t *testing.T) {
@@ -41,7 +41,7 @@ func TestKubecmd_MissingEnvironment(t *testing.T) {
 	out := bytes.Buffer{}
 	cmd := Kubecmd(name, &out, "dummy")
 	assert.Nil(t, cmd)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\nno environment matching dummy found\n", filePath), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\nno environment matching dummy found\n", filePath), out.String())
 }
 
 func TestKubecmd_NoOptions(t *testing.T) {
@@ -59,7 +59,7 @@ environments:
 	out := bytes.Buffer{}
 	cmd := Kubecmd(name, &out, "dummy")
 	assert.Equal(t, "kubectl --context missing --namespace none", *cmd)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", filePath), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", filePath), out.String())
 }
 
 func TestKubecmd_ContextAndNamespaceSpecified(t *testing.T) {
@@ -77,5 +77,5 @@ environments:
 	out := bytes.Buffer{}
 	cmd := Kubecmd(name, &out, "-c", "other", "-n", "dev", "dummy")
 	assert.Equal(t, "kubectl --context other --namespace dev", *cmd)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s'\n", filePath), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", filePath), out.String())
 }

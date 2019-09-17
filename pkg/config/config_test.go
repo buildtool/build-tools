@@ -82,7 +82,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 	assert.Equal(t, "", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "", cfg.Registry.Selected)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
 }
 
 func TestLoad_UnreadableFile(t *testing.T) {
@@ -99,7 +99,7 @@ func TestLoad_UnreadableFile(t *testing.T) {
 	assert.Equal(t, "", cfg.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "", cfg.Registry.Selected)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
 }
 
 func TestLoad_YAML(t *testing.T) {
@@ -157,7 +157,7 @@ environments:
 	assert.Equal(t, &devEnv, currentEnv)
 	_, err = cfg.CurrentEnvironment("missing")
 	assert.EqualError(t, err, "no environment matching missing found")
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\n", name), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
 }
 
 func TestLoad_BrokenYAML_From_Env(t *testing.T) {
@@ -236,7 +236,7 @@ registry:
 	currentRegistry, err := cfg.CurrentRegistry()
 	assert.NoError(t, err)
 	assert.NotNil(t, currentRegistry)
-	assert.Equal(t, fmt.Sprintf("Parsing config from file: '%s/.buildtools.yaml'\nParsing config from file: '%s/sub/.buildtools.yaml'\n", name, name), out.String())
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
 
 func TestLoad_ENV(t *testing.T) {
