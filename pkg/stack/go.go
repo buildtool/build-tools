@@ -8,7 +8,7 @@ import (
 
 type Go struct{}
 
-func (g Go) Scaffold(dir, name string, data templating.TemplateData) error {
+func (g Go) Scaffold(dir string, data templating.TemplateData) error {
 	if err := file.WriteTemplated(dir, "go.mod", goMod, data); err != nil {
 		return err
 	}

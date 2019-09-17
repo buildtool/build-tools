@@ -488,7 +488,7 @@ func TestScaffold_StackError(t *testing.T) {
 
 type errorStack struct{}
 
-func (e errorStack) Scaffold(dir, name string, data templating.TemplateData) error {
+func (e errorStack) Scaffold(dir string, data templating.TemplateData) error {
 	return errors.New("error")
 }
 

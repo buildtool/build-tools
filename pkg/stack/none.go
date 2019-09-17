@@ -4,7 +4,7 @@ import "gitlab.com/sparetimecoders/build-tools/pkg/templating"
 
 type None struct{}
 
-func (n *None) Scaffold(dir, name string, data templating.TemplateData) error {
+func (n *None) Scaffold(dir string, data templating.TemplateData) error {
 	return nil
 }
 

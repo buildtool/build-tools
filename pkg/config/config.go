@@ -267,7 +267,7 @@ func (c *Config) Scaffold(dir, name string, stack stck.Stack, out io.Writer) int
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -14
 	}
-	if err := stack.Scaffold(projectDir, name, data); err != nil {
+	if err := stack.Scaffold(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -15
 	}

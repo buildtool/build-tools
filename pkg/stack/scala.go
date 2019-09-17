@@ -10,7 +10,7 @@ import (
 
 type Scala struct{}
 
-func (s Scala) Scaffold(dir, name string, data templating.TemplateData) error {
+func (s Scala) Scaffold(dir string, data templating.TemplateData) error {
 	for _, s := range []string{"main", "test"} {
 		for _, t := range []string{"scala", "resources"} {
 			if err := os.MkdirAll(filepath.Join(dir, "src", s, t), 0777); err != nil {
