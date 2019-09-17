@@ -17,7 +17,8 @@ func TestPush_BadDockerHost(t *testing.T) {
 
 	os.Clearenv()
 	_ = os.Setenv("DOCKER_HOST", "abc-123")
-	main()
+	code := doPush()
+	assert.Equal(t, -1, code)
 }
 
 func TestPush(t *testing.T) {
@@ -28,5 +29,6 @@ func TestPush(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Chdir(oldPwd)
 	os.Clearenv()
-	main()
+	code := doPush()
+	assert.Equal(t, -2, code)
 }
