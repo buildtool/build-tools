@@ -20,7 +20,7 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(".", "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(".", "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.EqualError(t, err, "open deployment_files: no such file or directory")
 	assert.Equal(t, "", out.String())
@@ -38,7 +38,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
@@ -65,7 +65,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -85,7 +85,7 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.EqualError(t, err, fmt.Sprintf("read %s/deployment_files/deploy.yaml: is a directory", name))
 	assert.Equal(t, "", out.String())
@@ -107,7 +107,7 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.EqualError(t, err, fmt.Sprintf("open %s/deployment_files/deploy.yaml: no such file or directory", name))
 	assert.Equal(t, "", out.String())
@@ -133,7 +133,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -161,7 +161,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -191,7 +191,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -219,7 +219,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.EqualError(t, err, "apply failed")
 	assert.Equal(t, "", out.String())
@@ -245,7 +245,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout)
 
 	assert.EqualError(t, err, "apply failed")
 	assert.Equal(t, "", out.String())
@@ -273,7 +273,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "2019-05-13T17:22:36Z01:00", client, out, eout)
+	err := Deploy(name, "abc123", "image", "2019-05-13T17:22:36Z01:00", "test", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -310,7 +310,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -340,7 +340,7 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", client, out, eout)
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))

@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-func Deploy(dir, commit, buildName, timestamp string, client kubectl.Kubectl, out, eout io.Writer) error {
+func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
 	deploymentFiles := filepath.Join(dir, "deployment_files")
-	if err := processDir(deploymentFiles, commit, timestamp, client); err != nil {
+	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client); err != nil {
 		return err
 	}
 
@@ -26,15 +26,14 @@ func Deploy(dir, commit, buildName, timestamp string, client kubectl.Kubectl, ou
 	return nil
 }
 
-func processDir(dir, commit, timestamp string, client kubectl.Kubectl) error {
-	env := client.Environment()
+func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl.Kubectl) error {
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
-			if info.Name() == env.Name && info.IsDir() {
-				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, client); err != nil {
+			if info.Name() == targetEnvironment && info.IsDir() {
+				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, targetEnvironment, client); err != nil {
 					return err
 				}
-			} else if fileIsForEnvironment(info, env.Name) {
+			} else if fileIsForEnvironment(info, targetEnvironment) {
 				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				} else {

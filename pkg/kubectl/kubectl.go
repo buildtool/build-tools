@@ -16,7 +16,6 @@ import (
 
 type Kubectl interface {
 	Apply(input string) error
-	Environment() *config.Environment
 	Cleanup()
 	DeploymentExists(name string) bool
 	RolloutStatus(name string) bool
@@ -25,12 +24,11 @@ type Kubectl interface {
 }
 
 type kubectl struct {
-	context     string
-	namespace   string
-	environment *config.Environment
-	tempDir     string
-	out         io.Writer
-	eout        io.Writer
+	context   string
+	namespace string
+	tempDir   string
+	out       io.Writer
+	eout      io.Writer
 }
 
 var newKubectlCmd = cmd.NewKubectlCommand
@@ -41,7 +39,16 @@ func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 		ns = "default"
 	}
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	return &kubectl{context: environment.Context, namespace: ns, environment: environment, tempDir: name, out: out}
+	return &kubectl{context: environment.Context, namespace: ns, tempDir: name, out: out}
+}
+
+func (k kubectl) defaultArgs() []string {
+	return []string{
+		"--context",
+		k.context,
+		"--namespace",
+		k.namespace,
+	}
 }
 
 func (k kubectl) Apply(input string) error {
@@ -50,14 +57,12 @@ func (k kubectl) Apply(input string) error {
 	if err != nil {
 		return err
 	}
-	args := []string{"apply", "--context", k.environment.Context, "--namespace", k.environment.Namespace, "-f", file}
+
+	args := k.defaultArgs()
+	args = append(args, "apply", "-f", file)
 	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)
 	return c.Execute()
-}
-
-func (k kubectl) Environment() *config.Environment {
-	return k.environment
 }
 
 func (k kubectl) Cleanup() {
@@ -65,7 +70,8 @@ func (k kubectl) Cleanup() {
 }
 
 func (k kubectl) DeploymentExists(name string) bool {
-	args := []string{"get", "deployment", name, "--context", k.environment.Context, "--namespace", k.environment.Namespace}
+	args := k.defaultArgs()
+	args = append(args, "get", "deployment", name)
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	c := newKubectlCmd(os.Stdin, k.out, k.eout)
 	c.SetArgs(args)
@@ -73,7 +79,8 @@ func (k kubectl) DeploymentExists(name string) bool {
 }
 
 func (k kubectl) RolloutStatus(name string) bool {
-	args := []string{"rollout", "status", "deployment", "--timeout=2m", name, "--context", k.environment.Context, "--namespace", k.environment.Namespace}
+	args := k.defaultArgs()
+	args = append(args, "rollout", "status", "deployment", "--timeout=2m", name)
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)
@@ -89,7 +96,8 @@ func (k kubectl) RolloutStatus(name string) bool {
 }
 
 func (k kubectl) DeploymentEvents(name string) string {
-	args := []string{"describe", "deployment", name, "--show-events=true", "--context", k.environment.Context, "--namespace", k.environment.Namespace}
+	args := k.defaultArgs()
+	args = append(args, "describe", "deployment", name, "--show-events=true")
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
 	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
@@ -101,7 +109,8 @@ func (k kubectl) DeploymentEvents(name string) string {
 }
 
 func (k kubectl) PodEvents(name string) string {
-	args := []string{"describe", "pods", "-l", fmt.Sprintf("app=%s", name), "--show-events=true", "--context", k.environment.Context, "--namespace", k.environment.Namespace}
+	args := k.defaultArgs()
+	args = append(args, "describe", "pods", "-l", fmt.Sprintf("app=%s", name), "--show-events=true")
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
 	c := newKubectlCmd(os.Stdin, &buffer, &buffer)

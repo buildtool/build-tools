@@ -44,7 +44,7 @@ func TestKubectl_Apply(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, tempDir: tempDir, out: out}
+	k := &kubectl{context: "missing", namespace: "default", tempDir: tempDir, out: out}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -59,7 +59,7 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 	eout := &bytes.Buffer{}
 	newKubectlCmd = mockCmd
 
-	k := &kubectl{context: "missing", namespace: "default", environment: &config.Environment{}, tempDir: "/missing", out: out}
+	k := &kubectl{context: "missing", namespace: "default", tempDir: "/missing", out: out}
 
 	err := k.Apply("")
 	assert.EqualError(t, err, "open /missing/content.yaml: no such file or directory")
@@ -70,10 +70,10 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 func TestKubectl_Environment(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	env := &config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}
+	env := &config.Environment{Context: "missing", Namespace: "", Name: "dummy"}
 	k := New(env, out, eout)
 
-	assert.Equal(t, env, k.Environment())
+	assert.Equal(t, "default", k.(*kubectl).namespace)
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -91,7 +91,7 @@ func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl get deployment image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -109,7 +109,7 @@ func TestKubectl_DeploymentExistsFalse(t *testing.T) {
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl get deployment image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -126,7 +126,7 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -144,7 +144,7 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -165,7 +165,7 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "2m0s", "--show-events", "false", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl rollout status deployment --timeout=2m image --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -184,7 +184,7 @@ func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	assert.Equal(t, "deployment not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -207,7 +207,7 @@ Events:          <none>
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -236,7 +236,7 @@ Events:
 	assert.Equal(t, "Events:\n  Type    Reason             Age   From                   Message\n  ----    ------             ----  ----                   -------\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled up replica set gpe-core-5cb459ff7d to 1\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled down replica set gpe-core-7fc44679dc to 0\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled up replica set gpe-core-c8798ff88 to 1\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled down replica set gpe-core-5cb459ff7d to 0\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", ""}, calls[0])
-	assert.Equal(t, "kubectl describe deployment image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -255,7 +255,7 @@ func TestKubectl_PodEvents_Error(t *testing.T) {
 	assert.Equal(t, "pod not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -278,7 +278,7 @@ Events:          <none>
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -306,7 +306,7 @@ Events:
 	assert.Equal(t, "Events:\n  Type     Reason     Age                From                                                 Message\n  ----     ------     ----               ----                                                 -------\n  Normal   Scheduled  61s                default-scheduler                                    Successfully assigned dev/gpe-core-c8798ff88-674tr to some-ip-somewhere\n  Normal   Pulling    10s (x4 over 60s)  kubelet, some-ip-somewhere                           pulling image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Pulled     9s (x4 over 57s)   kubelet, some-ip-somewhere                           Successfully pulled image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Created    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Created container\n  Normal   Started    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Started container\n  Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--file", "", "--timout", "0s", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	assert.Equal(t, "kubectl describe pods -l app=image --show-events=true --context missing --namespace default\n", out.String())
+	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
