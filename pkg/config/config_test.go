@@ -148,8 +148,8 @@ environments:
 	assert.Equal(t, &registry.GitlabRegistry{Repository: "registry.gitlab.com/group/project", Token: "token-value"}, cfg.Registry.Gitlab)
 	assert.Equal(t, &registry.QuayRegistry{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Quay)
 	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{"local", "docker-desktop", ""}, cfg.Environments[0])
-	devEnv := Environment{"dev", "docker-desktop", "dev"}
+	assert.Equal(t, Environment{Name: "local", Context: "docker-desktop"}, cfg.Environments[0])
+	devEnv := Environment{Name: "dev", Context: "docker-desktop", Namespace: "dev"}
 	assert.Equal(t, devEnv, cfg.Environments[1])
 
 	currentEnv, err := cfg.CurrentEnvironment("dev")
@@ -196,8 +196,8 @@ environments:
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{"local", "docker-desktop", ""}, cfg.Environments[0])
-	devEnv := Environment{"dev", "docker-desktop", "dev"}
+	assert.Equal(t, Environment{Name: "local", Context: "docker-desktop"}, cfg.Environments[0])
+	devEnv := Environment{Name: "dev", Context: "docker-desktop", Namespace: "dev"}
 	assert.Equal(t, devEnv, cfg.Environments[1])
 
 	currentEnv, err := cfg.CurrentEnvironment("dev")

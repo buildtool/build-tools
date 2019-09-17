@@ -11,6 +11,7 @@ import (
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -24,28 +25,55 @@ type Kubectl interface {
 }
 
 type kubectl struct {
-	context   string
-	namespace string
-	tempDir   string
-	out       io.Writer
-	eout      io.Writer
+	args    map[string]string
+	tempDir string
+	out     io.Writer
+	eout    io.Writer
 }
 
 var newKubectlCmd = cmd.NewKubectlCommand
 
 func New(environment *config.Environment, out, eout io.Writer) Kubectl {
-	ns := environment.Namespace
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	return &kubectl{context: environment.Context, namespace: ns, tempDir: name, out: out, eout: eout}
+
+	arg := argsFromEnvironment(environment, name)
+	return &kubectl{args: arg, tempDir: name, out: out, eout: eout}
+}
+
+func argsFromEnvironment(e *config.Environment, tempDir string) map[string]string {
+	args := make(map[string]string)
+	if len(e.Context) > 0 {
+		args["context"] = e.Context
+	}
+	if len(e.Namespace) > 0 {
+		args["namespace"] = e.Namespace
+	}
+	if len(e.Kubeconfig) > 0 {
+		_, err := os.Stat(e.Kubeconfig)
+		if err != nil {
+			// Not a file, create file from content
+			kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
+			_ = ioutil.WriteFile(kubeconfigFile, []byte(e.Kubeconfig), 0777)
+			args["kubeconfig"] = kubeconfigFile
+		} else {
+			// File, use it
+			args["kubeconfig"] = e.Kubeconfig
+		}
+	}
+
+	return args
 }
 
 func (k kubectl) defaultArgs() (args []string) {
-	if len(k.context) > 0 {
-		args = append(args, "--context", k.context)
+	var keys []string
+	for key, _ := range k.args {
+		keys = append(keys, key)
 	}
-	if len(k.namespace) > 0 {
-		args = append(args, "--namespace", k.namespace)
+	sort.Strings(keys)
+	for _, key := range keys {
+		args = append(args, fmt.Sprintf("--%s", key), k.args[key])
 	}
+
 	return
 }
 
@@ -56,8 +84,7 @@ func (k kubectl) Apply(input string) error {
 		return err
 	}
 
-	args := k.defaultArgs()
-	args = append(args, "apply", "-f", file)
+	args := append(k.defaultArgs(), "apply", "-f", file)
 	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)
 	return c.Execute()

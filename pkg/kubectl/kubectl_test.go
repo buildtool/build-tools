@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -20,8 +21,8 @@ func TestNew(t *testing.T) {
 	eout := &bytes.Buffer{}
 	k := New(&config.Environment{Context: "missing", Namespace: "dev", Name: "dummy"}, out, eout)
 
-	assert.Equal(t, "missing", k.(*kubectl).context)
-	assert.Equal(t, "dev", k.(*kubectl).namespace)
+	assert.Equal(t, "missing", k.(*kubectl).args["context"])
+	assert.Equal(t, "dev", k.(*kubectl).args["namespace"])
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -33,7 +34,7 @@ func TestNew_NoNamespace(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	k := &kubectl{context: "missing", namespace: "", tempDir: tempDir, out: out}
+	k := &kubectl{args: map[string]string{"context": "missing"}, tempDir: tempDir, out: out}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -49,7 +50,7 @@ func TestNew_NoContext(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	k := &kubectl{context: "", namespace: "namespace", tempDir: tempDir, out: out}
+	k := &kubectl{args: map[string]string{"namespace": "namespace"}, tempDir: tempDir, out: out}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -66,7 +67,7 @@ func TestKubectl_Apply(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	k := &kubectl{context: "missing", namespace: "default", tempDir: tempDir, out: out}
+	k := &kubectl{args: map[string]string{"context": "missing", "namespace": "default"}, tempDir: tempDir, out: out}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -81,7 +82,7 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 	eout := &bytes.Buffer{}
 	newKubectlCmd = mockCmd
 
-	k := &kubectl{context: "missing", namespace: "default", tempDir: "/missing", out: out}
+	k := &kubectl{args: nil, tempDir: "/missing", out: out}
 
 	err := k.Apply("")
 	assert.EqualError(t, err, "open /missing/content.yaml: no such file or directory")
@@ -95,7 +96,7 @@ func TestKubectl_Environment(t *testing.T) {
 	env := &config.Environment{Context: "missing", Namespace: "", Name: "dummy"}
 	k := New(env, out, eout)
 
-	assert.Equal(t, "", k.(*kubectl).namespace)
+	assert.Equal(t, "", k.(*kubectl).args["namespace"])
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -189,6 +190,36 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
 	assert.Equal(t, "", eout.String())
+}
+
+func TestKubectl_KubeconfigSet(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	k := New(&config.Environment{Name: "dummy", Kubeconfig: `contexts:
+- context:
+    cluster: k8s.prod
+    user: user@example.org
+`}, out, eout)
+
+	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
+	fileContent, err := ioutil.ReadFile(kubeConfigFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
+	assert.Equal(t, kubeConfigFile, k.(*kubectl).args["kubeconfig"])
+	k.Cleanup()
+}
+
+func TestKubectl_KubeconfigExistingFile(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	name, _ := ioutil.TempFile(os.TempDir(), "kubecontent")
+	defer func() {
+		_ = os.Remove(name.Name())
+	}()
+
+	k := New(&config.Environment{Name: "dummy", Kubeconfig: name.Name()}, out, eout)
+	assert.Equal(t, name.Name(), k.(*kubectl).args["kubeconfig"])
+	k.Cleanup()
 }
 
 func TestKubectl_DeploymentEvents_Error(t *testing.T) {
