@@ -57,7 +57,7 @@ type Environment struct {
 	Name       string `yaml:"name"`
 	Context    string `yaml:"context"`
 	Namespace  string `yaml:"namespace"`
-	Kubeconfig string `yaml:"kubeconfig" env:"KUBECONFIG_CONTENT"`
+	Kubeconfig string `yaml:"kubeconfig"`
 }
 
 func Load(dir string, out io.Writer) (*Config, error) {

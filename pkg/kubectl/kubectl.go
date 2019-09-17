@@ -43,6 +43,7 @@ func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 }
 
 func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) map[string]string {
+	kubeConfigArg := "kubeconfig"
 	args := make(map[string]string)
 	if len(e.Context) > 0 {
 		args["context"] = e.Context
@@ -50,16 +51,16 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) m
 	if len(e.Namespace) > 0 {
 		args["namespace"] = e.Namespace
 	}
-	if content, exist := os.LookupEnv("KUBECONFIG_CONTENT"); exist {
+	if content, exist := os.LookupEnv(envKubeConfigContent); exist {
 		// Not a file, create file from content
-		kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
+		kubeconfigFile := filepath.Join(tempDir, kubeConfigArg)
 		_ = ioutil.WriteFile(kubeconfigFile, []byte(content), 0777)
-		args["kubeconfig"] = kubeconfigFile
+		args[kubeConfigArg] = kubeconfigFile
 	} else if len(e.Kubeconfig) > 0 {
-		args["kubeconfig"] = e.Kubeconfig
+		args[kubeConfigArg] = e.Kubeconfig
 	}
-	if _, exists := args["kubeconfig"]; exists {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args["kubeconfig"]))
+	if _, exists := args[kubeConfigArg]; exists {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args[kubeConfigArg]))
 	}
 
 	return args
@@ -164,3 +165,5 @@ func (k kubectl) extractEvents(output string) string {
 }
 
 var _ Kubectl = &kubectl{}
+
+const envKubeConfigContent = "KUBECONFIG_CONTENT"

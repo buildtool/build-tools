@@ -200,8 +200,7 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
     cluster: k8s.prod
     user: user@example.org
 `
-	_ = os.Setenv("KUBECONFIG_CONTENT", yaml)
-	defer func() { _ = os.Unsetenv("KUBECONFIG_CONTENT") }()
+	defer setEnv(envKubeConfigContent, yaml)()
 	k := New(&config.Environment{Name: "dummy"}, out, eout)
 
 	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
@@ -430,4 +429,9 @@ func mockCmd(in io.Reader, out, err io.Writer) *cobra.Command {
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 
 	return &cmd
+}
+
+func setEnv(key, value string) func() {
+	_ = os.Setenv(key, value)
+	return func() { _ = os.Unsetenv(key) }
 }
