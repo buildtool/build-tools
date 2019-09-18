@@ -14,11 +14,9 @@ func Append(name, content string) error {
 		return err
 	} else {
 		defer func() { _ = f.Close() }()
-		if _, err := f.WriteString(fmt.Sprintf("\n%s\n", content)); err != nil {
-			return err
-		}
+		_, err := f.WriteString(fmt.Sprintf("\n%s\n", content))
+		return err
 	}
-	return nil
 }
 
 func AppendTemplated(name, template string, data templating.TemplateData) error {
