@@ -24,7 +24,7 @@ func (c AzureCI) BranchReplaceSlash() string {
 
 func (c AzureCI) BuildName() string {
 	if c.CIBuildName != "" {
-		return c.CIBuildName
+		return strings.ToLower(c.CIBuildName)
 	}
 	return c.CommonCI.BuildName()
 }

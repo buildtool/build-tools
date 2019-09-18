@@ -46,7 +46,7 @@ func (c *BuildkiteCI) BranchReplaceSlash() string {
 
 func (c *BuildkiteCI) BuildName() string {
 	if c.CIBuildName != "" {
-		return c.CIBuildName
+		return strings.ToLower(c.CIBuildName)
 	}
 	return c.CommonCI.BuildName()
 }

@@ -50,7 +50,7 @@ func (c *GitlabCI) BranchReplaceSlash() string {
 
 func (c *GitlabCI) BuildName() string {
 	if c.CIBuildName != "" {
-		return c.CIBuildName
+		return strings.ToLower(c.CIBuildName)
 	}
 	return c.CommonCI.BuildName()
 }

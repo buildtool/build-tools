@@ -24,7 +24,7 @@ func (c TeamCityCI) BranchReplaceSlash() string {
 
 func (c TeamCityCI) BuildName() string {
 	if c.CIBuildName != "" {
-		return c.CIBuildName
+		return strings.ToLower(c.CIBuildName)
 	}
 	return c.CommonCI.BuildName()
 }

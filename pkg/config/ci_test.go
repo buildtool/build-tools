@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -363,4 +364,13 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "", out.String())
+}
+
+// Pretty ugly...
+func TestCIBuildNameLowerCase(t *testing.T) {
+	for _, ci := range initEmptyConfig().availableCI {
+		r := reflect.ValueOf(ci).Elem()
+		r.FieldByName("CIBuildName").Set(reflect.ValueOf("MixedCase"))
+		assert.Equal(t, "mixedcase", ci.BuildName(), "CI %s does not set buildname to lowercase", ci.Name())
+	}
 }

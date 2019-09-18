@@ -5,10 +5,12 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type CI interface {
 	Name() string
+	// BuildName returns the name of the current build in lowercase
 	BuildName() string
 	Branch() string
 	BranchReplaceSlash() string
@@ -31,5 +33,5 @@ func (c *CommonCI) SetVCS(vcs vcs.VCS) {
 
 func (c *CommonCI) BuildName() string {
 	dir, _ := os.Getwd()
-	return filepath.Base(dir)
+	return strings.ToLower(filepath.Base(dir))
 }
