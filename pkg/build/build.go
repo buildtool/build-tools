@@ -16,8 +16,6 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
 	"io"
-	"regexp"
-	"strings"
 )
 
 type responsetype struct {
@@ -173,16 +171,7 @@ func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var stages []string
+	stages := docker.FindStages(content)
 
-	re := regexp.MustCompile(`(?i)^FROM .* AS (.*)$`)
-	scanner := bufio.NewScanner(strings.NewReader(content))
-	for scanner.Scan() {
-		text := scanner.Text()
-		matches := re.FindStringSubmatch(text)
-		if len(matches) != 0 {
-			stages = append(stages, matches[1])
-		}
-	}
 	return stages, nil
 }

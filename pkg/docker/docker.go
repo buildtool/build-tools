@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 )
 
 type Client interface {
@@ -45,4 +47,19 @@ func ParseDockerignore(dir string) ([]string, error) {
 		}
 		return result, nil
 	}
+}
+
+func FindStages(content string) []string {
+	var stages []string
+
+	re := regexp.MustCompile(`(?i)^FROM .* AS (.*)$`)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		text := scanner.Text()
+		matches := re.FindStringSubmatch(text)
+		if len(matches) != 0 {
+			stages = append(stages, matches[1])
+		}
+	}
+	return stages
 }

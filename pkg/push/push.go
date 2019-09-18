@@ -1,14 +1,41 @@
 package push
 
 import (
+	docker2 "docker.io/go-docker"
+	"flag"
+	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
-func Push(client docker.Client, dockerfile string, out, eout io.Writer) error {
-	dir, _ := os.Getwd()
+func Push(dir string) int {
+	var dockerfile string
+	const (
+		defaultDockerfile = "Dockerfile"
+		usage             = "name of the Dockerfile to use"
+	)
+	set := flag.NewFlagSet("push", flag.ExitOnError)
+	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
+	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
+	_ = set.Parse(os.Args)
+	client, err := docker2.NewEnvClient()
+	if err != nil {
+		fmt.Println(err.Error())
+		return -1
+	}
+	err = doPush(client, dir, dockerfile, os.Stdout, os.Stderr)
+	if err != nil {
+		fmt.Println(err.Error())
+		return -2
+	}
+	return 0
+}
+
+func doPush(client docker.Client, dir, dockerfile string, out, eout io.Writer) error {
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		return err
@@ -32,12 +59,21 @@ func Push(client docker.Client, dockerfile string, out, eout io.Writer) error {
 		return err
 	}
 
-	// TODO: Parse Dockerfile and push each stage for caching?
+	content, err := ioutil.ReadFile(filepath.Join(dir, dockerfile))
+	if err != nil {
+		return err
+	}
+	stages := docker.FindStages(string(content))
 
-	tags := []string{
+	var tags []string
+	for _, stage := range stages {
+		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage))
+	}
+
+	tags = append(tags,
 		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
 		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
-	}
+	)
 	if currentCI.Branch() == "master" {
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
 	}

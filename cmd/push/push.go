@@ -1,36 +1,13 @@
 package main
 
 import (
-	"docker.io/go-docker"
-	"flag"
-	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/push"
 	"os"
 )
 
 func main() {
-	os.Exit(doPush())
+	dir, _ := os.Getwd()
+	exitFunc(push.Push(dir))
 }
 
-func doPush() int {
-	var dockerfile string
-	const (
-		defaultDockerfile = "Dockerfile"
-		usage             = "name of the Dockerfile to use"
-	)
-	set := flag.NewFlagSet("push", flag.ExitOnError)
-	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
-	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
-	_ = set.Parse(os.Args)
-	client, err := docker.NewEnvClient()
-	if err != nil {
-		fmt.Println(err.Error())
-		return -1
-	}
-	err = push.Push(client, dockerfile, os.Stdout, os.Stderr)
-	if err != nil {
-		fmt.Println(err.Error())
-		return -2
-	}
-	return 0
-}
+var exitFunc = os.Exit
