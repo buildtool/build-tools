@@ -7,8 +7,9 @@ import (
 )
 
 func TestBuild(t *testing.T) {
+	_ = os.Setenv("DOCKER_HOST", "abc-123")
 	exitFunc = func(code int) {
-		assert.Equal(t, -7, code)
+		assert.Equal(t, -1, code)
 	}
 	os.Args = []string{"build"}
 	main()
