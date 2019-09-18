@@ -8,5 +8,7 @@ import (
 func main() {
 	dir, _ := os.Getwd()
 
-	os.Exit(build.DoBuild(dir, os.Stdout, os.Stderr, os.Args[1:]...))
+	exitFunc(build.DoBuild(dir, os.Stdout, os.Stderr, os.Args[1:]...))
 }
+
+var exitFunc = os.Exit
