@@ -106,7 +106,7 @@ func (c *Config) Scaffold(dir, name string, stack stack.Stack, out io.Writer) in
 		RepositoryHost: parsedUrl.Host,
 		RepositoryPath: strings.Replace(parsedUrl.Path, ".git", "", 1),
 	}
-	webhook, err := c.currentCI.Scaffold(dir, data)
+	webhook, err := c.currentCI.Scaffold(projectDir, data)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -9
