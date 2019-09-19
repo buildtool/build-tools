@@ -36,14 +36,14 @@ func TestPush_BadDockerHost(t *testing.T) {
 
 	os.Clearenv()
 	_ = os.Setenv("DOCKER_HOST", "abc-123")
-	code := Push(name)
+	code := Push(name, os.Stdout, os.Stderr)
 	assert.Equal(t, -1, code)
 }
 
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	os.Clearenv()
-	code := Push(name)
+	code := Push(name, os.Stdout, os.Stderr)
 	assert.Equal(t, -2, code)
 }
 
