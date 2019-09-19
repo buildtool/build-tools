@@ -18,6 +18,9 @@ func Test(t *testing.T) {
 	os.Clearenv()
 	_ = os.Setenv("REGISTRY", "dockerhub")
 
+	exitFunc = func(code int) {
+		assert.Equal(t, -1, code)
+	}
 	os.Args = []string{"service-setup"}
 	main()
 }

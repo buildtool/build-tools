@@ -8,5 +8,7 @@ import (
 func main() {
 	dir, _ := os.Getwd()
 
-	service.Setup(dir, os.Stdout, os.Exit, os.Args[1:]...)
+	exitFunc(service.Setup(dir, os.Stdout, os.Args[1:]...))
 }
+
+var exitFunc = os.Exit

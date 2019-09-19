@@ -30,3 +30,27 @@ func TestGitlab_BuildName_Fallback(t *testing.T) {
 
 	assert.Equal(t, filepath.Base(name), ci.BuildName())
 }
+
+func TestGitlab_Branch(t *testing.T) {
+	ci := &Gitlab{CIBranchName: "feature1"}
+
+	assert.Equal(t, "feature1", ci.Branch())
+}
+
+func TestGitlab_Branch_Fallback(t *testing.T) {
+	ci := &Gitlab{Common: &Common{VCS: &mockVcs{}}}
+
+	assert.Equal(t, "fallback-branch", ci.Branch())
+}
+
+func TestGitlab_Commit(t *testing.T) {
+	ci := &Gitlab{CICommit: "sha"}
+
+	assert.Equal(t, "sha", ci.Commit())
+}
+
+func TestGitlab_Commit_Fallback(t *testing.T) {
+	ci := &Gitlab{Common: &Common{VCS: &mockVcs{}}}
+
+	assert.Equal(t, "fallback-sha", ci.Commit())
+}

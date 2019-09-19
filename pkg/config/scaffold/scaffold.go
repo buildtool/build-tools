@@ -20,8 +20,8 @@ type Config struct {
 	CI           *CIConfig  `yaml:"ci"`
 	RegistryUrl  string     `yaml:"registry" env:"REGISTRY"`
 	Organisation string     `yaml:"organisation"`
-	currentCI    ci.CI
-	currentVCS   vcs.VCS
+	CurrentCI    ci.CI
+	CurrentVCS   vcs.VCS
 }
 
 type VCSConfig struct {
@@ -37,65 +37,65 @@ type CIConfig struct {
 }
 
 func (c *Config) Configure() error {
-	c.currentVCS.Configure()
-	return c.currentCI.Configure()
+	c.CurrentVCS.Configure()
+	return c.CurrentCI.Configure()
 }
 
 func (c *Config) ValidateConfig() error {
 	switch c.VCS.Selected {
 	case "github":
-		c.currentVCS = c.VCS.Github
+		c.CurrentVCS = c.VCS.Github
 	case "gitlab":
-		c.currentVCS = c.VCS.Gitlab
+		c.CurrentVCS = c.VCS.Gitlab
 	default:
 		return errors.New("no VCS configured")
 	}
 	switch c.CI.Selected {
 	case "buildkite":
-		c.currentCI = c.CI.Buildkite
+		c.CurrentCI = c.CI.Buildkite
 	case "gitlab":
-		c.currentCI = c.CI.Gitlab
+		c.CurrentCI = c.CI.Gitlab
 	default:
 		return errors.New("no CI configured")
 	}
 
-	if err := c.currentVCS.ValidateConfig(); err != nil {
+	if err := c.CurrentVCS.ValidateConfig(); err != nil {
 		return err
 	}
-	return c.currentCI.ValidateConfig()
+	return c.CurrentCI.ValidateConfig()
 }
 
 func (c *Config) Validate(name string) error {
-	if err := c.currentVCS.Validate(name); err != nil {
+	if err := c.CurrentVCS.Validate(name); err != nil {
 		return err
 	}
-	return c.currentCI.Validate(name)
+	return c.CurrentCI.Validate(name)
 }
 
 func (c *Config) Scaffold(dir, name string, stack stack.Stack, out io.Writer) int {
 	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating new service </lightblue><white><bold>'%s'</bold></white> <lightblue>using stack </lightblue><white><bold>'%s'</bold></white>\n", name, stack.Name()))
-	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", c.currentVCS.Name()))
-	repository, err := c.currentVCS.Scaffold(name)
-	if err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -5
-	}
-	_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
-	if err := c.currentVCS.Clone(dir, name, repository.SSHURL, out); err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -6
-	}
-	projectDir := filepath.Join(dir, name)
-	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
-	badges, err := c.currentCI.Badges(name)
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating repository at </lightblue><white><bold>'%s'</bold></white>\n", c.CurrentVCS.Name()))
+	repository, err := c.CurrentVCS.Scaffold(name)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -7
 	}
+	_, _ = fmt.Fprint(out, tml.Sprintf("<green>Created repository </green><white><bold>'%s'</bold></white>\n", repository.SSHURL))
+	if err := c.CurrentVCS.Clone(dir, name, repository.SSHURL, out); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -8
+	}
+	projectDir := filepath.Join(dir, name)
+	_, _ = fmt.Fprint(out, tml.Sprintf("<lightblue>Creating build pipeline for </lightblue><white><bold>'%s'</bold></white>\n", name))
+	badges, err := c.CurrentCI.Badges(name)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -9
+	}
 	parsedUrl, err := url.Parse(repository.HTTPURL)
 	if err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -8
+		return -10
 	}
 	data := templating.TemplateData{
 		ProjectName:    name,
@@ -106,30 +106,30 @@ func (c *Config) Scaffold(dir, name string, stack stack.Stack, out io.Writer) in
 		RepositoryHost: parsedUrl.Host,
 		RepositoryPath: strings.Replace(parsedUrl.Path, ".git", "", 1),
 	}
-	webhook, err := c.currentCI.Scaffold(projectDir, data)
+	webhook, err := c.CurrentCI.Scaffold(projectDir, data)
 	if err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -9
-	}
-	if err := addWebhook(name, webhook, c.currentVCS); err != nil {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -10
-	}
-	if err := createDotfiles(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -11
 	}
-	if err := createReadme(projectDir, data); err != nil {
+	if err := addWebhook(name, webhook, c.CurrentVCS); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -12
 	}
-	if err := createDeployment(projectDir, data); err != nil {
+	if err := createDotfiles(projectDir); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -13
 	}
-	if err := stack.Scaffold(projectDir, data); err != nil {
+	if err := createReadme(projectDir, data); err != nil {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -14
+	}
+	if err := createDeployment(projectDir, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -15
+	}
+	if err := stack.Scaffold(projectDir, data); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -16
 	}
 	return 0
 }

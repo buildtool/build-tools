@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
+	scaffold2 "gitlab.com/sparetimecoders/build-tools/pkg/config/scaffold"
 	"gitlab.com/sparetimecoders/build-tools/pkg/stack"
 	"io"
 	"sort"
 	"strings"
 )
 
-func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
+func Setup(dir string, out io.Writer, args ...string) int {
 	var selectedStack string
 	const (
 		stackUsage = "stack to scaffold"
@@ -28,37 +29,42 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 
 	if set.NArg() < 1 {
 		set.Usage()
-	} else {
-		name := set.Args()[0]
-		if currentStack, exists := stack.Stacks[selectedStack]; exists {
-			if cfg, err := config.Load(dir, out); err != nil {
-				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-				exit(-1)
-			} else {
-				if err := cfg.Scaffold.ValidateConfig(); err != nil {
-					_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-					exit(-2)
-				} else {
-					if err := cfg.Scaffold.Configure(); err != nil {
-						_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-						exit(-3)
-					} else {
-						if err := cfg.Scaffold.Validate(name); err != nil {
-							_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
-							exit(-4)
-						} else {
-							exit(cfg.Scaffold.Scaffold(dir, name, currentStack, out))
-						}
-					}
-				}
-			}
-		} else {
-			var stackNames []string
-			for k := range stack.Stacks {
-				stackNames = append(stackNames, k)
-			}
-			sort.Strings(stackNames)
-			_, _ = fmt.Fprint(out, tml.Sprintf("<red>Provided stack does not exist yet. Available stacks are: </red><white><bold>(%s)</bold></white>\n", strings.Join(stackNames, ", ")))
-		}
+		return -1
 	}
+
+	name := set.Args()[0]
+	currentStack, exists := stack.Stacks[selectedStack]
+	if !exists {
+		var stackNames []string
+		for k := range stack.Stacks {
+			stackNames = append(stackNames, k)
+		}
+		sort.Strings(stackNames)
+		_, _ = fmt.Fprint(out, tml.Sprintf("<red>Provided stack does not exist yet. Available stacks are: </red><white><bold>(%s)</bold></white>\n", strings.Join(stackNames, ", ")))
+		return -2
+	}
+	cfg, err := config.Load(dir, out)
+	if err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -3
+	}
+
+	if err := cfg.Scaffold.ValidateConfig(); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -4
+	}
+
+	return scaffold(cfg.Scaffold, dir, name, currentStack, out)
+}
+
+func scaffold(cfg *scaffold2.Config, dir, name string, stack stack.Stack, out io.Writer) int {
+	if err := cfg.Configure(); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -5
+	}
+	if err := cfg.Validate(name); err != nil {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -6
+	}
+	return cfg.Scaffold(dir, name, stack, out)
 }
