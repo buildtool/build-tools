@@ -1,37 +1,93 @@
-stages:
-  - build
-  - deploy-staging
-  - deploy-prod
+# Copyright (c) 2019 sparetimecoders
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 variables:
-  DOCKER_HOST: tcp://docker:2375/
+  GOCACHE: "${CI_PROJECT_DIR}/_go/cache"
 
-image: registry.gitlab.com/sparetimecoders/build-tools:master
+before_script:
+  - mkdir -p ${CI_PROJECT_DIR}/_go/{pkg,bin,cache}
+  - rm -rf /go/pkg || true
+  - mkdir -p /go
+  - ln -s ${CI_PROJECT_DIR}/_go/pkg /go/pkg
+  - ln -s ${CI_PROJECT_DIR}/_go/bin /go/bin
+
+cache:
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - _go
+  untracked: true
+
+stages:
+  - deps
+  - test
+  - build
+  - docker
+
+deps:
+  stage: deps
+  image: golang:1.12
+  script:
+    - go get -mod=readonly
+
+test:
+  stage: test
+  dependencies:
+    - deps
+  image: golang:1.12
+  script:
+    - find . -name "rice-box.go" -delete
+    - go fmt $(go list ./...)
+    - go vet $(go list ./...)
+    - CGO_ENABLED=1 go test -mod=readonly -race -coverprofile=.testCoverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
+    - go tool cover -html=.testCoverage.txt -o coverage.html
+    - go tool cover -func=.testCoverage.txt
+  artifacts:
+    paths:
+      - coverage.html
 
 build:
   stage: build
+  image: golang:1.12
+  script: |
+    for file in $(find ./cmd -name *.go ! -name *test*); do
+     echo "go build -o ./$(basename $(dirname ${file})) ${file}"
+     GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build --tags prod -ldflags="-s -w" -o ./$(basename $(dirname ${file})) ${file}
+    done
+
+docker:
+  stage: docker
   services:
     - docker:dind
-  script:
-  - build
-  - push
-
-deploy-to-staging:
-  stage: deploy-staging
-  when: on_success
-  script:
-    - echo Deploy fluff to staging.
-    - deploy staging
-  environment:
-    name: staging
-
-deploy-to-prod:
-  stage: deploy-prod
-  when: on_success
-  script:
-    - echo Deploy fluff to prod.
-    - deploy prod
-  environment:
-    name: prod
-  only:
-    - master
+  image: docker:stable
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script: |
+    docker build -t registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} .
+    docker tag registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
+    if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
+      docker tag registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA} registry.gitlab.com/sparetimecoders/build-tools:latest
+    fi
+    docker push registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_SHA}
+    docker push registry.gitlab.com/sparetimecoders/build-tools:${CI_COMMIT_REF_SLUG}
+    if [ "${CI_COMMIT_REF_SLUG}" == "master" ]; then
+      docker push registry.gitlab.com/sparetimecoders/build-tools:latest
+    fi
