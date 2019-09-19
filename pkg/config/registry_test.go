@@ -129,7 +129,6 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 
 func TestGitlab_RegistryFallback(t *testing.T) {
 	os.Clearenv()
-	_ = os.Setenv("REGISTRY", "gitlab")
 	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
 	_ = os.Setenv("CI_REGISTRY_IMAGE", "")
 	_ = os.Setenv("CI_BUILD_TOKEN", "token")

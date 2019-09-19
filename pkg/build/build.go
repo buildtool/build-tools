@@ -67,22 +67,18 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 		return -3
 	}
-	currentCI, err := cfg.CurrentCI()
-	if err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
-		return -4
-	}
+	currentCI := cfg.CurrentCI()
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>\n", currentCI.Name()))
 
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
-		return -5
+		return -4
 	} else {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
 		if err := currentRegistry.Login(client, out); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
-			return -6
+			return -5
 		}
 	}
 
@@ -91,7 +87,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	stages, err := findStages(tee, dockerfile)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
-		return -7
+		return -6
 	}
 
 	commit := currentCI.Commit()
@@ -107,7 +103,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, []string{tag}, caches, stage, out, eout); err != nil {
-			return -8
+			return -7
 		}
 	}
 
@@ -123,7 +119,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 	caches = append([]string{branchTag, latestTag}, caches...)
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, tags, caches, "", out, eout); err != nil {
-		return -9
+		return -8
 	}
 
 	return 0

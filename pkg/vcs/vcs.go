@@ -4,14 +4,9 @@ import "io"
 
 type VCS interface {
 	Identify(dir string, out io.Writer) bool
-	Configure()
 	Name() string
 	Branch() string
 	Commit() string
-	Scaffold(name string) (*RepositoryInfo, error)
-	Webhook(name, url string) error
-	Clone(dir, name, url string, out io.Writer) error
-	Validate(name string) error
 }
 
 type RepositoryInfo struct {
@@ -41,7 +36,6 @@ func Identify(dir string, out io.Writer) VCS {
 		}
 	}
 
-	no := &No{}
-	no.Identify(dir, out)
+	no := &No{CommonVCS: CommonVCS{}}
 	return no
 }

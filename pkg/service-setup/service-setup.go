@@ -35,7 +35,22 @@ func Setup(dir string, out io.Writer, exit func(code int), args ...string) {
 				_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
 				exit(-1)
 			} else {
-				exit(cfg.Scaffold(dir, name, currentStack, out))
+				if err := cfg.Scaffold.ValidateConfig(); err != nil {
+					_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+					exit(-2)
+				} else {
+					if err := cfg.Scaffold.Configure(); err != nil {
+						_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+						exit(-3)
+					} else {
+						if err := cfg.Scaffold.Validate(name); err != nil {
+							_, _ = fmt.Fprintln(out, tml.Sprintf("<red>%s</red>", err.Error()))
+							exit(-4)
+						} else {
+							exit(cfg.Scaffold.Scaffold(dir, name, currentStack, out))
+						}
+					}
+				}
 			}
 		} else {
 			var stackNames []string

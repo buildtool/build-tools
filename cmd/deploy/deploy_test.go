@@ -52,7 +52,7 @@ environments:
 
 	os.Args = []string{"deploy", "dummy"}
 	code := doDeploy()
-	assert.Equal(t, -3, code)
+	assert.Equal(t, -2, code)
 }
 
 func TestDeploy_NoEnv(t *testing.T) {
@@ -102,7 +102,7 @@ environments:
 
 	os.Args = []string{"deploy", "dummy"}
 	code := doDeploy()
-	assert.Equal(t, -3, code)
+	assert.Equal(t, -2, code)
 }
 
 func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
@@ -127,5 +127,5 @@ environments:
 
 	os.Args = []string{"deploy", "-c", "other", "-n", "dev", "dummy"}
 	code := doDeploy()
-	assert.Equal(t, -3, code)
+	assert.Equal(t, -2, code)
 }
