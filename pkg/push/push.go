@@ -8,11 +8,10 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 )
 
-func Push(dir string) int {
+func Push(dir string, out, eout io.Writer, args ...string) int {
 	var dockerfile string
 	const (
 		defaultDockerfile = "Dockerfile"
@@ -21,13 +20,13 @@ func Push(dir string) int {
 	set := flag.NewFlagSet("push", flag.ExitOnError)
 	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
 	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
-	_ = set.Parse(os.Args)
+	_ = set.Parse(args)
 	client, err := docker2.NewEnvClient()
 	if err != nil {
 		fmt.Println(err.Error())
 		return -1
 	}
-	err = doPush(client, dir, dockerfile, os.Stdout, os.Stderr)
+	err = doPush(client, dir, dockerfile, out, eout)
 	if err != nil {
 		fmt.Println(err.Error())
 		return -2
@@ -40,10 +39,7 @@ func doPush(client docker.Client, dir, dockerfile string, out, eout io.Writer) e
 	if err != nil {
 		return err
 	}
-	currentCI, err := cfg.CurrentCI()
-	if err != nil {
-		return err
-	}
+	currentCI := cfg.CurrentCI()
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
 		return err
