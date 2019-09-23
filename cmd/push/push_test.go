@@ -7,6 +7,7 @@ import (
 )
 
 func TestPush(t *testing.T) {
+	os.Clearenv()
 	exitFunc = func(code int) {
 		assert.Equal(t, -3, code)
 	}
