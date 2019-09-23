@@ -4,6 +4,7 @@ import (
 	docker2 "docker.io/go-docker"
 	"flag"
 	"fmt"
+	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
@@ -23,41 +24,41 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 	_ = set.Parse(args)
 	client, err := docker2.NewEnvClient()
 	if err != nil {
-		fmt.Println(err.Error())
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -1
 	}
-	err = doPush(client, dir, dockerfile, out, eout)
-	if err != nil {
-		fmt.Println(err.Error())
-		return -2
-	}
-	return 0
-}
-
-func doPush(client docker.Client, dir, dockerfile string, out, eout io.Writer) error {
 	cfg, err := config.Load(dir, out)
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -2
 	}
+	return doPush(client, cfg, dir, dockerfile, out, eout)
+}
+
+func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, out, eout io.Writer) int {
 	currentCI := cfg.CurrentCI()
 	currentRegistry, err := cfg.CurrentRegistry()
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -3
 	}
 
 	if err := currentRegistry.Login(client, out); err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -4
 	}
 
 	auth := currentRegistry.GetAuthInfo()
 
 	if err := currentRegistry.Create(currentCI.BuildName()); err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -5
 	}
 
 	content, err := ioutil.ReadFile(filepath.Join(dir, dockerfile))
 	if err != nil {
-		return err
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+		return -6
 	}
 	stages := docker.FindStages(string(content))
 
@@ -76,8 +77,9 @@ func doPush(client docker.Client, dir, dockerfile string, out, eout io.Writer) e
 
 	for _, tag := range tags {
 		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
-			return err
+			_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
+			return -7
 		}
 	}
-	return nil
+	return 0
 }

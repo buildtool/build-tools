@@ -17,12 +17,13 @@ import (
 )
 
 type Config struct {
-	VCS          *VCSConfig       `yaml:"vcs"`
-	CI           *CIConfig        `yaml:"ci"`
-	Registry     *RegistryConfig  `yaml:"registry"`
-	Environments []Environment    `yaml:"environments"`
-	Scaffold     *scaffold.Config `yaml:"scaffold"`
-	availableCI  []ci.CI
+	VCS                 *VCSConfig       `yaml:"vcs"`
+	CI                  *CIConfig        `yaml:"ci"`
+	Registry            *RegistryConfig  `yaml:"registry"`
+	Environments        []Environment    `yaml:"environments"`
+	Scaffold            *scaffold.Config `yaml:"scaffold"`
+	AvailableCI         []ci.CI
+	AvailableRegistries []registry.Registry
 }
 
 type VCSConfig struct {
@@ -54,7 +55,7 @@ type Environment struct {
 }
 
 func Load(dir string, out io.Writer) (*Config, error) {
-	cfg := initEmptyConfig()
+	cfg := InitEmptyConfig()
 
 	if content, ok := os.LookupEnv("BUILDTOOLS_CONTENT"); ok {
 		_, _ = fmt.Fprintln(out, "Parsing config from env: BUILDTOOLS_CONTENT")
@@ -80,7 +81,7 @@ func Load(dir string, out io.Writer) (*Config, error) {
 	return cfg, err
 }
 
-func initEmptyConfig() *Config {
+func InitEmptyConfig() *Config {
 	c := &Config{
 		VCS: &VCSConfig{
 			Azure:  &vcs.Azure{},
@@ -101,7 +102,8 @@ func initEmptyConfig() *Config {
 		},
 		Scaffold: scaffold.InitEmptyConfig(),
 	}
-	c.availableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
+	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
+	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
 	return c
 }
 
@@ -110,7 +112,7 @@ func (c *Config) CurrentVCS() vcs.VCS {
 }
 
 func (c *Config) CurrentCI() ci.CI {
-	for _, x := range c.availableCI {
+	for _, x := range c.AvailableCI {
 		if x.Configured() {
 			x.SetVCS(c.CurrentVCS())
 			return x
@@ -122,8 +124,7 @@ func (c *Config) CurrentCI() ci.CI {
 }
 
 func (c *Config) CurrentRegistry() (registry.Registry, error) {
-	vals := []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
-	for _, reg := range vals {
+	for _, reg := range c.AvailableRegistries {
 		if reg.Configured() {
 			return reg, nil
 		}

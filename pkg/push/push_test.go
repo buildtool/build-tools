@@ -2,10 +2,15 @@ package push
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
+	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,7 +49,7 @@ func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	os.Clearenv()
 	code := Push(name, os.Stdout, os.Stderr)
-	assert.Equal(t, -2, code)
+	assert.Equal(t, -3, code)
 }
 
 func TestPush_BrokenConfig(t *testing.T) {
@@ -55,86 +60,60 @@ func TestPush_BrokenConfig(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	client := &docker.MockDocker{}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	exitCode := Push(name, out, eout)
 
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.Equal(t, -2, exitCode)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", filepath.Join(name, ".buildtools.yaml")), out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "\x1b[0m\x1b[31myaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig\x1b[39m\x1b[0m\n", eout.String())
 }
 
 func TestPush_NoRegistry(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
-
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "no Docker registry found")
+	assert.Equal(t, -3, exitCode)
 	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "\x1b[0m\x1b[31mno Docker registry found\x1b[39m\x1b[0m\n", eout.String())
 }
 
 func TestPush_LoginFailure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
-	_ = os.Setenv("ECR_URL", "ecr_url")
-
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.Registry.ECR.Url = "abc"
 
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "MissingRegion: could not find region configuration")
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.NotNil(t, exitCode)
+	assert.Equal(t, -4, exitCode)
 	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "\x1b[0m\x1b[31mMissingRegion: could not find region configuration\x1b[39m\x1b[0m\n", eout.String())
 }
 
 func TestPush_PushError(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{PushError: fmt.Errorf("unable to push layer")}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "project"
+	cfg.Registry.Dockerhub.Repository = "repo"
 
-	assert.NotNil(t, err)
-	assert.EqualError(t, err, "unable to push layer")
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.NotNil(t, exitCode)
+	assert.Equal(t, -7, exitCode)
 	assert.Equal(t, "Logged in\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "\x1b[0m\x1b[31munable to push layer\x1b[39m\x1b[0m\n", eout.String())
 }
 
 func TestPush_PushFeatureBranch(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature1")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
 
@@ -142,24 +121,21 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "feature1"
+	cfg.Registry.Dockerhub.Repository = "repo"
 
-	assert.Nil(t, err)
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.Images)
 	assert.Equal(t, "Logged in\nPush successful\nPush successful\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_PushMasterBranch(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
 
@@ -167,24 +143,20 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Nil(t, err)
+	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
 	assert.Equal(t, "Logged in\nPush successful\nPush successful\nPush successful\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_Multistage(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	dockerfile := `
 FROM scratch as build
@@ -201,24 +173,21 @@ COPY --from=test file2 .
 	eout := &bytes.Buffer{}
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
 
-	assert.Nil(t, err)
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:test", "repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
 	assert.Equal(t, "Logged in\nPush successful\nPush successful\nPush successful\nPush successful\nPush successful\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_Output(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
 
@@ -264,24 +233,21 @@ func TestPush_Output(t *testing.T) {
 {"progressDetail":{},"aux":{"Tag":"cd38b8b25e3e62d05589ad6b4639e2e222086604","Digest":"sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7","Size":2828}}
 `
 	client := &docker.MockDocker{PushOutput: &pushOut}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
 
-	assert.Nil(t, err)
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
 	assert.Equal(t, "Logged in\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
 func TestPush_BrokenOutput(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
-
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
 
@@ -289,7 +255,106 @@ func TestPush_BrokenOutput(t *testing.T) {
 	eout := &bytes.Buffer{}
 	pushOut := `Broken output`
 	client := &docker.MockDocker{PushOutput: &pushOut}
-	err := doPush(client, name, "Dockerfile", out, eout)
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.EqualError(t, err, "invalid character 'B' looking for beginning of value")
+	assert.Equal(t, -7, exitCode)
+	assert.Equal(t, "Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n\x1b[0m\x1b[31minvalid character 'B' looking for beginning of value\x1b[39m\x1b[0m\n", eout.String())
 }
+
+func TestPush_Create_Error(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = file.Write(name, "Dockerfile", "FROM scratch")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	pushOut := `Broken output`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.AvailableRegistries = []registry.Registry{&mockRegistry{}}
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, -5, exitCode)
+	assert.Equal(t, "\x1b[0m\x1b[31mcreate error\x1b[39m\x1b[0m\n", eout.String())
+}
+
+func TestPush_UnreadableDockerfile(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	dockerfile := filepath.Join(name, "Dockerfile")
+	_ = os.MkdirAll(dockerfile, 0777)
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	pushOut := `Broken output`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[31mread %s: is a directory\x1b[39m\x1b[0m\n", dockerfile), eout.String())
+}
+
+type mockVcs struct{}
+
+func (m mockVcs) Identify(dir string, out io.Writer) bool {
+	panic("implement me")
+}
+
+func (m mockVcs) Name() string {
+	panic("implement me")
+}
+
+func (m mockVcs) Branch() string {
+	panic("implement me")
+}
+
+func (m mockVcs) Commit() string {
+	panic("implement me")
+}
+
+var _ vcs.VCS = &mockVcs{}
+
+type mockRegistry struct {
+}
+
+func (m mockRegistry) Configured() bool {
+	return true
+}
+
+func (m mockRegistry) Name() string {
+	panic("implement me")
+}
+
+func (m mockRegistry) Login(client docker.Client, out io.Writer) error {
+	return nil
+}
+
+func (m mockRegistry) GetAuthInfo() string {
+	return ""
+}
+
+func (m mockRegistry) RegistryUrl() string {
+	panic("implement me")
+}
+
+func (m mockRegistry) Create(repository string) error {
+	return errors.New("create error")
+}
+
+func (m mockRegistry) PushImage(client docker.Client, auth, image string, out, eout io.Writer) error {
+	panic("implement me")
+}
+
+var _ registry.Registry = &mockRegistry{}

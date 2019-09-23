@@ -333,7 +333,7 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 
 // Pretty ugly...
 func TestCIBuildNameLowerCase(t *testing.T) {
-	for _, ci := range initEmptyConfig().availableCI {
+	for _, ci := range InitEmptyConfig().AvailableCI {
 		r := reflect.ValueOf(ci).Elem()
 		r.FieldByName("CIBuildName").Set(reflect.ValueOf("MixedCase"))
 		assert.Equal(t, "mixedcase", ci.BuildName(), "CI %s does not set buildname to lowercase", ci.Name())

@@ -32,7 +32,7 @@ func ExtractFileContent(tarFile io.Reader, filename string) (string, error) {
 			}
 			buff, err := ioutil.ReadAll(r)
 			if err != nil {
-				return "", nil
+				return "", err
 			}
 			s := string(buff)
 			content = &s
