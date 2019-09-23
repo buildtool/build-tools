@@ -3,4 +3,6 @@
 /build
 /deploy
 /push
+/kubecmd
+/service-setup
 .testCoverage.txt

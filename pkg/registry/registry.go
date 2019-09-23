@@ -5,6 +5,7 @@ import (
 	"context"
 	"docker.io/go-docker/api/types"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
@@ -21,7 +22,11 @@ type Registry interface {
 }
 
 type responsetype struct {
-	Status         string `json:"status"`
+	Status      string `json:"status"`
+	ErrorDetail *struct {
+		Message string `json:"message"`
+	} `json:"errorDetail"`
+	Error          string `json:"error"`
 	ProgressDetail *struct {
 		Current int64 `json:"current"`
 		Total   int64 `json:"total"`
@@ -57,6 +62,8 @@ func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eo
 					} else {
 						_, _ = fmt.Fprintf(ow, "%s: %s %s\n", r.Id, r.Status, r.Progress)
 					}
+				} else if r.ErrorDetail != nil {
+					return errors.New(r.ErrorDetail.Message)
 				}
 			}
 		}
