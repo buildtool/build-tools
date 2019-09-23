@@ -11,8 +11,10 @@ import (
 )
 
 func main() {
-	os.Exit(doDeploy())
+	exitFunc(doDeploy())
 }
+
+var exitFunc = os.Exit
 
 func doDeploy() int {
 	var context, namespace string
