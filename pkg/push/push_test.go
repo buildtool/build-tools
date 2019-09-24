@@ -266,6 +266,26 @@ func TestPush_BrokenOutput(t *testing.T) {
 	assert.Equal(t, "Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n\x1b[0m\x1b[31minvalid character 'B' looking for beginning of value\x1b[39m\x1b[0m\n", eout.String())
 }
 
+func TestPush_ErrorDetail(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = file.Write(name, "Dockerfile", "FROM scratch")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	pushOut := `{"status":"", "errorDetail":{"message":"error details"}}`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, -7, exitCode)
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "\x1b[0m\x1b[31merror details\x1b[39m\x1b[0m\n", eout.String())
+}
+
 func TestPush_Create_Error(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = file.Write(name, "Dockerfile", "FROM scratch")
