@@ -27,10 +27,7 @@ type Config struct {
 }
 
 type VCSConfig struct {
-	Azure  *vcs.Azure  `yaml:"azure"`
-	Github *vcs.Github `yaml:"github"`
-	Gitlab *vcs.Gitlab `yaml:"gitlab"`
-	VCS    vcs.VCS
+	VCS vcs.VCS
 }
 
 type CIConfig struct {
@@ -83,9 +80,6 @@ func Load(dir string, out io.Writer) (*Config, error) {
 func InitEmptyConfig() *Config {
 	c := &Config{
 		VCS: &VCSConfig{
-			Azure:  &vcs.Azure{},
-			Github: &vcs.Github{},
-			Gitlab: &vcs.Gitlab{},
 		},
 		CI: &CIConfig{
 			Azure:     &ci.Azure{Common: &ci.Common{}},
