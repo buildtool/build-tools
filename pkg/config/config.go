@@ -34,6 +34,7 @@ type CIConfig struct {
 	Azure     *ci.Azure     `yaml:"azure"`
 	Buildkite *ci.Buildkite `yaml:"buildkite"`
 	Gitlab    *ci.Gitlab    `yaml:"gitlab"`
+	TeamCity  *ci.TeamCity  `yaml:"teamcity"`
 }
 
 type RegistryConfig struct {
@@ -80,12 +81,12 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 func InitEmptyConfig() *Config {
 	c := &Config{
-		VCS: &VCSConfig{
-		},
+		VCS: &VCSConfig{},
 		CI: &CIConfig{
 			Azure:     &ci.Azure{Common: &ci.Common{}},
 			Buildkite: &ci.Buildkite{Common: &ci.Common{}},
 			Gitlab:    &ci.Gitlab{Common: &ci.Common{}},
+			TeamCity:  &ci.TeamCity{Common: &ci.Common{}},
 		},
 		Registry: &RegistryConfig{
 			Dockerhub: &registry.Dockerhub{},
@@ -96,7 +97,7 @@ func InitEmptyConfig() *Config {
 		},
 		Scaffold: scaffold.InitEmptyConfig(),
 	}
-	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab}
+	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity}
 	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay}
 	return c
 }
