@@ -39,6 +39,7 @@ type CIConfig struct {
 type RegistryConfig struct {
 	Dockerhub *registry.Dockerhub `yaml:"dockerhub"`
 	ECR       *registry.ECR       `yaml:"ecr"`
+	Github    *registry.Github    `yaml:"github"`
 	Gitlab    *registry.Gitlab    `yaml:"gitlab"`
 	Quay      *registry.Quay      `yaml:"quay"`
 }
@@ -89,13 +90,14 @@ func InitEmptyConfig() *Config {
 		Registry: &RegistryConfig{
 			Dockerhub: &registry.Dockerhub{},
 			ECR:       &registry.ECR{},
+			Github:    &registry.Github{},
 			Gitlab:    &registry.Gitlab{},
 			Quay:      &registry.Quay{},
 		},
 		Scaffold: scaffold.InitEmptyConfig(),
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab}
-	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Gitlab, c.Registry.Quay}
+	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay}
 	return c
 }
 
