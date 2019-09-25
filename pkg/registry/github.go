@@ -44,7 +44,11 @@ func (r Github) GetAuthInfo() string {
 }
 
 func (r Github) RegistryUrl() string {
-	return fmt.Sprintf("docker.pkg.github.com/%s/%s", r.Organisation, r.Repository)
+	if len(r.Organisation) > 0 {
+		return fmt.Sprintf("docker.pkg.github.com/%s/%s", r.Organisation, r.Repository)
+	} else {
+		return fmt.Sprintf("docker.pkg.github.com/%s", r.Repository)
+	}
 }
 
 func (r *Github) Create(repository string) error {
