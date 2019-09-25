@@ -22,7 +22,7 @@ func TestGithub_Configured(t *testing.T) {
 
 func TestGithub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &Github{Repository: "repo", Username: "user", Password: "token"}
+	registry := &Github{Repository: "repo", Username: "user", Token: "token"}
 	out := &bytes.Buffer{}
 	err := registry.Login(client, out)
 	assert.Nil(t, err)

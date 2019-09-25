@@ -14,6 +14,7 @@ type Github struct {
 	dockerRegistry
 	Username   string `yaml:"username" env:"GITHUB_USERNAME"`
 	Password   string `yaml:"password" env:"GITHUB_PASSWORD"`
+	Token      string `yaml:"token" env:"GITHUB_TOKEN"`
 	Repository string `yaml:"repository" env:"GITHUB_REPOSITORY"`
 }
 
@@ -28,7 +29,7 @@ func (r Github) Configured() bool {
 }
 
 func (r Github) Login(client docker.Client, out io.Writer) error {
-	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "docker.pkg.github.com"}); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}); err == nil {
 		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
@@ -36,8 +37,15 @@ func (r Github) Login(client docker.Client, out io.Writer) error {
 	}
 }
 
+func (r Github) password() string {
+	if len(r.Token) > 0 {
+		return r.Token
+	}
+	return r.Password
+}
+
 func (r Github) GetAuthInfo() string {
-	auth := types.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "docker.pkg.github.com"}
+	auth := types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}
 	authBytes, _ := json.Marshal(auth)
 	return base64.URLEncoding.EncodeToString(authBytes)
 }
