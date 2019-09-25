@@ -32,7 +32,7 @@ func (c *Github) Branch() string {
 	if len(c.CIBranchName) == 0 && c.VCS != nil {
 		return c.VCS.Branch()
 	}
-	return strings.TrimPrefix(c.CIBranchName, "refs/head/")
+	return strings.TrimPrefix(c.CIBranchName, "refs/heads/")
 }
 
 func (c *Github) Commit() string {
