@@ -107,7 +107,7 @@ func TestBuild_BuildError(t *testing.T) {
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "build error\n", eout.String())
 }
 
 func TestBuild_BuildResponseError(t *testing.T) {
@@ -127,7 +127,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
-	assert.Equal(t, "Code: 123 Message: build error\n", eout.String())
+	assert.Equal(t, "error Code: 123 Message: build error\n", eout.String())
 }
 
 func TestBuild_BrokenOutput(t *testing.T) {
@@ -147,7 +147,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
-	assert.Equal(t, "Unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
+	assert.Equal(t, "unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -342,7 +342,7 @@ COPY --from=test file2 .
 	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "build error\n", eout.String())
 }
 
 type brokenReader struct{}

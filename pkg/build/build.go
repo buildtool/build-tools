@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/liamg/tml"
-	"github.com/pkg/errors"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
@@ -147,12 +146,10 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 			r := &responsetype{}
 			response := scanner.Bytes()
 			if err := json.Unmarshal(response, &r); err != nil {
-				_, _ = fmt.Fprintf(eout, "Unable to parse response: %s, Error: %v\n", string(response), err)
-				return err
+				return fmt.Errorf("unable to parse response: %s, Error: %v", string(response), err)
 			} else {
 				if r.ErrorDetail != nil {
-					_, _ = fmt.Fprintf(eout, "Code: %v Message: %v\n", r.ErrorDetail.Code, r.ErrorDetail.Message)
-					return errors.New(r.ErrorDetail.Message)
+					return fmt.Errorf("error Code: %v Message: %v", r.ErrorDetail.Code, r.ErrorDetail.Message)
 				} else {
 					_, _ = fmt.Fprint(out, r.Stream)
 				}
