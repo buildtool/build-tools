@@ -20,6 +20,12 @@ func TestGithub_Configured(t *testing.T) {
 	assert.True(t, registry.Configured())
 }
 
+func TestGithub_Organisation_Not_Configured(t *testing.T) {
+	registry := &Github{Repository: "repo", Username: "user", Password: "token"}
+
+	assert.False(t, registry.Configured())
+}
+
 func TestGithub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &Github{Repository: "repo", Organisation: "org", Username: "user", Password: "token"}

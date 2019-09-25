@@ -25,7 +25,7 @@ func (r Github) Name() string {
 }
 
 func (r Github) Configured() bool {
-	return len(r.Repository) > 0
+	return len(r.Repository) > 0 && len(r.Organisation) > 0
 }
 
 func (r Github) Login(client docker.Client, out io.Writer) error {
@@ -44,11 +44,7 @@ func (r Github) GetAuthInfo() string {
 }
 
 func (r Github) RegistryUrl() string {
-	if len(r.Organisation) > 0 {
-		return fmt.Sprintf("docker.pkg.github.com/%s/%s", r.Organisation, r.Repository)
-	} else {
-		return fmt.Sprintf("docker.pkg.github.com/%s", r.Repository)
-	}
+	return fmt.Sprintf("docker.pkg.github.com/%s/%s", r.Organisation, r.Repository)
 }
 
 func (r *Github) Create(repository string) error {
