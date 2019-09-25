@@ -64,7 +64,6 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
-
 		return -3
 	}
 	currentCI := cfg.CurrentCI()
@@ -103,6 +102,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, []string{tag}, caches, stage, out, eout); err != nil {
+			_, _ = fmt.Fprintln(eout, err.Error())
 			return -7
 		}
 	}
@@ -119,6 +119,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 
 	caches = append([]string{branchTag, latestTag}, caches...)
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, tags, caches, "", out, eout); err != nil {
+		_, _ = fmt.Fprintln(eout, err.Error())
 		return -8
 	}
 
