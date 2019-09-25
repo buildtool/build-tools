@@ -30,3 +30,7 @@ func (c *Common) BuildName() string {
 	dir, _ := os.Getwd()
 	return strings.ToLower(filepath.Base(dir))
 }
+
+func branchReplaceSlash(name string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), " ", "_")
+}

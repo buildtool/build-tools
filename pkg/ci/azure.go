@@ -18,7 +18,7 @@ func (c Azure) Name() string {
 }
 
 func (c Azure) BranchReplaceSlash() string {
-	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
+	return branchReplaceSlash(c.Branch())
 }
 
 func (c Azure) BuildName() string {

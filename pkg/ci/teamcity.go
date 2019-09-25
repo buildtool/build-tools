@@ -18,7 +18,7 @@ func (c TeamCity) Name() string {
 }
 
 func (c TeamCity) BranchReplaceSlash() string {
-	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
+	return branchReplaceSlash(c.Branch())
 }
 
 func (c TeamCity) BuildName() string {

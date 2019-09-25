@@ -1,9 +1,5 @@
 package ci
 
-import (
-	"strings"
-)
-
 type No struct {
 	*Common
 }
@@ -15,7 +11,7 @@ func (c No) Name() string {
 }
 
 func (c No) BranchReplaceSlash() string {
-	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
+	return branchReplaceSlash(c.Branch())
 }
 
 func (c No) BuildName() string {

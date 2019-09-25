@@ -18,7 +18,7 @@ func (c *Buildkite) Name() string {
 }
 
 func (c *Buildkite) BranchReplaceSlash() string {
-	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
+	return branchReplaceSlash(c.Branch())
 }
 
 func (c *Buildkite) BuildName() string {

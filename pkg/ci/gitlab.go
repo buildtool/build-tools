@@ -18,7 +18,7 @@ func (c *Gitlab) Name() string {
 }
 
 func (c *Gitlab) BranchReplaceSlash() string {
-	return strings.ReplaceAll(strings.ReplaceAll(c.Branch(), "/", "_"), " ", "_")
+	return branchReplaceSlash(c.Branch())
 }
 
 func (c *Gitlab) BuildName() string {
