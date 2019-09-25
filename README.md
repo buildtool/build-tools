@@ -1,5 +1,44 @@
 # build-tools
-A repository with tools for creating and building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
+A set of highly opinionated tools for creating and building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
+
+By following the conventions set by the tools, building and deploying applications is made simpler.
+
+The only hard requirement is to provide a [Dockerfile](https://docs.docker.com/engine/reference/builder/) which describes how to build and run your application.
+
+The configuration needed is done by environment variables (most likely for CI/CD) and yaml files (for local use).
+
+## Using in CI/CD pipelines
+
+## Local usage
+After installing (*TODO link*) the tools, clone the example repository (link), cd into it and execute the `build` command.
+
+    $ build
+    Using CI none
+    
+    no Docker registry found
+
+Since we we haven't setup a `.buildtools.yaml` file nothing has been configured, and to be able to build a docker image we must specify where we (potentially) want to push it later. In other words, setting the [tags](https://docs.docker.com/engine/reference/commandline/tag/) of the create image.
+Let's try:
+
+    $ DOCKERHUB_REPOSITORY=stc build
+    Using CI none
+    
+    Using registry Dockerhub
+
+    Login Succeeded
+    Using build variables commit 7c76db502b4a70df5480d6ff438ae10e374b420e on branch master
+
+As we can see, the `build` command identified that we are using Dockerhub, and extracted the commit id and branch information from the local git repository.
+After the successful build the image is tagged with the commit id and branch.
+
+    Successfully tagged stc/gt-examples:7c76db502b4a70df5480d6ff438ae10e374b420e
+    Successfully tagged stc/gt-examples:master
+    
+Now that we have a docker image, let's publish it to Dockerhub.
+
+    $ DOCKERHUB_REPOSITORY=sparetimecoders push
+    
+*TODO Link to more environment variables and stuff*
 
 ## Basic setup
 - Clone this repository
