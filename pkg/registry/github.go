@@ -12,10 +12,9 @@ import (
 
 type Github struct {
 	dockerRegistry
-	Username     string `yaml:"username" env:"GITHUB_USERNAME"`
-	Password     string `yaml:"password" env:"GITHUB_PASSWORD"`
-	Organisation string `yaml:"organisation" env:"GITHUB_ORGANISATION"`
-	Repository   string `yaml:"repository" env:"GITHUB_REPOSITORY"`
+	Username   string `yaml:"username" env:"GITHUB_USERNAME"`
+	Password   string `yaml:"password" env:"GITHUB_PASSWORD"`
+	Repository string `yaml:"repository" env:"GITHUB_REPOSITORY"`
 }
 
 var _ Registry = &Github{}
@@ -25,7 +24,7 @@ func (r Github) Name() string {
 }
 
 func (r Github) Configured() bool {
-	return len(r.Repository) > 0 && len(r.Organisation) > 0
+	return len(r.Repository) > 0
 }
 
 func (r Github) Login(client docker.Client, out io.Writer) error {
@@ -44,7 +43,7 @@ func (r Github) GetAuthInfo() string {
 }
 
 func (r Github) RegistryUrl() string {
-	return fmt.Sprintf("docker.pkg.github.com/%s/%s", r.Organisation, r.Repository)
+	return fmt.Sprintf("docker.pkg.github.com/%s", r.Repository)
 }
 
 func (r *Github) Create(repository string) error {
