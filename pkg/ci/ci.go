@@ -26,9 +26,26 @@ func (c *Common) SetVCS(vcs vcs.VCS) {
 	c.VCS = vcs
 }
 
-func (c *Common) BuildName() string {
+func (c *Common) BuildName(name string) string {
+	if name != "" {
+		return strings.ToLower(name)
+	}
 	dir, _ := os.Getwd()
 	return strings.ToLower(filepath.Base(dir))
+}
+
+func (c *Common) Branch(name string) string {
+	if name != "" {
+		return name
+	}
+	return c.VCS.Branch()
+}
+
+func (c *Common) Commit(name string) string {
+	if name != "" {
+		return name
+	}
+	return c.VCS.Commit()
 }
 
 func branchReplaceSlash(name string) string {

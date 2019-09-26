@@ -15,7 +15,7 @@ func (c No) BranchReplaceSlash() string {
 }
 
 func (c No) BuildName() string {
-	return c.Common.BuildName()
+	return c.Common.BuildName("")
 }
 
 func (c No) Branch() string {

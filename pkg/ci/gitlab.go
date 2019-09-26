@@ -1,9 +1,5 @@
 package ci
 
-import (
-	"strings"
-)
-
 type Gitlab struct {
 	*Common
 	CICommit     string `env:"CI_COMMIT_SHA"`
@@ -22,24 +18,15 @@ func (c *Gitlab) BranchReplaceSlash() string {
 }
 
 func (c *Gitlab) BuildName() string {
-	if c.CIBuildName != "" {
-		return strings.ToLower(c.CIBuildName)
-	}
-	return c.Common.BuildName()
+	return c.Common.BuildName(c.CIBuildName)
 }
 
 func (c *Gitlab) Branch() string {
-	if len(c.CIBranchName) == 0 && c.VCS != nil {
-		return c.VCS.Branch()
-	}
-	return c.CIBranchName
+	return c.Common.Branch(c.CIBranchName)
 }
 
 func (c *Gitlab) Commit() string {
-	if len(c.CICommit) == 0 && c.VCS != nil {
-		return c.VCS.Commit()
-	}
-	return c.CICommit
+	return c.Common.Commit(c.CICommit)
 }
 
 func (c *Gitlab) Configured() bool {

@@ -22,24 +22,15 @@ func (c *Github) BranchReplaceSlash() string {
 }
 
 func (c *Github) BuildName() string {
-	if c.CIBuildName != "" {
-		return strings.ToLower(strings.TrimPrefix(c.CIBuildName, "/home/runner/work/"))
-	}
-	return c.Common.BuildName()
+	return c.Common.BuildName(strings.TrimPrefix(c.CIBuildName, "/home/runner/work/"))
 }
 
 func (c *Github) Branch() string {
-	if len(c.CIBranchName) == 0 && c.VCS != nil {
-		return c.VCS.Branch()
-	}
-	return strings.TrimPrefix(c.CIBranchName, "refs/heads/")
+	return c.Common.Branch(strings.TrimPrefix(c.CIBranchName, "refs/heads/"))
 }
 
 func (c *Github) Commit() string {
-	if len(c.CICommit) == 0 && c.VCS != nil {
-		return c.VCS.Commit()
-	}
-	return c.CICommit
+	return c.Common.Commit(c.CICommit)
 }
 
 func (c *Github) Configured() bool {

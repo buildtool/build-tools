@@ -1,9 +1,5 @@
 package ci
 
-import (
-	"strings"
-)
-
 type Azure struct {
 	*Common
 	CICommit     string `env:"BUILD_SOURCEVERSION"`
@@ -22,24 +18,15 @@ func (c Azure) BranchReplaceSlash() string {
 }
 
 func (c Azure) BuildName() string {
-	if c.CIBuildName != "" {
-		return strings.ToLower(c.CIBuildName)
-	}
-	return c.Common.BuildName()
+	return c.Common.BuildName(c.CIBuildName)
 }
 
 func (c Azure) Branch() string {
-	if len(c.CIBranchName) == 0 {
-		return c.VCS.Branch()
-	}
-	return c.CIBranchName
+	return c.Common.Branch(c.CIBranchName)
 }
 
 func (c Azure) Commit() string {
-	if len(c.CICommit) == 0 {
-		return c.VCS.Commit()
-	}
-	return c.CICommit
+	return c.Common.Commit(c.CICommit)
 }
 
 func (c Azure) Configured() bool {

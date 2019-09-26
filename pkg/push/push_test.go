@@ -103,6 +103,7 @@ func TestPush_PushError(t *testing.T) {
 	client := &docker.MockDocker{PushError: fmt.Errorf("unable to push layer")}
 	cfg := config.InitEmptyConfig()
 	cfg.CI.Gitlab.CIBuildName = "project"
+	cfg.VCS.VCS = &vcs.No{}
 	cfg.Registry.Dockerhub.Repository = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
