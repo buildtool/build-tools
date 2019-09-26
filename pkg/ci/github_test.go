@@ -2,6 +2,7 @@ package ci
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,7 +45,7 @@ func TestGithub_Branch(t *testing.T) {
 }
 
 func TestGithub_Branch_Fallback(t *testing.T) {
-	ci := &Github{Common: &Common{VCS: &mockVcs{}}}
+	ci := &Github{Common: &Common{VCS: vcs.NewMockVcs()}}
 
 	assert.Equal(t, "fallback-branch", ci.Branch())
 }
@@ -56,7 +57,7 @@ func TestGithub_Commit(t *testing.T) {
 }
 
 func TestGithub_Commit_Fallback(t *testing.T) {
-	ci := &Github{Common: &Common{VCS: &mockVcs{}}}
+	ci := &Github{Common: &Common{VCS: vcs.NewMockVcs()}}
 
 	assert.Equal(t, "fallback-sha", ci.Commit())
 }

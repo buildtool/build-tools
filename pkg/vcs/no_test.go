@@ -7,7 +7,7 @@ import (
 )
 
 func TestNo_Identify(t *testing.T) {
-	vcs := &No{}
+	vcs := &no{}
 
 	out := &bytes.Buffer{}
 
@@ -16,7 +16,7 @@ func TestNo_Identify(t *testing.T) {
 }
 
 func TestNo_Name(t *testing.T) {
-	vcs := &No{}
+	vcs := &no{}
 
 	assert.Equal(t, "none", vcs.Name())
 }

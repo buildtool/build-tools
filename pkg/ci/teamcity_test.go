@@ -22,7 +22,7 @@ func TestTeamCityCI_BranchReplaceSlash(t *testing.T) {
 }
 
 func TestTeamCityCI_BranchReplaceSlash_VCS_Fallback(t *testing.T) {
-	ci := &TeamCity{Common: &Common{VCS: &vcs.Git{CommonVCS: vcs.CommonVCS{CurrentBranch: "refs/heads/feature1"}}}}
+	ci := &TeamCity{Common: &Common{VCS: vcs.NewMockVcsWithBranch( "refs/heads/feature1")}}
 
 	assert.Equal(t, "refs_heads_feature1", ci.BranchReplaceSlash())
 }
@@ -40,7 +40,7 @@ func TestTeamCityCI_BuildName_VCS_Fallback(t *testing.T) {
 	_ = os.Chdir(name)
 	defer func() { _ = os.Chdir(oldpwd) }()
 
-	ci := &TeamCity{Common: &Common{VCS: &vcs.Git{CommonVCS: vcs.CommonVCS{}}}}
+	ci := &TeamCity{Common: &Common{VCS: vcs.NewMockVcs()}}
 
 	assert.Equal(t, filepath.Base(name), ci.BuildName())
 }
@@ -52,9 +52,9 @@ func TestTeamCityCI_Commit(t *testing.T) {
 }
 
 func TestTeamCityCI_Commit_VCS_Fallback(t *testing.T) {
-	ci := &TeamCity{Common: &Common{VCS: &vcs.Git{CommonVCS: vcs.CommonVCS{CurrentCommit: "abc123"}}}}
+	ci := &TeamCity{Common: &Common{VCS: vcs.NewMockVcs()}}
 
-	assert.Equal(t, "abc123", ci.Commit())
+	assert.Equal(t, "fallback-sha", ci.Commit())
 }
 
 func TestTeamCityCI_Configured(t *testing.T) {

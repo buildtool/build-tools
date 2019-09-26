@@ -103,7 +103,7 @@ func TestPush_PushError(t *testing.T) {
 	client := &docker.MockDocker{PushError: fmt.Errorf("unable to push layer")}
 	cfg := config.InitEmptyConfig()
 	cfg.CI.Gitlab.CIBuildName = "project"
-	cfg.VCS.VCS = &vcs.No{}
+	cfg.VCS.VCS = &no{}
 	cfg.Registry.Dockerhub.Repository = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
@@ -327,25 +327,7 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[31mread %s: is a directory\x1b[39m\x1b[0m\n", dockerfile), eout.String())
 }
 
-type mockVcs struct{}
-
-func (m mockVcs) Identify(dir string, out io.Writer) bool {
-	panic("implement me")
-}
-
-func (m mockVcs) Name() string {
-	panic("implement me")
-}
-
-func (m mockVcs) Branch() string {
-	panic("implement me")
-}
-
-func (m mockVcs) Commit() string {
-	panic("implement me")
-}
-
-var _ vcs.VCS = &mockVcs{}
+var _ vcs.VCS = vcs.NewMockVcs()
 
 type mockRegistry struct {
 }
@@ -379,3 +361,20 @@ func (m mockRegistry) PushImage(client docker.Client, auth, image string, out, e
 }
 
 var _ registry.Registry = &mockRegistry{}
+
+type no struct {
+	vcs.CommonVCS
+}
+
+func (v no) Identify(dir string, out io.Writer) bool {
+	v.CurrentCommit = ""
+	v.CurrentBranch = ""
+
+	return true
+}
+
+func (v no) Name() string {
+	return "none"
+}
+
+var _ vcs.VCS = &no{}

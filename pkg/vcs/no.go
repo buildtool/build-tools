@@ -4,19 +4,19 @@ import (
 	"io"
 )
 
-type No struct {
+type no struct {
 	CommonVCS
 }
 
-func (v No) Identify(dir string, out io.Writer) bool {
+func (v no) Identify(dir string, out io.Writer) bool {
 	v.CurrentCommit = ""
 	v.CurrentBranch = ""
 
 	return true
 }
 
-func (v No) Name() string {
+func (v no) Name() string {
 	return "none"
 }
 
-var _ VCS = &No{}
+var _ VCS = &no{}

@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 )
 
-type Git struct {
+type git struct {
 	CommonVCS
 	repo *git2.Repository
 }
 
-func (v *Git) Identify(dir string, out io.Writer) bool {
+func (v *git) Identify(dir string, out io.Writer) bool {
 	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
 		return false
 	}
@@ -34,8 +34,8 @@ func (v *Git) Identify(dir string, out io.Writer) bool {
 	return true
 }
 
-func (v *Git) Name() string {
+func (v *git) Name() string {
 	return "Git"
 }
 
-var _ VCS = &Git{}
+var _ VCS = &git{}

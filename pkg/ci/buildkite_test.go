@@ -2,6 +2,7 @@ package ci
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func TestBuildkite_Branch(t *testing.T) {
 }
 
 func TestBuildkite_Branch_Fallback(t *testing.T) {
-	ci := &Buildkite{Common: &Common{VCS: &mockVcs{}}}
+	ci := &Buildkite{Common: &Common{VCS: vcs.NewMockVcs()}}
 
 	assert.Equal(t, "fallback-branch", ci.Branch())
 }
@@ -50,7 +51,7 @@ func TestBuildkite_Commit(t *testing.T) {
 }
 
 func TestBuildkite_Commit_Fallback(t *testing.T) {
-	ci := &Buildkite{Common: &Common{VCS: &mockVcs{}}}
+	ci := &Buildkite{Common: &Common{VCS: vcs.NewMockVcs()}}
 
 	assert.Equal(t, "fallback-sha", ci.Commit())
 }
