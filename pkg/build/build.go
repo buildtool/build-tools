@@ -11,10 +11,12 @@ import (
 	"fmt"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/liamg/tml"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
 	"io"
+	"strings"
 )
 
 type responsetype struct {
@@ -27,17 +29,6 @@ type responsetype struct {
 }
 
 func DoBuild(dir string, out, eout io.Writer, args ...string) int {
-	var dockerfile string
-	const (
-		defaultDockerfile = "Dockerfile"
-		usage             = "name of the Dockerfile to use"
-	)
-
-	set := flag.NewFlagSet("build", flag.ExitOnError)
-	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
-	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
-	_ = set.Parse(args)
-
 	if client, err := dkr.NewEnvClient(); err != nil {
 		_, _ = fmt.Fprintln(out, err.Error())
 		return -1
@@ -46,7 +37,7 @@ func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 			_, _ = fmt.Fprintln(out, err.Error())
 			return -2
 		} else {
-			return build(client, dir, buildContext, dockerfile, out, eout)
+			return build(client, dir, buildContext, out, eout, args...)
 		}
 	}
 }
@@ -59,7 +50,21 @@ func createBuildContext(dir string) (io.ReadCloser, error) {
 	}
 }
 
-func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerfile string, out, eout io.Writer) int {
+func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, args ...string) int {
+	var dockerfile string
+	var buildArgsFlags arrayFlags
+	const (
+		defaultDockerfile = "Dockerfile"
+		usage             = "name of the Dockerfile to use"
+	)
+
+	set := flag.NewFlagSet("build", flag.ExitOnError)
+	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
+	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
+	set.Var(&buildArgsFlags, "build-arg", "")
+
+	_ = set.Parse(args)
+
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
@@ -93,14 +98,24 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch))
 	var caches []string
 
-	args := map[string]*string{
+	buildArgs := map[string]*string{
 		"CI_COMMIT": &commit,
 		"CI_BRANCH": &branch,
+	}
+	for _, arg := range buildArgsFlags {
+		split := strings.Split(arg, "=")
+		key := split[0]
+		value := strings.Join(split[1:], "=")
+		if len(split) > 1 && len(value) > 0 {
+			buildArgs[key] = pkg.String(value)
+		} else {
+			_, _ = fmt.Fprintf(out, "ignoring build-arg %s\n", key)
+		}
 	}
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, []string{tag}, caches, stage, out, eout); err != nil {
+		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -7
 		}
@@ -117,7 +132,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, dockerf
 	}
 
 	caches = append([]string{branchTag, latestTag}, caches...)
-	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, args, tags, caches, "", out, eout); err != nil {
+	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", out, eout); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -8
 	}
@@ -168,4 +183,16 @@ func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
 	stages := docker.FindStages(content)
 
 	return stages, nil
+}
+
+type arrayFlags []string
+
+func (i *arrayFlags) String() string {
+	// change this, this is just can example to satisfy the interface
+	return "my string representation"
+}
+
+func (i *arrayFlags) Set(value string) error {
+	*i = append(*i, strings.TrimSpace(value))
+	return nil
 }

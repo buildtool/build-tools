@@ -45,7 +45,7 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "-f", "Dockerfile")
 
 	absPath, _ := filepath.Abs(filepath.Join(name, ".buildtools.yaml"))
 	assert.Equal(t, -3, code)
@@ -63,7 +63,7 @@ func TestBuild_NoRegistry(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -4, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n", out.String())
@@ -83,7 +83,7 @@ func TestBuild_LoginError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -5, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nUnable to login\n", out.String())
@@ -103,7 +103,7 @@ func TestBuild_BuildError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
@@ -123,7 +123,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
@@ -143,11 +143,44 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{BrokenOutput: true}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -8, code)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
 	assert.Equal(t, "unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
+}
+
+func TestBuild_WithBuildArgs(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "--build-arg", "buildargs1=1", "--build-arg", "buildargs2=2")
+	assert.Equal(t, 0, code)
+
+	assert.Equal(t, 4, len(client.BuildOptions[0].BuildArgs))
+	assert.Equal(t, "1", *client.BuildOptions[0].BuildArgs["buildargs1"])
+	assert.Equal(t, "2", *client.BuildOptions[0].BuildArgs["buildargs2"])
+}
+
+func TestBuild_WithStrangeBuildArg(t *testing.T) {
+	os.Clearenv()
+	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
+	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "--build-arg", "buildargs1=1=1", "--build-arg", "buildargs2", "--build-arg", "buildargs3=")
+	assert.Equal(t, 0, code)
+
+	assert.Equal(t, 3, len(client.BuildOptions[0].BuildArgs))
+	assert.Equal(t, "1=1", *client.BuildOptions[0].BuildArgs["buildargs1"])
+	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\n\x1b[0m\nignoring build-arg buildargs2\nignoring build-arg buildargs3\nBuild successful", out.String())
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -163,7 +196,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
@@ -198,7 +231,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
@@ -268,7 +301,7 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 
-	code := build(client, name, ioutil.NopCloser(&brokenReader{}), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(&brokenReader{}), out, eout)
 
 	assert.Equal(t, -6, code)
 	assert.Equal(t, "read error\n", eout.String())
@@ -297,7 +330,7 @@ COPY --from=test file2 .
 `
 
 	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
@@ -339,7 +372,7 @@ COPY --from=test file2 .
 `
 
 	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	code := build(client, name, ioutil.NopCloser(buildContext), "Dockerfile", out, eout)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -7, code)
 	assert.Equal(t, "build error\n", eout.String())
