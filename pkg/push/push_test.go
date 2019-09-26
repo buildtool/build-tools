@@ -327,8 +327,6 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[31mread %s: is a directory\x1b[39m\x1b[0m\n", dockerfile), eout.String())
 }
 
-var _ vcs.VCS = vcs.NewMockVcs()
-
 type mockRegistry struct {
 }
 
