@@ -31,6 +31,12 @@ func TestGithub_BuildName_Fallback(t *testing.T) {
 	assert.Equal(t, filepath.Base(name), ci.BuildName())
 }
 
+func TestGithub_BranchReplaceSlash(t *testing.T) {
+	ci := &Github{CIBranchName: "refs/heads/feature/xyz"}
+
+	assert.Equal(t, "feature_xyz", ci.BranchReplaceSlash())
+}
+
 func TestGithub_Branch(t *testing.T) {
 	ci := &Github{CIBranchName: "refs/heads/feature1"}
 
