@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +14,6 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 		assert.Equal(t, -1, code)
 	}
 
-	os.Clearenv()
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
@@ -34,7 +34,6 @@ func TestDeploy_MissingEnvironment(t *testing.T) {
 		assert.Equal(t, -0, code)
 	}
 
-	os.Clearenv()
 	os.Args = []string{"deploy", "dummy"}
 	main()
 }
@@ -44,7 +43,6 @@ func TestDeploy_NoCI(t *testing.T) {
 		assert.Equal(t, -2, code)
 	}
 
-	os.Clearenv()
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
@@ -69,10 +67,9 @@ func TestDeploy_NoEnv(t *testing.T) {
 		assert.Equal(t, -0, code)
 	}
 
-	os.Clearenv()
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "dummy")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "dummy")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
@@ -97,10 +94,9 @@ func TestDeploy_NoOptions(t *testing.T) {
 		assert.Equal(t, -2, code)
 	}
 
-	os.Clearenv()
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "dummy")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "dummy")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
@@ -125,10 +121,9 @@ func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
 		assert.Equal(t, -2, code)
 	}
 
-	os.Clearenv()
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "dummy")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "master")
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "dummy")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()

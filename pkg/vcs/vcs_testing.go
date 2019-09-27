@@ -16,6 +16,7 @@ func NewMockVcs() VCS {
 		commit: "fallback-sha",
 	}
 }
+
 // NewMockVcsWithBranch returns a mockVcs with a specific branch name
 func NewMockVcsWithBranch(branch string) VCS {
 	return &mockVcs{

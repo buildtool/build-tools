@@ -9,6 +9,7 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -22,6 +23,7 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
 	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
 	_ = set.Parse(args)
+
 	client, err := docker2.NewEnvClient()
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
@@ -67,14 +69,20 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage))
 	}
 
-	tags = append(tags,
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
-	)
-	if currentCI.Branch() == "master" {
-		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
-	}
+	if dockerTag := os.Getenv("DOCKER_TAG"); len(dockerTag) > 0 {
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag)
+		tags = append(tags, tag)
+		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
 
+	} else {
+		tags = append(tags,
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
+		)
+		if currentCI.Branch() == "master" {
+			tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
+		}
+	}
 	for _, tag := range tags {
 		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))

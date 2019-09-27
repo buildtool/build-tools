@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"io"
 	"io/ioutil"
@@ -200,7 +201,7 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
     cluster: k8s.prod
     user: user@example.org
 `
-	defer setEnv(envKubeConfigContent, yaml)()
+	defer pkg.SetEnv(envKubeConfigContent, yaml)()
 	k := New(&config.Environment{Name: "dummy"}, out, eout)
 
 	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
@@ -429,9 +430,4 @@ func mockCmd(in io.Reader, out, err io.Writer) *cobra.Command {
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 
 	return &cmd
-}
-
-func setEnv(key, value string) func() {
-	_ = os.Setenv(key, value)
-	return func() { _ = os.Unsetenv(key) }
 }

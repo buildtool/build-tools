@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,11 +12,10 @@ import (
 )
 
 func TestIdentify_Azure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("VSTS_PROCESS_LOOKUP_ID", "1")
-	_ = os.Setenv("BUILD_SOURCEVERSION", "abc123")
-	_ = os.Setenv("BUILD_REPOSITORY_NAME", "reponame")
-	_ = os.Setenv("BUILD_SOURCEBRANCHNAME", "feature/first test")
+	defer pkg.SetEnv("VSTS_PROCESS_LOOKUP_ID", "1")()
+	defer pkg.SetEnv("BUILD_SOURCEVERSION", "abc123")()
+	defer pkg.SetEnv("BUILD_REPOSITORY_NAME", "reponame")()
+	defer pkg.SetEnv("BUILD_SOURCEBRANCHNAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -30,11 +30,10 @@ func TestIdentify_Azure(t *testing.T) {
 }
 
 func TestName_Azure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("VSTS_PROCESS_LOOKUP_ID", "1")
-	_ = os.Setenv("BUILD_SOURCEVERSION", "abc123")
-	_ = os.Setenv("BUILD_REPOSITORY_NAME", "reponame")
-	_ = os.Setenv("BUILD_SOURCEBRANCHNAME", "feature/first test")
+	defer pkg.SetEnv("VSTS_PROCESS_LOOKUP_ID", "1")()
+	defer pkg.SetEnv("BUILD_SOURCEVERSION", "abc123")()
+	defer pkg.SetEnv("BUILD_REPOSITORY_NAME", "reponame")()
+	defer pkg.SetEnv("BUILD_SOURCEBRANCHNAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -44,8 +43,7 @@ func TestName_Azure(t *testing.T) {
 }
 
 func TestBuildName_Fallback_Azure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "azure")
+	defer pkg.SetEnv("CI", "azure")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
@@ -63,8 +61,7 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 }
 
 func TestBranch_VCS_Fallback_Azure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "azure")
+	defer pkg.SetEnv("CI", "azure")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
@@ -81,8 +78,7 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 }
 
 func TestCommit_VCS_Fallback_Azure(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "azure")
+	defer pkg.SetEnv("CI", "azure")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
@@ -99,10 +95,9 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 }
 
 func TestIdentify_Buildkite(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("BUILDKITE_COMMIT", "abc123")
-	_ = os.Setenv("BUILDKITE_PIPELINE_SLUG", "reponame")
-	_ = os.Setenv("BUILDKITE_BRANCH_NAME", "feature/first test")
+	defer pkg.SetEnv("BUILDKITE_COMMIT", "abc123")()
+	defer pkg.SetEnv("BUILDKITE_PIPELINE_SLUG", "reponame")()
+	defer pkg.SetEnv("BUILDKITE_BRANCH_NAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -117,9 +112,8 @@ func TestIdentify_Buildkite(t *testing.T) {
 }
 
 func TestBuildName_Fallback_Buildkite(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "buildkite")
-	_ = os.Setenv("BUILDKITE_TOKEN", "abc123")
+	defer pkg.SetEnv("CI", "buildkite")()
+	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -137,9 +131,8 @@ func TestBuildName_Fallback_Buildkite(t *testing.T) {
 }
 
 func TestBranch_VCS_Fallback_Buildkite(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "buildkite")
-	_ = os.Setenv("BUILDKITE_TOKEN", "abc123")
+	defer pkg.SetEnv("CI", "buildkite")()
+	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -156,9 +149,8 @@ func TestBranch_VCS_Fallback_Buildkite(t *testing.T) {
 }
 
 func TestCommit_VCS_Fallback_Buildkite(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "buildkite")
-	_ = os.Setenv("BUILDKITE_TOKEN", "abc123")
+	defer pkg.SetEnv("CI", "buildkite")()
+	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -175,11 +167,10 @@ func TestCommit_VCS_Fallback_Buildkite(t *testing.T) {
 }
 
 func TestIdentify_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
+	defer pkg.SetEnv("GITLAB_CI", "1")()
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -194,11 +185,10 @@ func TestIdentify_Gitlab(t *testing.T) {
 }
 
 func TestName_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("GITLAB_CI", "1")
-	_ = os.Setenv("CI_COMMIT_SHA", "abc123")
-	_ = os.Setenv("CI_PROJECT_NAME", "reponame")
-	_ = os.Setenv("CI_COMMIT_REF_NAME", "feature/first test")
+	defer pkg.SetEnv("GITLAB_CI", "1")()
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -208,8 +198,7 @@ func TestName_Gitlab(t *testing.T) {
 }
 
 func TestBuildName_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
+	defer pkg.SetEnv("CI", "gitlab")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -227,8 +216,7 @@ func TestBuildName_Fallback_Gitlab(t *testing.T) {
 }
 
 func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
+	defer pkg.SetEnv("CI", "gitlab")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -245,8 +233,7 @@ func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 }
 
 func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "gitlab")
+	defer pkg.SetEnv("CI", "gitlab")()
 
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -263,8 +250,7 @@ func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 }
 
 func TestNoOp(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "")
+	defer pkg.SetEnv("CI", "")()
 
 	// NoOp uses PWD to generate BuildName so have to switch working dir
 	oldPwd, _ := os.Getwd()
@@ -285,8 +271,7 @@ func TestNoOp(t *testing.T) {
 }
 
 func TestName_NoOp(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "")
+	defer pkg.SetEnv("CI", "")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -296,8 +281,7 @@ func TestName_NoOp(t *testing.T) {
 }
 
 func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "")
+	defer pkg.SetEnv("CI", "")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
@@ -314,8 +298,7 @@ func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 }
 
 func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI", "")
+	defer pkg.SetEnv("CI", "")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()

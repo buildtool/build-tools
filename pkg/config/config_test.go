@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
 	"io/ioutil"
 	"os"
@@ -160,7 +161,7 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	_ = os.Setenv("BUILDTOOLS_CONTENT", yaml)
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -184,7 +185,7 @@ environments:
     context: docker-desktop
     namespace: dev
 `
-	_ = os.Setenv("BUILDTOOLS_CONTENT", yaml)
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -239,8 +240,8 @@ registry:
 }
 
 func TestLoad_ENV(t *testing.T) {
-	_ = os.Setenv("CI", "gitlab")
-	_ = os.Setenv("REGISTRY", "quay")
+	defer pkg.SetEnv("CI", "gitlab")()
+	defer pkg.SetEnv("REGISTRY", "quay")()
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
@@ -253,9 +254,9 @@ func TestLoad_ENV(t *testing.T) {
 }
 
 func TestLoad_Selected_VCS(t *testing.T) {
-	_ = os.Setenv("CI", "buildkite")
-	_ = os.Setenv("VCS", "github")
-	_ = os.Setenv("REGISTRY", "dockerhub")
+	defer pkg.SetEnv("CI", "buildkite")()
+	defer pkg.SetEnv("VCS", "github")()
+	defer pkg.SetEnv("REGISTRY", "dockerhub")()
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
@@ -266,8 +267,8 @@ func TestLoad_Selected_VCS(t *testing.T) {
 }
 
 func TestLoad_Scaffold_RegistryUrl(t *testing.T) {
-	_ = os.Setenv("CI", "gitlab")
-	_ = os.Setenv("REGISTRY", "dockerhub")
+	defer pkg.SetEnv("CI", "gitlab")()
+	defer pkg.SetEnv("REGISTRY", "dockerhub")()
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)

@@ -16,6 +16,7 @@ import (
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -121,17 +122,25 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		}
 	}
 
-	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
-	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
-	tags := []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
-		branchTag,
-	}
-	if currentCI.Branch() == "master" {
-		tags = append(tags, latestTag)
-	}
+	var tags []string
+	if dockerTag := os.Getenv("DOCKER_TAG"); len(dockerTag) > 0 {
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag)
+		caches = append([]string{tag}, caches...)
+		tags = append(tags, tag)
+		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
+	} else {
+		branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
+		latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
+		tags = append(tags, []string{
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+			branchTag,
+		}...)
+		if currentCI.Branch() == "master" {
+			tags = append(tags, latestTag)
+		}
 
-	caches = append([]string{branchTag, latestTag}, caches...)
+		caches = append([]string{branchTag, latestTag}, caches...)
+	}
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", out, eout); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -8
