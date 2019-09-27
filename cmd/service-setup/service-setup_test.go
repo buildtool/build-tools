@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -15,8 +16,7 @@ func Test(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Chdir(oldPwd)
 
-	os.Clearenv()
-	_ = os.Setenv("REGISTRY", "dockerhub")
+	defer pkg.SetEnv("REGISTRY", "dockerhub")()
 
 	exitFunc = func(code int) {
 		assert.Equal(t, -1, code)

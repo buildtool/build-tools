@@ -22,7 +22,7 @@ func TestTeamCityCI_BranchReplaceSlash(t *testing.T) {
 }
 
 func TestTeamCityCI_BranchReplaceSlash_VCS_Fallback(t *testing.T) {
-	ci := &TeamCity{Common: &Common{VCS: vcs.NewMockVcsWithBranch( "refs/heads/feature1")}}
+	ci := &TeamCity{Common: &Common{VCS: vcs.NewMockVcsWithBranch("refs/heads/feature1")}}
 
 	assert.Equal(t, "refs_heads_feature1", ci.BranchReplaceSlash())
 }

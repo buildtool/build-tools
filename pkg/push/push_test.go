@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/file"
@@ -39,22 +40,19 @@ func teardown(tempDir string) {
 func TestPush_BadDockerHost(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 
-	os.Clearenv()
-	_ = os.Setenv("DOCKER_HOST", "abc-123")
+	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
 	code := Push(name, os.Stdout, os.Stderr)
 	assert.Equal(t, -1, code)
 }
 
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	os.Clearenv()
 	code := Push(name, os.Stdout, os.Stderr)
 	assert.Equal(t, -3, code)
 }
 
 func TestPush_BrokenConfig(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	os.Clearenv()
 	yaml := `ci: [] `
 	_ = file.Write(name, ".buildtools.yaml", yaml)
 
@@ -154,6 +152,28 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
 	assert.Equal(t, "Logged in\nPush successful\nPush successful\nPush successful\n", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
+func TestPush_DockerTagOverride(t *testing.T) {
+	defer pkg.SetEnv("DOCKER_TAG", "override")()
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = file.Write(name, "Dockerfile", "FROM scratch")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	pushOut := `{"status":"Push successful"}`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Repository = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, 0, exitCode)
+	assert.Equal(t, []string{"repo/reponame:override"}, client.Images)
+	assert.Equal(t, "Logged in\noverriding docker tags with value from env DOCKER_TAG override\nPush successful\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 

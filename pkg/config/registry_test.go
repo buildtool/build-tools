@@ -3,16 +3,16 @@ package config
 import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestDockerhub_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -25,10 +25,9 @@ func TestDockerhub_Identify(t *testing.T) {
 }
 
 func TestDockerhub_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("DOCKERHUB_REPOSITORY", "repo")
-	_ = os.Setenv("DOCKERHUB_USERNAME", "user")
-	_ = os.Setenv("DOCKERHUB_PASSWORD", "pass")
+	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -39,9 +38,8 @@ func TestDockerhub_Name(t *testing.T) {
 }
 
 func TestEcr_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("ECR_URL", "url")
-	_ = os.Setenv("ECR_REGION", "region")
+	defer pkg.SetEnv("ECR_URL", "url")()
+	defer pkg.SetEnv("ECR_REGION", "region")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -54,9 +52,8 @@ func TestEcr_Identify(t *testing.T) {
 }
 
 func TestEcr_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("ECR_URL", "url")
-	_ = os.Setenv("ECR_REGION", "region")
+	defer pkg.SetEnv("ECR_URL", "url")()
+	defer pkg.SetEnv("ECR_REGION", "region")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -67,10 +64,9 @@ func TestEcr_Name(t *testing.T) {
 }
 
 func TestEcr_Identify_BrokenConfig(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("ECR_URL", "url")
-	_ = os.Setenv("ECR_REGION", "region")
-	_ = os.Setenv("AWS_CA_BUNDLE", "/missing/bundle")
+	defer pkg.SetEnv("ECR_URL", "url")()
+	defer pkg.SetEnv("ECR_REGION", "region")()
+	defer pkg.SetEnv("AWS_CA_BUNDLE", "/missing/bundle")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -82,10 +78,9 @@ func TestEcr_Identify_BrokenConfig(t *testing.T) {
 }
 
 func TestGitlab_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
-	_ = os.Setenv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")
-	_ = os.Setenv("CI_BUILD_TOKEN", "token")
+	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
+	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -98,10 +93,9 @@ func TestGitlab_Identify(t *testing.T) {
 }
 
 func TestGitlab_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
-	_ = os.Setenv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")
-	_ = os.Setenv("CI_BUILD_TOKEN", "token")
+	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
+	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -112,10 +106,9 @@ func TestGitlab_Name(t *testing.T) {
 }
 
 func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
-	_ = os.Setenv("CI_REGISTRY_IMAGE", "registry.gitlab.com")
-	_ = os.Setenv("CI_BUILD_TOKEN", "token")
+	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -128,10 +121,9 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 }
 
 func TestGitlab_RegistryFallback(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("CI_REGISTRY", "registry.gitlab.com")
-	_ = os.Setenv("CI_REGISTRY_IMAGE", "")
-	_ = os.Setenv("CI_BUILD_TOKEN", "token")
+	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "")()
+	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
@@ -150,10 +142,9 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 }
 
 func TestQuay_Identify(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("QUAY_REPOSITORY", "repo")
-	_ = os.Setenv("QUAY_USERNAME", "user")
-	_ = os.Setenv("QUAY_PASSWORD", "pass")
+	defer pkg.SetEnv("QUAY_REPOSITORY", "repo")()
+	defer pkg.SetEnv("QUAY_USERNAME", "user")()
+	defer pkg.SetEnv("QUAY_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -166,10 +157,9 @@ func TestQuay_Identify(t *testing.T) {
 }
 
 func TestQuay_Name(t *testing.T) {
-	os.Clearenv()
-	_ = os.Setenv("QUAY_REPOSITORY", "repo")
-	_ = os.Setenv("QUAY_USERNAME", "user")
-	_ = os.Setenv("QUAY_PASSWORD", "pass")
+	defer pkg.SetEnv("QUAY_REPOSITORY", "repo")()
+	defer pkg.SetEnv("QUAY_USERNAME", "user")()
+	defer pkg.SetEnv("QUAY_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)

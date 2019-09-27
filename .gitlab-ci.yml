@@ -51,10 +51,10 @@ test:
     - deps
   image: golang:1.12
   script:
-    - find . -name "rice-box.go" -delete
     - go fmt $(go list ./...)
     - go vet $(go list ./...)
-    - CGO_ENABLED=1 go test -mod=readonly -race -coverprofile=.testCoverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
+    - unset "${!CI@}"
+    - CGO_ENABLED=1 go test -p 1 -mod=readonly -race -coverprofile=.testCoverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
     - go tool cover -html=.testCoverage.txt -o coverage.html
     - go tool cover -func=.testCoverage.txt
   artifacts:
