@@ -84,6 +84,7 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		}
 	}
 	for _, tag := range tags {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Pushing tag '<green>%s</green>'", tag))
 		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
 			return -7
