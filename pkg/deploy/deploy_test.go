@@ -312,7 +312,7 @@ metadata:
 	eout := &bytes.Buffer{}
 	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
-	assert.NoError(t, err)
+	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 	assert.Equal(t, "Rollout failed. Fetching events.Deployment eventsPod events", out.String())
@@ -342,7 +342,7 @@ metadata:
 	eout := &bytes.Buffer{}
 	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
-	assert.NoError(t, err)
+	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
 	assert.Equal(t, "Rollout failed. Fetching events.Deployment eventsPod events", out.String())

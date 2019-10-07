@@ -21,6 +21,7 @@ func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client 
 			_, _ = fmt.Fprintf(out, "Rollout failed. Fetching events.")
 			_, _ = fmt.Fprintf(out, client.DeploymentEvents(buildName))
 			_, _ = fmt.Fprintf(out, client.PodEvents(buildName))
+			return fmt.Errorf("failed to rollout")
 		}
 	}
 	return nil
