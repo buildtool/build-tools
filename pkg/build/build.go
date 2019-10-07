@@ -67,7 +67,6 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	set.BoolVar(&skipLogin, "skiplogin", false, "disable login to docker registry")
 
 	_ = set.Parse(args)
-	fmt.Println(skipLogin)
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
