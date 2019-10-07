@@ -54,6 +54,7 @@ func createBuildContext(dir string) (io.ReadCloser, error) {
 func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, args ...string) int {
 	var dockerfile string
 	var buildArgsFlags arrayFlags
+	var skipLogin bool
 	const (
 		defaultDockerfile = "Dockerfile"
 		usage             = "name of the Dockerfile to use"
@@ -63,9 +64,10 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
 	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
 	set.Var(&buildArgsFlags, "build-arg", "")
+	set.BoolVar(&skipLogin, "skiplogin", false, "disable login to docker registry")
 
 	_ = set.Parse(args)
-
+	fmt.Println(skipLogin)
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
@@ -80,9 +82,14 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		return -4
 	} else {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
-		if err := currentRegistry.Login(client, out); err != nil {
-			_, _ = fmt.Fprintln(eout, err.Error())
-			return -5
+		if skipLogin {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("Login <red>disabled</red>\n"))
+		} else {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name()))
+			if err := currentRegistry.Login(client, out); err != nil {
+				_, _ = fmt.Fprintln(eout, err.Error())
+				return -5
+			}
 		}
 	}
 
