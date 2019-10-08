@@ -39,28 +39,24 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 
 func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, out, eout io.Writer) int {
 	currentCI := cfg.CurrentCI()
-	currentRegistry, err := cfg.CurrentRegistry()
-	if err != nil {
-		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -3
-	}
+	currentRegistry := cfg.CurrentRegistry()
 
 	if err := currentRegistry.Login(client, out); err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -4
+		return -3
 	}
 
 	auth := currentRegistry.GetAuthInfo()
 
 	if err := currentRegistry.Create(currentCI.BuildName()); err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -5
+		return -4
 	}
 
 	content, err := ioutil.ReadFile(filepath.Join(dir, dockerfile))
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-		return -6
+		return -5
 	}
 	stages := docker.FindStages(string(content))
 
@@ -87,7 +83,7 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Pushing tag '<green>%s</green>'", tag))
 		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-			return -7
+			return -6
 		}
 	}
 	return 0

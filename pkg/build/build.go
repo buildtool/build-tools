@@ -30,7 +30,7 @@ type responsetype struct {
 }
 
 func DoBuild(dir string, out, eout io.Writer, args ...string) int {
-	if client, err := dkr.NewEnvClient(); err != nil {
+	if client, err := dockerClient(); err != nil {
 		_, _ = fmt.Fprintln(out, err.Error())
 		return -1
 	} else {
@@ -41,6 +41,10 @@ func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 			return build(client, dir, buildContext, out, eout, args...)
 		}
 	}
+}
+
+var dockerClient = func() (docker.Client, error) {
+	return dkr.NewEnvClient()
 }
 
 func createBuildContext(dir string) (io.ReadCloser, error) {
@@ -75,20 +79,15 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	currentCI := cfg.CurrentCI()
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>\n", currentCI.Name()))
 
-	currentRegistry, err := cfg.CurrentRegistry()
-	if err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
-		return -4
+	currentRegistry := cfg.CurrentRegistry()
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
+	if skipLogin {
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <red>disabled</red>\n"))
 	} else {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
-		if skipLogin {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("Login <red>disabled</red>\n"))
-		} else {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name()))
-			if err := currentRegistry.Login(client, out); err != nil {
-				_, _ = fmt.Fprintln(eout, err.Error())
-				return -5
-			}
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name()))
+		if err := currentRegistry.Login(client, out); err != nil {
+			_, _ = fmt.Fprintln(eout, err.Error())
+			return -4
 		}
 	}
 
@@ -97,7 +96,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	stages, err := findStages(tee, dockerfile)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
-		return -6
+		return -5
 	}
 
 	commit := currentCI.Commit()
@@ -124,7 +123,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
-			return -7
+			return -6
 		}
 	}
 
@@ -149,7 +148,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	}
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", out, eout); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
-		return -8
+		return -7
 	}
 
 	return 0

@@ -9,7 +9,7 @@ import (
 func TestPush(t *testing.T) {
 	os.Clearenv()
 	exitFunc = func(code int) {
-		assert.Equal(t, -3, code)
+		assert.Equal(t, -5, code)
 	}
 
 	os.Args = []string{"push"}

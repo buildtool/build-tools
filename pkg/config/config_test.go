@@ -233,8 +233,7 @@ registry:
 	assert.Equal(t, "buildkite", cfg.Scaffold.CI.Selected)
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "quay.io", cfg.Scaffold.RegistryUrl)
-	currentRegistry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	currentRegistry := cfg.CurrentRegistry()
 	assert.NotNil(t, currentRegistry)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }

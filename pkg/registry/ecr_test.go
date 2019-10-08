@@ -126,7 +126,7 @@ func (r *MockECR) DescribeRepositories(input *awsecr.DescribeRepositoriesInput) 
 	if r.repoExists {
 		return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}}, nil
 	}
-	return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}}, fmt.Errorf("no repository found")
+	return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}}, fmt.Errorf("NoDockerRegistry repository found")
 }
 
 func (r *MockECR) CreateRepository(input *awsecr.CreateRepositoryInput) (*awsecr.CreateRepositoryOutput, error) {

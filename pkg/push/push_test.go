@@ -48,7 +48,7 @@ func TestPush_BadDockerHost(t *testing.T) {
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	code := Push(name, os.Stdout, os.Stderr)
-	assert.Equal(t, -3, code)
+	assert.Equal(t, -5, code)
 }
 
 func TestPush_BrokenConfig(t *testing.T) {
@@ -66,15 +66,19 @@ func TestPush_BrokenConfig(t *testing.T) {
 }
 
 func TestPush_NoRegistry(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = file.Write(name, "Dockerfile", "FROM scratch")
+
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	cfg := config.InitEmptyConfig()
+	cfg.VCS.VCS = &no{}
+
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -3, exitCode)
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "\x1b[0m\x1b[31mno Docker registry found\x1b[39m\x1b[0m\n", eout.String())
+	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, "Authentication not supported for registry\n\x1b[0mPushing tag '\x1b[32mnoregistry/push:\x1b[39m'\x1b[0m\n", out.String())
 }
 
 func TestPush_LoginFailure(t *testing.T) {
@@ -87,7 +91,7 @@ func TestPush_LoginFailure(t *testing.T) {
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.NotNil(t, exitCode)
-	assert.Equal(t, -4, exitCode)
+	assert.Equal(t, -3, exitCode)
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "\x1b[0m\x1b[31mMissingRegion: could not find region configuration\x1b[39m\x1b[0m\n", eout.String())
 }
@@ -107,7 +111,7 @@ func TestPush_PushError(t *testing.T) {
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.NotNil(t, exitCode)
-	assert.Equal(t, -7, exitCode)
+	assert.Equal(t, -6, exitCode)
 	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/project:\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "\x1b[0m\x1b[31munable to push layer\x1b[39m\x1b[0m\n", eout.String())
 }
@@ -283,7 +287,7 @@ func TestPush_BrokenOutput(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -7, exitCode)
+	assert.Equal(t, -6, exitCode)
 	assert.Equal(t, "Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n\x1b[0m\x1b[31minvalid character 'B' looking for beginning of value\x1b[39m\x1b[0m\n", eout.String())
 }
 
@@ -302,7 +306,7 @@ func TestPush_ErrorDetail(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -7, exitCode)
+	assert.Equal(t, -6, exitCode)
 	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "\x1b[0m\x1b[31merror details\x1b[39m\x1b[0m\n", eout.String())
 }
@@ -323,7 +327,7 @@ func TestPush_Create_Error(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -5, exitCode)
+	assert.Equal(t, -4, exitCode)
 	assert.Equal(t, "\x1b[0m\x1b[31mcreate error\x1b[39m\x1b[0m\n", eout.String())
 }
 
@@ -343,7 +347,7 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, -5, exitCode)
 	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[31mread %s: is a directory\x1b[39m\x1b[0m\n", dockerfile), eout.String())
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/sparetimecoders/build-tools/pkg"
+	"gitlab.com/sparetimecoders/build-tools/pkg/registry"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -17,8 +18,7 @@ func TestDockerhub_Identify(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
 	assert.Equal(t, "repo", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
@@ -32,8 +32,7 @@ func TestDockerhub_Name(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Dockerhub", registry.Name())
 }
 
@@ -44,8 +43,7 @@ func TestEcr_Identify(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
 	assert.Equal(t, "url", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
@@ -58,12 +56,11 @@ func TestEcr_Name(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "ECR", registry.Name())
 }
 
-func TestEcr_Identify_BrokenConfig(t *testing.T) {
+func TestEcr_Identify_MissingDockerRegistry(t *testing.T) {
 	defer pkg.SetEnv("ECR_URL", "url")()
 	defer pkg.SetEnv("ECR_REGION", "region")()
 	defer pkg.SetEnv("AWS_CA_BUNDLE", "/missing/bundle")()
@@ -71,9 +68,8 @@ func TestEcr_Identify_BrokenConfig(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.EqualError(t, err, "no Docker registry found")
-	assert.Nil(t, registry)
+	reg := cfg.CurrentRegistry()
+	assert.Equal(t, registry.NoDockerRegistry{}, reg)
 	assert.Equal(t, "", out.String())
 }
 
@@ -85,9 +81,7 @@ func TestGitlab_Identify(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
-	assert.NotNil(t, registry)
+	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "registry.gitlab.com/group", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
 }
@@ -100,8 +94,7 @@ func TestGitlab_Name(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Gitlab", registry.Name())
 }
 
@@ -113,8 +106,7 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
 	assert.Equal(t, "registry.gitlab.com", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
@@ -134,8 +126,7 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
 	assert.Equal(t, "registry.gitlab.com", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
@@ -149,8 +140,7 @@ func TestQuay_Identify(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
 	assert.Equal(t, "quay.io/repo", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
@@ -164,7 +154,6 @@ func TestQuay_Name(t *testing.T) {
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
-	registry, err := cfg.CurrentRegistry()
-	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Quay.io", registry.Name())
 }

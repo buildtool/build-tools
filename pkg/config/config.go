@@ -1,7 +1,6 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/caarlos0/env"
 	"github.com/liamg/tml"
@@ -120,13 +119,13 @@ func (c *Config) CurrentCI() ci.CI {
 	return x
 }
 
-func (c *Config) CurrentRegistry() (registry.Registry, error) {
+func (c *Config) CurrentRegistry() registry.Registry {
 	for _, reg := range c.AvailableRegistries {
 		if reg.Configured() {
-			return reg, nil
+			return reg
 		}
 	}
-	return nil, errors.New("no Docker registry found")
+	return registry.NoDockerRegistry{}
 }
 
 func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {

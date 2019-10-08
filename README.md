@@ -1,3 +1,4 @@
+
 # build-tools
 A set of highly opinionated tools for creating and building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
 
@@ -17,10 +18,10 @@ After installing (*TODO link*) the tools, clone the example repository (link), c
     
     no Docker registry found
 
-Since we we haven't setup a `.buildtools.yaml` file nothing has been configured, and to be able to build a docker image we must specify where we (potentially) want to push it later. In other words, setting the [tags](https://docs.docker.com/engine/reference/commandline/tag/) of the create image.
-Let's try:
+Since we we haven't setup a `.buildtools.yaml` (*TODO LINK in doc*) file nothing has been configured, and to be able to build a docker image we must specify where we (potentially) want to push it later. In other words, setting the [tags](https://docs.docker.com/engine/reference/commandline/tag/) of the created image.
+Luckily we can use environment variables as well, let's try:
 
-    $ DOCKERHUB_REPOSITORY=stc build
+    $ DOCKERHUB_REPOSITORY=sparetimecoders build
     Using CI none
     
     Using registry Dockerhub
@@ -31,12 +32,20 @@ Let's try:
 As we can see, the `build` command identified that we are using Dockerhub, and extracted the commit id and branch information from the local git repository.
 After the successful build the image is tagged with the commit id and branch.
 
-    Successfully tagged stc/gt-examples:7c76db502b4a70df5480d6ff438ae10e374b420e
-    Successfully tagged stc/gt-examples:master
-    
-Now that we have a docker image, let's publish it to Dockerhub.
+    Successfully tagged sparetimecoders/buildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e
+    Successfully tagged sparetimecoders/buildtools-examples:master
+    Successfully tagged sparetimecoders/buildtools-examples:latest
 
-    $ DOCKERHUB_REPOSITORY=sparetimecoders push
+
+
+    
+Now that we have a docker image, let's publish it to Dockerhub (this of course requires write access to the repository).
+
+    $ DOCKERHUB_REPOSITORY=sparetimecoders DOCKERHUB_PASSWORD=<PASSWORD> DOCKERHUB_USERNAME=<USERNAME> push
+    ...
+    Pushing tag 'sparetimecoders/buildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e'
+    ...
+
     
 *TODO Link to more environment variables and stuff*
 
