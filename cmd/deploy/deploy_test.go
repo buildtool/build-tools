@@ -91,7 +91,7 @@ environments:
 
 func TestDeploy_NoOptions(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -2, code)
+		assert.Equal(t, -3, code)
 	}
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
@@ -118,7 +118,7 @@ environments:
 
 func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -2, code)
+		assert.Equal(t, -3, code)
 	}
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()

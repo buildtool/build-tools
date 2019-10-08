@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/liamg/tml"
+	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/deploy"
 	"gitlab.com/sparetimecoders/build-tools/pkg/kubectl"
@@ -51,13 +53,18 @@ func doDeploy() int {
 				if namespace != "" {
 					env.Namespace = namespace
 				}
-				ci := cfg.CurrentCI()
+				currentCI := cfg.CurrentCI()
+				if !ci.IsValid(currentCI) {
+					_, _ = fmt.Println(tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+					return -2
+				}
+
 				tstamp := time.Now().Format(time.RFC3339)
 				client := kubectl.New(env, os.Stdout, os.Stderr)
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, ci.Commit(), ci.BuildName(), tstamp, env.Name, client, os.Stdout, os.Stderr); err != nil {
+				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, env.Name, client, os.Stdout, os.Stderr); err != nil {
 					fmt.Println(err.Error())
-					return -2
+					return -3
 				}
 			}
 		}

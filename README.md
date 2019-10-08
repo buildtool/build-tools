@@ -8,6 +8,14 @@ The only hard requirement is to provide a [Dockerfile](https://docs.docker.com/e
 
 The configuration needed is done by environment variables (most likely for CI/CD) and yaml files (for local use).
 
+# Conventions
+
+A `Dockerfile` must be present in the 
+# Commands
+
+## build
+## push
+## deploy
 ## Using in CI/CD pipelines
 
 ## Local usage

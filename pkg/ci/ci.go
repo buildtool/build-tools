@@ -51,3 +51,7 @@ func (c *Common) Commit(name string) string {
 func branchReplaceSlash(name string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(name, "/", "_"), " ", "_")
 }
+
+func IsValid(c CI) bool {
+	return len(c.Commit()) != 0 || len(c.Branch()) != 0
+}

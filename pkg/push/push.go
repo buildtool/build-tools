@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/liamg/tml"
+	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
@@ -69,8 +70,11 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag)
 		tags = append(tags, tag)
 		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
-
 	} else {
+		if !ci.IsValid(currentCI) {
+			_, _ = fmt.Fprint(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+			return -6
+		}
 		tags = append(tags,
 			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
 			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
@@ -83,7 +87,7 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Pushing tag '<green>%s</green>'", tag))
 		if err := currentRegistry.PushImage(client, auth, tag, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
-			return -6
+			return -7
 		}
 	}
 	return 0

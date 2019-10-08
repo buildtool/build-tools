@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg"
+	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"gitlab.com/sparetimecoders/build-tools/pkg/tar"
@@ -98,6 +99,12 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -5
 	}
+	dockerTagOverride := os.Getenv("DOCKER_TAG")
+
+	if !ci.IsValid(currentCI) && len(dockerTagOverride) == 0 {
+		_, _ = fmt.Fprintln(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+		return -6
+	}
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
@@ -123,16 +130,16 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, out, eout); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
-			return -6
+			return -7
 		}
 	}
 
 	var tags []string
-	if dockerTag := os.Getenv("DOCKER_TAG"); len(dockerTag) > 0 {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag)
+	if len(dockerTagOverride) > 0 {
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTagOverride)
 		caches = append([]string{tag}, caches...)
 		tags = append(tags, tag)
-		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
+		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTagOverride)
 	} else {
 		branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
 		latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")

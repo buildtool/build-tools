@@ -78,7 +78,8 @@ func TestPush_NoRegistry(t *testing.T) {
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -6, exitCode)
-	assert.Equal(t, "\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mPushing tag '\x1b[32mnoregistry/push:\x1b[39m'\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mCommit and/or branch information is \x1b[31mmissing\x1b[39m. Perhaps your not in a Git repository or forgot to set environment variables?\x1b[0m", eout.String())
 }
 
 func TestPush_LoginFailure(t *testing.T) {
@@ -112,8 +113,8 @@ func TestPush_PushError(t *testing.T) {
 
 	assert.NotNil(t, exitCode)
 	assert.Equal(t, -6, exitCode)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/project:\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "\x1b[0m\x1b[31munable to push layer\x1b[39m\x1b[0m\n", eout.String())
+	assert.Equal(t, "Logged in\n", out.String())
+	assert.Equal(t, "\x1b[0mCommit and/or branch information is \x1b[31mmissing\x1b[39m. Perhaps your not in a Git repository or forgot to set environment variables?\x1b[0m", eout.String())
 }
 
 func TestPush_PushFeatureBranch(t *testing.T) {
@@ -287,7 +288,7 @@ func TestPush_BrokenOutput(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, -7, exitCode)
 	assert.Equal(t, "Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n\x1b[0m\x1b[31minvalid character 'B' looking for beginning of value\x1b[39m\x1b[0m\n", eout.String())
 }
 
@@ -306,7 +307,7 @@ func TestPush_ErrorDetail(t *testing.T) {
 	cfg.Registry.Dockerhub.Repository = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
-	assert.Equal(t, -6, exitCode)
+	assert.Equal(t, -7, exitCode)
 	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "\x1b[0m\x1b[31merror details\x1b[39m\x1b[0m\n", eout.String())
 }
