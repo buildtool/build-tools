@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 )
@@ -17,7 +18,7 @@ func (n NoDockerRegistry) Name() string {
 }
 
 func (n NoDockerRegistry) Login(client docker.Client, out io.Writer) error {
-	_, _ = fmt.Fprintln(out, "Authentication not supported for registry")
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Authentication <yellow>not supported</yellow> for registry <green>%s</green>", n.Name()))
 	return nil
 }
 

@@ -78,7 +78,7 @@ func TestPush_NoRegistry(t *testing.T) {
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -6, exitCode)
-	assert.Equal(t, "Authentication not supported for registry\n\x1b[0mPushing tag '\x1b[32mnoregistry/push:\x1b[39m'\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mPushing tag '\x1b[32mnoregistry/push:\x1b[39m'\x1b[0m\n", out.String())
 }
 
 func TestPush_LoginFailure(t *testing.T) {

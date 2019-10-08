@@ -77,14 +77,14 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		return -3
 	}
 	currentCI := cfg.CurrentCI()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>\n", currentCI.Name()))
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>", currentCI.Name()))
 
 	currentRegistry := cfg.CurrentRegistry()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>\n", currentRegistry.Name()))
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>", currentRegistry.Name()))
 	if skipLogin {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <red>disabled</red>\n"))
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <yellow>disabled</yellow>"))
 	} else {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name()))
+		_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>", currentRegistry.Name()))
 		if err := currentRegistry.Login(client, out); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -4
@@ -101,7 +101,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch))
+	_, _ = fmt.Fprintln(out, tml.Sprintf("Using build variables commit <green>%s</green> on branch <green>%s</green>", commit, branch))
 	var caches []string
 
 	buildArgs := map[string]*string{

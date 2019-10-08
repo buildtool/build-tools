@@ -74,7 +74,7 @@ func TestBuild_NoRegistry(t *testing.T) {
 
 	code := DoBuild(name, out, eout)
 	assert.Equal(t, 0, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mNo docker registry\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mNo docker registry\x1b[39m\n\x1b[0m\nAuthentication not supported for registry\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -93,7 +93,7 @@ func TestBuild_LoginError(t *testing.T) {
 	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -4, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nUnable to login\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nUnable to login\n", out.String())
 	assert.Equal(t, "invalid username/password\n", eout.String())
 }
 
@@ -112,7 +112,7 @@ func TestBuild_BuildError(t *testing.T) {
 	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
 	assert.Equal(t, "build error\n", eout.String())
 }
 
@@ -131,7 +131,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
 	assert.Equal(t, "error Code: 123 Message: build error\n", eout.String())
 }
 
@@ -150,7 +150,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	code := build(client, name, ioutil.NopCloser(buildContext), out, eout)
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\n", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
 	assert.Equal(t, "unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
 }
 
@@ -182,7 +182,7 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	assert.Equal(t, 3, len(client.BuildOptions[0].BuildArgs))
 	assert.Equal(t, "1=1", *client.BuildOptions[0].BuildArgs["buildargs1"])
 	assert.Equal(t, "", eout.String())
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\n\x1b[0m\nignoring build-arg buildargs2\nignoring build-arg buildargs3\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\x1b[0m\nignoring build-arg buildargs2\nignoring build-arg buildargs3\nBuild successful", out.String())
 }
 
 func TestBuild_WithSkipLogin(t *testing.T) {
@@ -194,7 +194,7 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
 	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "--skiplogin")
 	assert.Equal(t, 0, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mLogin \x1b[31mdisabled\x1b[39m\n\x1b[0m\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\n\x1b[0m\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mLogin \x1b[33mdisabled\x1b[39m\x1b[0m\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\x1b[0m\nBuild successful", out.String())
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -227,7 +227,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\n\x1b[0m\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -243,7 +243,7 @@ func TestBuild_DockerTagOverride(t *testing.T) {
 	assert.Equal(t, 0, code)
 	assert.Equal(t, []string{"repo/build:override"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, []string{"repo/build:override"}, client.BuildOptions[0].CacheFrom)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mnone\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\n\x1b[0m\noverriding docker tags with value from env DOCKER_TAG override\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mnone\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\x1b[0m\noverriding docker tags with value from env DOCKER_TAG override\nBuild successful", out.String())
 }
 
 func TestBuild_MasterBranch(t *testing.T) {
@@ -267,7 +267,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\n\x1b[0m\nBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -355,7 +355,7 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:master", "repo/reponame:latest", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[2].CacheFrom)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\n\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\n\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\n\x1b[0m\nBuild successfulBuild successfulBuild successful", out.String())
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successfulBuild successfulBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
