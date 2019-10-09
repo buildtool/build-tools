@@ -179,13 +179,13 @@ The scripts assume that the project follow the directory layout described below.
 ## Project structure
 The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
 
-There must be a `deployment_files` directory in the root of your project file. This directory contains all the `yaml` files used to describe the Kubernetes deployment tasks needed to run this service.
-Environment specific files can be handled in two different ways depending on personal preference. They can either be located in sub-directories, for example `deployment_files/local` for local setup.
+There must be a `k8s` directory in the root of your project file. This directory contains all the `yaml` files used to describe the Kubernetes deployment tasks needed to run this service.
+Environment specific files can be handled in two different ways depending on personal preference. They can either be located in sub-directories, for example `k8s/local` for local setup.
 
     $ cd projecct
     $ tree
     .
-    └── deployment_files
+    └── k8s
         ├── deploy.yaml
         ├── local
         │   ├── ingress.yaml
@@ -198,7 +198,7 @@ Or they can be defined using a `-<environment>` suffix, i.e. ingress-prod.yaml
     $ cd projecct
     $ tree
     .
-    └── deployment_files
+    └── k8s
         ├── deploy.yaml
         ├── ingress-local.yaml
         ├── ingress-prod.yaml

@@ -22,7 +22,7 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 	eout := &bytes.Buffer{}
 	err := Deploy(".", "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
-	assert.EqualError(t, err, "open deployment_files: no such file or directory")
+	assert.EqualError(t, err, "open k8s: no such file or directory")
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -34,7 +34,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -53,14 +53,14 @@ func TestDeploy_NoEnvSpecificFiles(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -81,13 +81,13 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.MkdirAll(filepath.Join(name, "deployment_files", "deploy.yaml"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "deploy.yaml"), 0777)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
-	assert.EqualError(t, err, fmt.Sprintf("read %s/deployment_files/deploy.yaml: is a directory", name))
+	assert.EqualError(t, err, fmt.Sprintf("read %s/k8s/deploy.yaml: is a directory", name))
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -99,17 +99,17 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.MkdirAll(filepath.Join(name, "deployment_files"), 0777)
-	deployFile := filepath.Join(name, "deployment_files", "ns.yaml")
+	_ = os.MkdirAll(filepath.Join(name, "k8s"), 0777)
+	deployFile := filepath.Join(name, "k8s", "ns.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte("test"), 0777)
-	_ = os.Symlink(deployFile, filepath.Join(name, "deployment_files", "deploy.yaml"))
+	_ = os.Symlink(deployFile, filepath.Join(name, "k8s", "deploy.yaml"))
 	_ = os.Remove(deployFile)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
 
-	assert.EqualError(t, err, fmt.Sprintf("open %s/deployment_files/deploy.yaml: no such file or directory", name))
+	assert.EqualError(t, err, fmt.Sprintf("open %s/k8s/deploy.yaml: no such file or directory", name))
 	assert.Equal(t, "", out.String())
 	assert.Equal(t, "", eout.String())
 }
@@ -121,14 +121,14 @@ func TestDeploy_EnvSpecificFilesInSubDirectory(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.MkdirAll(filepath.Join(name, "deployment_files", "dummy"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "dummy"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "dummy", "ns.yaml")
+	deployFile := filepath.Join(name, "k8s", "dummy", "ns.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -149,14 +149,14 @@ func TestDeploy_EnvSpecificFilesWithSuffix(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "ns-dummy.yaml")
+	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -177,17 +177,17 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.MkdirAll(filepath.Join(name, "deployment_files", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "ns-dummy.yaml")
+	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
-	_ = ioutil.WriteFile(filepath.Join(name, "deployment_files", "ns-prod.yaml"), []byte(yaml), 0777)
-	_ = ioutil.WriteFile(filepath.Join(name, "deployment_files", "other-dummy.sh"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte(yaml), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -207,14 +207,14 @@ func TestDeploy_ErrorFromApply(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -233,14 +233,14 @@ func TestDeploy_ErrorFromApplyInSubDirectory(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.MkdirAll(filepath.Join(name, "deployment_files", "dummy"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "dummy"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "dummy", "ns.yaml")
+	deployFile := filepath.Join(name, "k8s", "dummy", "ns.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -259,7 +259,7 @@ func TestDeploy_ReplacingCommitAndTimestamp(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -268,7 +268,7 @@ metadata:
   commit: ${COMMIT}
   timestamp: ${TIMESTAMP}
 `
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -298,14 +298,14 @@ func TestDeploy_DeploymentExists(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}
@@ -328,14 +328,14 @@ func TestDeploy_RolloutStatusFail(t *testing.T) {
 
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
-	_ = os.Mkdir(filepath.Join(name, "deployment_files"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
 metadata:
   name: dummy
 `
-	deployFile := filepath.Join(name, "deployment_files", "deploy.yaml")
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
 	out := &bytes.Buffer{}

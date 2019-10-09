@@ -11,7 +11,7 @@ import (
 )
 
 func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
-	deploymentFiles := filepath.Join(dir, "deployment_files")
+	deploymentFiles := filepath.Join(dir, "k8s")
 	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client); err != nil {
 		return err
 	}

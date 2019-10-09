@@ -194,7 +194,7 @@ func createReadme(dir string, data templating.TemplateData) error {
 }
 
 func createDeployment(dir string, data templating.TemplateData) error {
-	return file.WriteTemplated(dir, filepath.Join("deployment_files", "deploy.yaml"), deployment, data)
+	return file.WriteTemplated(dir, filepath.Join("k8s", "deploy.yaml"), deployment, data)
 }
 
 var deployment = `

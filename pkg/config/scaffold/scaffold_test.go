@@ -278,7 +278,7 @@ func TestScaffold_Error_Writing_Deployment(t *testing.T) {
 	cfg.CurrentCI = &mockCi{}
 	cfg.RegistryUrl = "dockerhub"
 
-	filename := filepath.Join(name, "project", "deployment_files", "deploy.yaml")
+	filename := filepath.Join(name, "project", "k8s", "deploy.yaml")
 	_ = os.MkdirAll(filename, 0777)
 	out := &bytes.Buffer{}
 
