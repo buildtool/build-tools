@@ -3,7 +3,7 @@ package kubecmd
 import (
 	"flag"
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/config"
+	"github.com/sparetimecoders/build-tools/pkg/config"
 	"io"
 )
 
@@ -15,7 +15,7 @@ func Kubecmd(dir string, out io.Writer, args ...string) *string {
 	)
 	set := flag.NewFlagSet("deploy", flag.ExitOnError)
 	set.Usage = func() {
-		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namsepace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
+		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
 		set.PrintDefaults()
 	}
 	set.StringVar(&context, "context", "", contextUsage)

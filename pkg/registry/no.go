@@ -3,7 +3,7 @@ package registry
 import (
 	"fmt"
 	"github.com/liamg/tml"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 )
 

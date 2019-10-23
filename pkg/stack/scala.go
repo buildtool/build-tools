@@ -1,8 +1,8 @@
 package stack
 
 import (
-	"gitlab.com/sparetimecoders/build-tools/pkg/file"
-	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/sparetimecoders/build-tools/pkg/file"
+	"github.com/sparetimecoders/build-tools/pkg/templating"
 	"os"
 	"path/filepath"
 	"strings"

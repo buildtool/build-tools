@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"regexp"
 	"strings"
@@ -46,7 +46,7 @@ func (r *ECR) Configured() bool {
 func (r *ECR) region() *string {
 	if r.Region == "" {
 		regex := regexp.MustCompile(`.*ecr.(.*).amazonaws.com`)
-		if submatch := regex.FindStringSubmatch(r.Url); submatch != nil && len(submatch) == 2 {
+		if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
 			return &submatch[1]
 		}
 	}

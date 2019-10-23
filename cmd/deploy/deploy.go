@@ -4,19 +4,31 @@ import (
 	"flag"
 	"fmt"
 	"github.com/liamg/tml"
-	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
-	"gitlab.com/sparetimecoders/build-tools/pkg/config"
-	"gitlab.com/sparetimecoders/build-tools/pkg/deploy"
-	"gitlab.com/sparetimecoders/build-tools/pkg/kubectl"
+	"github.com/sparetimecoders/build-tools/pkg/ci"
+	"github.com/sparetimecoders/build-tools/pkg/config"
+	"github.com/sparetimecoders/build-tools/pkg/deploy"
+	"github.com/sparetimecoders/build-tools/pkg/kubectl"
+	ver "github.com/sparetimecoders/build-tools/pkg/version"
+	"io"
 	"os"
 	"time"
 )
 
-func main() {
-	exitFunc(doDeploy())
-}
+var (
+	version            = "dev"
+	commit             = "none"
+	date               = "unknown"
+	exitFunc           = os.Exit
+	out      io.Writer = os.Stdout
+)
 
-var exitFunc = os.Exit
+func main() {
+	if ver.PrintVersionOnly(version, commit, date, out) {
+		exitFunc(0)
+	} else {
+		exitFunc(doDeploy())
+	}
+}
 
 func doDeploy() int {
 	var context, namespace string
@@ -26,7 +38,7 @@ func doDeploy() int {
 	)
 	set := flag.NewFlagSet("deploy", flag.ExitOnError)
 	set.Usage = func() {
-		fmt.Printf("Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namsepace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
+		fmt.Printf("Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
 		set.PrintDefaults()
 	}
 	set.StringVar(&context, "context", "", contextUsage)

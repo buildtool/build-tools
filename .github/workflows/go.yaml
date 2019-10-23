@@ -1,0 +1,29 @@
+name: Go
+
+on:
+  push:
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Test
+        run: |
+          go fmt $(go list ./...)
+          go vet $(go list ./...)
+          unset "${!GITHUB_@}" RUNNER_WORKSPACE
+          CGO_ENABLED=1 go test -p 1 -mod=readonly -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
+          go tool cover -func=coverage.txt
+          bash <(curl -s https://codecov.io/bash)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

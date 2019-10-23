@@ -3,9 +3,9 @@ package ci
 import (
 	"errors"
 	"fmt"
+	"github.com/sparetimecoders/build-tools/pkg/templating"
 	"github.com/stretchr/testify/assert"
 	"github.com/xanzy/go-gitlab"
-	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -217,7 +217,7 @@ var expectedGitlabCiYml = `stages:
 variables:
   DOCKER_HOST: tcp://docker:2375/
 
-image: registry.gitlab.com/sparetimecoders/build-tools:master
+image: registry.github.com/sparetimecoders/build-tools:master
 
 build:
   stage: build

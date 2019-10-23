@@ -2,7 +2,7 @@ package deploy
 
 import (
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/kubectl"
+	"github.com/sparetimecoders/build-tools/pkg/kubectl"
 	"io"
 	"io/ioutil"
 	"os"
@@ -18,9 +18,9 @@ func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client 
 
 	if client.DeploymentExists(buildName) {
 		if !client.RolloutStatus(buildName) {
-			_, _ = fmt.Fprintf(out, "Rollout failed. Fetching events.")
-			_, _ = fmt.Fprintf(out, client.DeploymentEvents(buildName))
-			_, _ = fmt.Fprintf(out, client.PodEvents(buildName))
+			_, _ = fmt.Fprint(out, "Rollout failed. Fetching events.")
+			_, _ = fmt.Fprint(out, client.DeploymentEvents(buildName))
+			_, _ = fmt.Fprint(out, client.PodEvents(buildName))
 			return fmt.Errorf("failed to rollout")
 		}
 	}

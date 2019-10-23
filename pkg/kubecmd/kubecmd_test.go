@@ -14,7 +14,7 @@ func TestKubecmd_MissingArgumentsPrintUsageToOutWriter(t *testing.T) {
 	out := bytes.Buffer{}
 	cmd := Kubecmd(".", &out)
 	assert.Nil(t, cmd)
-	assert.Equal(t, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namsepace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n", out.String())
+	assert.Equal(t, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n", out.String())
 }
 
 func TestKubecmd_BrokenConfig(t *testing.T) {

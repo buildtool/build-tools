@@ -1,13 +1,26 @@
 package main
 
 import (
+	"bytes"
+	"github.com/sparetimecoders/build-tools/pkg"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+func TestVersion(t *testing.T) {
+	out = &bytes.Buffer{}
+	version = "1.0.0"
+	exitFunc = func(code int) {
+		assert.Equal(t, 0, code)
+	}
+	os.Args = []string{"build", "-version"}
+	main()
+
+	assert.Equal(t, "Version: 1.0.0, commit none, built at unknown\n", out.(*bytes.Buffer).String())
+}
 
 func TestDeploy_BrokenConfig(t *testing.T) {
 	exitFunc = func(code int) {

@@ -2,7 +2,7 @@ package file
 
 import (
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/sparetimecoders/build-tools/pkg/templating"
 	"io/ioutil"
 	"os"
 	"path/filepath"

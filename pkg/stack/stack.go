@@ -1,6 +1,6 @@
 package stack
 
-import "gitlab.com/sparetimecoders/build-tools/pkg/templating"
+import "github.com/sparetimecoders/build-tools/pkg/templating"
 
 type Stack interface {
 	Scaffold(dir string, data templating.TemplateData) error

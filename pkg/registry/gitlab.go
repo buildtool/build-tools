@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"strings"
 )
@@ -45,7 +45,7 @@ func (r Gitlab) GetAuthInfo() string {
 
 func (r Gitlab) RegistryUrl() string {
 	if len(r.Repository) != 0 {
-		if strings.Index(r.Repository, "/") != -1 {
+		if strings.Contains(r.Repository, "/") {
 			return r.Repository[:strings.LastIndex(r.Repository, "/")]
 		}
 		return r.Repository

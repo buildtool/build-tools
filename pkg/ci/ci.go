@@ -1,7 +1,7 @@
 package ci
 
 import (
-	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
+	"github.com/sparetimecoders/build-tools/pkg/vcs"
 	"os"
 	"path/filepath"
 	"strings"

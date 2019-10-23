@@ -1,7 +1,7 @@
 package ci
 
 import (
-	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/sparetimecoders/build-tools/pkg/templating"
 )
 
 type CI interface {

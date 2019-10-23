@@ -1,13 +1,25 @@
 package main
 
 import (
-	"gitlab.com/sparetimecoders/build-tools/pkg/push"
+	"github.com/sparetimecoders/build-tools/pkg/push"
+	ver "github.com/sparetimecoders/build-tools/pkg/version"
+	"io"
 	"os"
 )
 
-func main() {
-	dir, _ := os.Getwd()
-	exitFunc(push.Push(dir, os.Stdout, os.Stderr, os.Args[1:]...))
-}
+var (
+	version            = "dev"
+	commit             = "none"
+	date               = "unknown"
+	exitFunc           = os.Exit
+	out      io.Writer = os.Stdout
+)
 
-var exitFunc = os.Exit
+func main() {
+	if ver.PrintVersionOnly(version, commit, date, out) {
+		exitFunc(0)
+	} else {
+		dir, _ := os.Getwd()
+		exitFunc(push.Push(dir, os.Stdout, os.Stderr, os.Args[1:]...))
+	}
+}

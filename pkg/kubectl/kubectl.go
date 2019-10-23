@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/liamg/tml"
-	"gitlab.com/sparetimecoders/build-tools/pkg/config"
+	"github.com/sparetimecoders/build-tools/pkg/config"
 	"io"
 	"io/ioutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -68,7 +68,7 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) m
 
 func (k kubectl) defaultArgs() (args []string) {
 	var keys []string
-	for key, _ := range k.args {
+	for key := range k.args {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
@@ -154,7 +154,7 @@ func (k kubectl) extractEvents(output string) string {
 	found := false
 	for scanner.Scan() {
 		text := scanner.Text()
-		if found || (strings.Index(text, "Events:") == 0 && strings.Index(text, "<none>") == -1) {
+		if found || strings.Index(text, "Events:") == 0 && !strings.Contains(text, "<none>") {
 			found = true
 			events.WriteString(text)
 			events.WriteString("\n")

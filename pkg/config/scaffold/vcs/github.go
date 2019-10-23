@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/go-github/v28/github"
-	"gitlab.com/sparetimecoders/build-tools/pkg"
+	"github.com/sparetimecoders/build-tools/pkg"
 	"golang.org/x/oauth2"
 	"net/http"
 )

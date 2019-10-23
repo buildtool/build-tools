@@ -1,8 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"github.com/sparetimecoders/build-tools/pkg"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/sparetimecoders/build-tools/pkg"
 	"os"
 	"testing"
 )
@@ -14,4 +15,15 @@ func TestBuild(t *testing.T) {
 	}
 	os.Args = []string{"build"}
 	main()
+}
+
+func TestVersion(t *testing.T) {
+	out = &bytes.Buffer{}
+	exitFunc = func(code int) {
+		assert.Equal(t, 0, code)
+	}
+	os.Args = []string{"build", "-version"}
+	main()
+
+	assert.Equal(t, "Version: dev, commit none, built at unknown\n", out.(*bytes.Buffer).String())
 }

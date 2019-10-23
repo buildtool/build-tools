@@ -3,9 +3,9 @@ package ci
 import (
 	"errors"
 	"fmt"
+	"github.com/sparetimecoders/build-tools/pkg/file"
+	"github.com/sparetimecoders/build-tools/pkg/templating"
 	"github.com/xanzy/go-gitlab"
-	"gitlab.com/sparetimecoders/build-tools/pkg/file"
-	"gitlab.com/sparetimecoders/build-tools/pkg/templating"
 	"path/filepath"
 	"strings"
 )
@@ -119,7 +119,7 @@ stages:
 variables:
   DOCKER_HOST: tcp://docker:2375/
 
-image: registry.gitlab.com/sparetimecoders/build-tools:master
+image: registry.github.com/sparetimecoders/build-tools:master
 
 build:
   stage: build

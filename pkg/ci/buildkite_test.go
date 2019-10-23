@@ -1,8 +1,8 @@
 package ci
 
 import (
+	"github.com/sparetimecoders/build-tools/pkg/vcs"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/sparetimecoders/build-tools/pkg/vcs"
 	"io/ioutil"
 	"os"
 	"path/filepath"

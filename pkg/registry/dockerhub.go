@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 )
 

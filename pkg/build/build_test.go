@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/pkg/archive"
+	"github.com/sparetimecoders/build-tools/pkg"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
-	"gitlab.com/sparetimecoders/build-tools/pkg"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 	"io/ioutil"
 	"os"

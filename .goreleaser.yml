@@ -1,0 +1,118 @@
+project_name: build-tools
+
+before:
+  hooks:
+  - docker login -u sparetimecoders -p  {{ .Env.DOCKERHUB_PASSWORD }}
+
+env:
+  - CGO_ENABLED=0
+
+builds:
+  - id: build
+    main: ./cmd/build/build.go
+    binary: build
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+  - id: push
+    main: ./cmd/push/push.go
+    binary: push
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+  - id: deploy
+    main: ./cmd/deploy/deploy.go
+    binary: deploy
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+  - id: service-setup
+    main: ./cmd/service-setup/service-setup.go
+    binary: service-setup
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+  - id: kubecmd
+    main: ./cmd/kubecmd/kubecmd.go
+    binary: kubecmd
+    flags:
+      - -tags=prod
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+dockers:
+  -
+    goos: linux
+    goarch: amd64
+    dockerfile: Dockerfile
+    binaries:
+    - build
+    - push
+    - deploy
+    - kubecmd
+    - service-setup
+    image_templates:
+    - "sparetimecoders/{{ .ProjectName }}:latest"
+    - "sparetimecoders/{{ .ProjectName }}:{{ .Tag }}"
+    - "sparetimecoders/{{ .ProjectName }}:{{ .Version }}"
+
+brews:
+  - name: build-tools
+    github:
+      owner: sparetimecoders
+      name: homebrew-taps
+    folder: Formula
+    commit_author:
+      name: peter-stc
+      email: peter@sparetimecoders.com
+
+archives:
+
+- id: build-tools
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    386: i386
+    amd64: x86_64
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'

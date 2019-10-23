@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gitlab.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 )
 
