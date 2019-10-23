@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/caarlos0/env"
+	"github.com/imdario/mergo"
 	"github.com/liamg/tml"
 	"gitlab.com/sparetimecoders/build-tools/pkg/ci"
 	"gitlab.com/sparetimecoders/build-tools/pkg/config/scaffold"
@@ -16,11 +17,11 @@ import (
 )
 
 type Config struct {
-	VCS                 *VCSConfig       `yaml:"vcs"`
-	CI                  *CIConfig        `yaml:"ci"`
-	Registry            *RegistryConfig  `yaml:"registry"`
-	Environments        []Environment    `yaml:"environments"`
-	Scaffold            *scaffold.Config `yaml:"scaffold"`
+	VCS                 *VCSConfig             `yaml:"vcs"`
+	CI                  *CIConfig              `yaml:"ci"`
+	Registry            *RegistryConfig        `yaml:"registry"`
+	Environments        map[string]Environment `yaml:"environments"`
+	Scaffold            *scaffold.Config       `yaml:"scaffold"`
 	AvailableCI         []ci.CI
 	AvailableRegistries []registry.Registry
 }
@@ -46,7 +47,6 @@ type RegistryConfig struct {
 }
 
 type Environment struct {
-	Name       string `yaml:"name"`
 	Context    string `yaml:"context"`
 	Namespace  string `yaml:"namespace"`
 	Kubeconfig string `yaml:"kubeconfig"`
@@ -129,10 +129,8 @@ func (c *Config) CurrentRegistry() registry.Registry {
 }
 
 func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
-	for _, e := range c.Environments {
-		if e.Name == environment {
-			return &e, nil
-		}
+	if e, exists := c.Environments[environment]; exists {
+		return &e, nil
 	}
 	return nil, fmt.Errorf("no environment matching %s found", environment)
 }
@@ -153,9 +151,13 @@ func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 
 		parent = filepath.Dir(parent)
 	}
-	for i := len(files) - 1; i >= 0; i-- {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Parsing config from file: <green>'%s'</green>", files[i]))
-		if err := fn(files[i]); err != nil {
+	for i, file := range files {
+		if i == 0 {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("Parsing config from file: <green>'%s'</green>", file))
+		} else {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("Merging with config from file: <green>'%s'</green>", file))
+		}
+		if err := fn(file); err != nil {
 			return err
 		}
 	}
@@ -173,9 +175,13 @@ func parseConfigFile(filename string, cfg *Config) error {
 }
 
 func parseConfig(content []byte, config *Config) error {
-	if err := yaml.UnmarshalStrict(content, &config); err != nil {
+	temp := &Config{}
+	if err := yaml.UnmarshalStrict(content, temp); err != nil {
 		return err
 	} else {
+		if err := mergo.Merge(config, temp); err != nil {
+			return err
+		}
 		return nil
 	}
 }

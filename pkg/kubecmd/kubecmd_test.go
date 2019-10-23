@@ -49,7 +49,7 @@ func TestKubecmd_NoOptions(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: dummy
+  dummy:
     context: missing
     namespace: none
 `
@@ -67,7 +67,7 @@ func TestKubecmd_ContextAndNamespaceSpecified(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: dummy
+  dummy:
     context: missing
     namespace: none
 `

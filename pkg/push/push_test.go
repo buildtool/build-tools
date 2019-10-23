@@ -83,6 +83,7 @@ func TestPush_NoRegistry(t *testing.T) {
 }
 
 func TestPush_LoginFailure(t *testing.T) {
+	os.Clearenv()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}

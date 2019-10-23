@@ -123,9 +123,9 @@ registry:
     username: user
     password: pass
 environments:
-  - name: local
+  local:
     context: docker-desktop
-  - name: dev
+  dev:
     context: docker-desktop
     namespace: dev
 `
@@ -144,9 +144,9 @@ environments:
 	assert.Equal(t, &registry.Gitlab{Repository: "registry.gitlab.com/group/project", Token: "token-value"}, cfg.Registry.Gitlab)
 	assert.Equal(t, &registry.Quay{Repository: "repo", Username: "user", Password: "pass"}, cfg.Registry.Quay)
 	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Name: "local", Context: "docker-desktop"}, cfg.Environments[0])
-	devEnv := Environment{Name: "dev", Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments[1])
+	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
+	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Environments["dev"])
 
 	currentEnv, err := cfg.CurrentEnvironment("dev")
 	assert.NoError(t, err)
@@ -179,9 +179,9 @@ func TestLoad_YAML_From_Env(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: local
+  local:
     context: docker-desktop
-  - name: dev
+  dev:
     context: docker-desktop
     namespace: dev
 `
@@ -192,9 +192,9 @@ environments:
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Name: "local", Context: "docker-desktop"}, cfg.Environments[0])
-	devEnv := Environment{Name: "dev", Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments[1])
+	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
+	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Environments["dev"])
 
 	currentEnv, err := cfg.CurrentEnvironment("dev")
 	assert.NoError(t, err)
@@ -215,6 +215,11 @@ func TestLoad_YAML_DirStructure(t *testing.T) {
 registry:
   dockerhub:
     repository: test
+environments:
+  test:
+    context: abc
+  local:
+    context: def
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 	subdir := "sub"
@@ -222,6 +227,9 @@ registry:
 	yaml2 := `scaffold:
   ci:
     selected: buildkite
+environments:
+  test:
+    context: ghi
 `
 	_ = ioutil.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
 
@@ -235,7 +243,10 @@ registry:
 	assert.Equal(t, "quay.io", cfg.Scaffold.RegistryUrl)
 	currentRegistry := cfg.CurrentRegistry()
 	assert.NotNil(t, currentRegistry)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
+	assert.Equal(t, 2, len(cfg.Environments))
+	assert.Equal(t, "ghi", cfg.Environments["test"].Context)
+	assert.Equal(t, "def", cfg.Environments["local"].Context)
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mMerging with config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
 
 func TestLoad_ENV(t *testing.T) {

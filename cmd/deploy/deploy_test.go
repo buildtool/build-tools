@@ -34,6 +34,14 @@ func TestDeploy_MissingEnvironment(t *testing.T) {
 		assert.Equal(t, -0, code)
 	}
 
+	oldPwd, _ := os.Getwd()
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+
+	err := os.Chdir(name)
+	assert.NoError(t, err)
+	defer func() { _ = os.Chdir(oldPwd) }()
+
 	os.Args = []string{"deploy", "dummy"}
 	main()
 }
@@ -48,7 +56,7 @@ func TestDeploy_NoCI(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: dummy
+  dummy:
     context: missing
     namespace: none
 `
@@ -102,7 +110,7 @@ func TestDeploy_NoOptions(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: dummy
+  dummy:
     context: missing
     namespace: none
 `
@@ -129,7 +137,7 @@ func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 environments:
-  - name: dummy
+  dummy:
     context: missing
     namespace: none
 `

@@ -20,7 +20,7 @@ import (
 func TestNew(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	k := New(&config.Environment{Context: "missing", Namespace: "dev", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "dev"}, out, eout)
 
 	assert.Equal(t, "missing", k.(*kubectl).args["context"])
 	assert.Equal(t, "dev", k.(*kubectl).args["namespace"])
@@ -94,7 +94,7 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 func TestKubectl_Environment(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	env := &config.Environment{Context: "missing", Namespace: "", Name: "dummy"}
+	env := &config.Environment{Context: "missing", Namespace: ""}
 	k := New(env, out, eout)
 
 	assert.Equal(t, "", k.(*kubectl).args["namespace"])
@@ -109,7 +109,7 @@ func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	cmdError = nil
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.DeploymentExists("image")
 	assert.True(t, result)
@@ -127,7 +127,7 @@ func TestKubectl_DeploymentExistsFalse(t *testing.T) {
 	cmdError = &e
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.DeploymentExists("image")
 	assert.False(t, result)
@@ -144,7 +144,7 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	cmdError = nil
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.True(t, result)
@@ -162,7 +162,7 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	cmdError = &e
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
@@ -183,7 +183,7 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.RolloutStatus("image")
 	assert.False(t, result)
@@ -202,7 +202,7 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
     user: user@example.org
 `
 	defer pkg.SetEnv(envKubeConfigContent, yaml)()
-	k := New(&config.Environment{Name: "dummy"}, out, eout)
+	k := New(&config.Environment{}, out, eout)
 
 	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
 	fileContent, err := ioutil.ReadFile(kubeConfigFile)
@@ -221,7 +221,7 @@ func TestKubectl_KubeconfigExistingFile(t *testing.T) {
 		_ = os.Remove(name.Name())
 	}()
 
-	k := New(&config.Environment{Name: "dummy", Kubeconfig: name.Name()}, out, eout)
+	k := New(&config.Environment{Kubeconfig: name.Name()}, out, eout)
 	assert.Equal(t, name.Name(), k.(*kubectl).args["kubeconfig"])
 	k.Cleanup()
 }
@@ -235,7 +235,7 @@ func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	e := "deployment not found"
 	cmdError = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "deployment not found", result)
@@ -258,7 +258,7 @@ Events:          <none>
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "", result)
@@ -287,7 +287,7 @@ Events:
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.DeploymentEvents("image")
 	assert.Equal(t, "Events:\n  Type    Reason             Age   From                   Message\n  ----    ------             ----  ----                   -------\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled up replica set gpe-core-5cb459ff7d to 1\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled down replica set gpe-core-7fc44679dc to 0\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled up replica set gpe-core-c8798ff88 to 1\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled down replica set gpe-core-5cb459ff7d to 0\n", result)
@@ -306,7 +306,7 @@ func TestKubectl_PodEvents_Error(t *testing.T) {
 	e := "pod not found"
 	cmdError = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "pod not found", result)
@@ -329,7 +329,7 @@ Events:          <none>
 `
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "", result)
@@ -357,7 +357,7 @@ Events:
   Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container`
 	events = &e
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default", Name: "dummy"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
 	result := k.PodEvents("image")
 	assert.Equal(t, "Events:\n  Type     Reason     Age                From                                                 Message\n  ----     ------     ----               ----                                                 -------\n  Normal   Scheduled  61s                default-scheduler                                    Successfully assigned dev/gpe-core-c8798ff88-674tr to some-ip-somewhere\n  Normal   Pulling    10s (x4 over 60s)  kubelet, some-ip-somewhere                           pulling image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Pulled     9s (x4 over 57s)   kubelet, some-ip-somewhere                           Successfully pulled image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Created    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Created container\n  Normal   Started    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Started container\n  Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container\n", result)
