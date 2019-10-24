@@ -67,8 +67,45 @@ You can also use it within a Docker container. To do that, you’ll need to exec
 # Available commands
 
 ## build
+Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image. By following the conventions no additional flags are needed, but the following flags are available:
+
+|      Flag                         |                   Description                                         |
+| :-------------------------------: | :-------------------------------------------------------------------: |
+| `-f/--file <path to Dockerfile>`  | Used to override the default `Dockerfile` location (which is `$PWD`)  |
+| `-skiplogin`                      | Disables login to docker registry (good for local testing)            |
+| `-build-arg key=value`            | Additional Docker [build-arg](https://docs.docker.com/engine/reference/commandline/#set-build-time-variables---build-arg) |
+
+    $ build -f docker/Dockerfile.build -skiplogin -build-arg AUTH_TOKEN=abc
+    
 ## push
+Performs a `docker push` of the image created by `build`.
+
+By following the conventions no additional flags are needed, but the following flags are available:
+
+|      Flag                        |                   Description                                        |
+| :------------------------------: | :------------------------------------------------------------------: |
+| `-f/--file <path to Dockerfile>` | Used to override the default `Dockerfile` location (which is `$PWD`) |
+
+    $ push -f docker/Dockerfile.build 
+    
 ## deploy
+Deploys the built application to a Kubernetes cluster. Normal usage `deploy <context>`, but additional flags can be used:
+
+|      Flag                           |                   Description                                  |
+| :---------------------------------: | :------------------------------------------------------------: |
+| `-c/--context <path to Dockerfile>` | Use a different context than the one found in configuration    |
+| `-n/--namespace`                    | Use a different namespace than the one found in configuration  |
+
+    $ deploy -n testing_namespace local 
+
+## service-setup
+Setup a new git repository and scaffolds the project.
+
+Basic usage `service-setup <name>`, it's also possible to scaffold for a certain stack. Supported stacks:
+* go
+* scala
+
+## kubecmd
 
 # Usage
 ## Conventions
