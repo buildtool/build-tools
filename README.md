@@ -82,7 +82,91 @@ to build, push and deploy the project to a Kubernetes cluster.
 
 Take a look at the build-tools-example repository (*TODO link*) to try it out.
 
+### Project structure
+The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
+
+There must be a `k8s` directory in the root of your project. This directory contains all the `yaml` files used to describe the Kubernetes tasks needed to run this service.
+Environment specific files can be handled in two different ways depending on personal preference. 
+They can either be located in sub-directories, for example `k8s/local` for local setup.
+
+    $ cd projecct
+    $ tree
+    .
+    └── k8s
+        ├── deploy.yaml
+        ├── local
+        │   ├── ingress.yaml
+        │   └── setup.sh
+        └── prod
+            └── ingress.yaml
+
+Or they can be defined using a `-<environment>` suffix, i.e. `ingress-prod.yaml`
+
+    $ cd projecct
+    $ tree
+    .
+    └── k8s
+        ├── deploy.yaml
+        ├── ingress-local.yaml
+        ├── ingress-prod.yaml
+        └── setup-local.sh
+
+### Configuration
+Configuration and setup is done in `.buildtools.yaml` files. 
+Those files must be present in the project folder or upwards in the directory structure. 
+This lets you create a common `.buildtools.yaml` file to be used for a set of projects.
+The `.buildtools.yaml` files will be merged together, with the file closest to the project being applied last.
+
+Example:
+
+    $ pwd
+    ~/source/
+    $ tree
+    .
+    ├── customer1
+    │   ├── project1
+    │   └── project2
+    └── customer2
+        └── project1
+        
+Here we can choose to put a `.buildtools.yaml` file in the different `customer` directories since they (most likely) have different deployment configuration.
+
+    $ pwd
+    ~/source/
+    $ cat .buildtools.yaml
+    registry:
+      dockerhub:
+        repository: sparetimecoders
+    environments:
+      - name: local
+        context: docker-desktop
+        namespace: default
+
+    $ cd customer1
+    $ cat .buildtools.yaml
+    environments:
+      - name: prod
+        context: production
+        namespace: default
+        kubeconfig: ~/.kube/config.d/production.yaml
+
+    $ cd project2
+    $ cat .buildtools.yaml
+    environments:
+      - name: staging
+        context: staging
+        namespace: project2
+
+    $ build -printconfig
+    
+    $ cd ..
+    
+    $ build -printconfig
+        
+Context and namespaces must be provided/created/configured elsewhere.
+
 ### Example
+
 After [installing](#installation) the tools, clone the build-tools-example repository (*TODO link*), cd into it and execute the `build` command.
 
     $ build
