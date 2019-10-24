@@ -96,7 +96,6 @@ They can either be located in sub-directories, for example `k8s/local` for local
         ├── deploy.yaml
         ├── local
         │   ├── ingress.yaml
-        │   └── setup.sh
         └── prod
             └── ingress.yaml
 
@@ -109,7 +108,6 @@ Or they can be defined using a `-<environment>` suffix, i.e. `ingress-prod.yaml`
         ├── deploy.yaml
         ├── ingress-local.yaml
         ├── ingress-prod.yaml
-        └── setup-local.sh
 
 ### Configuration
 Configuration and setup is done in `.buildtools.yaml` files. 
