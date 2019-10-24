@@ -1,8 +1,8 @@
 
 <p align="center">
   <a href="https://github.com/sparetimecoders/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="releases" src="https://img.shields.io/github/release/sparetimecoders/build-tools.svg?maxAge=43200"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="Github All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total.svg?maxAge=43200"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/sparetimecoders/build-tools"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total"></a>
   <a href="pulls"><img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/sparetimecoders/build-tools"></a>
 </p>
 
