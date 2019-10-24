@@ -15,7 +15,7 @@ func Test(t *testing.T) {
 	defer os.RemoveAll(name)
 	err := os.Chdir(name)
 	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.Chdir(oldPwd) }()
 
 	defer pkg.SetEnv("REGISTRY", "dockerhub")()
 

@@ -41,7 +41,7 @@ environments:
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.Chdir(oldPwd) }()
 
 	os.Args = []string{"deploy", "dummy"}
 	main()

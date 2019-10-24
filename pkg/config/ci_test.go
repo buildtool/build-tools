@@ -49,7 +49,7 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 	defer os.RemoveAll(dir)
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
-	defer os.Chdir(oldPwd)
+	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(dir, out)
