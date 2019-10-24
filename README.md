@@ -149,11 +149,11 @@ By following the conventions no additional flags are needed, but the following f
     $ push -f docker/Dockerfile.build 
     
 ## deploy
-Deploys the built application to a Kubernetes cluster. Normal usage `deploy <context>`, but additional flags can be used:
+Deploys the built application to a Kubernetes cluster. Normal usage `deploy <environment>`, but additional flags can be used:
 
 |      Flag                          |                   Description                                 |
 | :--------------------------------- | :------------------------------------------------------------ |
-| `-c/--context <path to Dockerfile>`| Use a different context than the one found in configuration   |
+| `-c/--context`                     | Use a different context than the one found in configuration   |
 | `-n/--namespace`                   | Use a different namespace than the one found in configuration |
 
     $ deploy -n testing_namespace local 
