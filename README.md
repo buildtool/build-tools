@@ -24,13 +24,54 @@ The only hard requirement is to provide a [Dockerfile](https://docs.docker.com/e
 
 The configuration needed is done by environment variables (most likely for CI/CD) and yaml files (for local use).
 
+# Installation
+You can install the pre-compiled binary (in several different ways), use Docker or compile from source.
+
+Here are the steps for each of them:
+
+## Homebrew tap
+
+    $ brew install sparetimecoders/taps/build-tools
+## Shell script
+
+    $ curl -sfL https://raw.githubusercontent.com/sparetimecoders/build-tools/master/install.sh | sh
+## Manually
+
+Download the pre-compiled binaries from the [releases](https://github.com/sparetimecoders/build-tools/releases) page and copy to the desired location.
+## Docker
+You can also use it within a Docker container. To do that, you’ll need to execute something more-or-less like the following:
+
+    $ docker run --rm --privileged \
+      -v $PWD:/repo \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -w /repo \
+      -e DOCKER_USERNAME \
+      -e DOCKER_PASSWORD \
+      sparetimecoders/build-tools build
+      
+## Compiling from source
+
+    # clone it outside GOPATH
+    $ git clone https://github.com/sparetimecoders/build-tools
+    $ cd build-tools
+    
+    # get dependencies using go modules (needs go 1.11+)
+    $ go get ./...
+    
+    # build
+    $ go build ./cmd/build
+    
+    # check it works
+    ./build -version
+    
 # Available commands
 
 ## build
 ## push
 ## deploy
 
-# Conventions
+# Usage
+## Conventions
 
 * `Dockerfile` must be present in the root of the project directory (*TODO Override name of file*). The `Dockerfile` will be used to build the project into a runnable docker image.
 * The name of the directory will be used as the name of the docker image (*TODO Override by ENV*)
@@ -39,9 +80,7 @@ The configuration needed is done by environment variables (most likely for CI/CD
 
 Take a look at the build-tools-example repository (*TODO link*) to try it out.
 
-## Using in CI/CD pipelines
-
-## Example usage
+### Example
 After installing (*TODO link*) the tools, clone the build-tools-example repository (*TODO link*), cd into it and execute the `build` command.
 
     $ build
@@ -83,3 +122,5 @@ Now that we have a docker image, let's publish it to the docker repository (this
     
 *TODO Link to more environment variables and stuff*
 
+
+### Using in CI/CD pipelines
