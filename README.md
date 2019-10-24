@@ -165,6 +165,7 @@ Basic usage `service-setup <name>`, it's also possible to scaffold for a certain
 * go
 * scala
 
+    $ service-setup -s go test
 ## kubecmd
 
 
