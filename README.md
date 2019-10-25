@@ -69,7 +69,7 @@ If the project follow the conventions and some configuration for the CI/CD tool 
 
     $ build
     $ push
-    $ deploy <target>
+    $ deploy <environment>
     
 to build, push and deploy the project to a Kubernetes cluster.    
 
