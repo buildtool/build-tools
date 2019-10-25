@@ -207,7 +207,7 @@ func validate(config *Config) error {
 	for i := 0; i < elem.NumField(); i++ {
 		currentCI := elem.Field(i).Interface().(sci.CI)
 		if currentCI.ValidateConfig() == nil {
-			if config.Scaffold.CurrentCI != nil {
+			if config.Scaffold.CurrentCI != nil && config.Scaffold.CurrentCI != currentCI {
 				return fmt.Errorf("scaffold CI already defined, please check configuration")
 			}
 			config.Scaffold.CurrentCI = currentCI
@@ -218,7 +218,7 @@ func validate(config *Config) error {
 	for i := 0; i < elem.NumField(); i++ {
 		currentVCS := elem.Field(i).Interface().(svs.VCS)
 		if currentVCS.ValidateConfig() == nil {
-			if config.Scaffold.CurrentVCS != nil {
+			if config.Scaffold.CurrentVCS != nil && config.Scaffold.CurrentVCS != currentVCS {
 				return fmt.Errorf("scaffold VCS already defined, please check configuration")
 			}
 			config.Scaffold.CurrentVCS = currentVCS
