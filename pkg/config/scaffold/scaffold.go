@@ -121,8 +121,8 @@ func (c *Config) Scaffold(dir, name string, stack stack.Stack, out io.Writer) in
 func InitEmptyConfig() *Config {
 	return &Config{
 		VCS: &VCSConfig{
-			Github:   &vcs.Github{},
-			Gitlab:   &vcs.Gitlab{},
+			Github: &vcs.Github{},
+			Gitlab: &vcs.Gitlab{},
 		},
 		CI: &CIConfig{
 			Buildkite: &ci.Buildkite{},

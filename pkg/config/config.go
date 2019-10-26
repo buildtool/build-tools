@@ -186,7 +186,6 @@ func parseConfig(content []byte, config *Config) error {
 			return err
 		}
 		return validate(config)
-		//return nil
 	}
 }
 

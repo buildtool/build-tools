@@ -48,29 +48,7 @@ func TestValidateConfig_No_CI_Configured(t *testing.T) {
 	err := cfg.ValidateConfig()
 	assert.EqualError(t, err, "no CI configured")
 }
-/*
-func TestValidateConfig_VCS_Error(t *testing.T) {
-	cfg := InitEmptyConfig()
-	err := cfg.ValidateConfig()
-	assert.EqualError(t, err, "token is required")
-}
 
-func TestValidateConfig_CI_Error(t *testing.T) {
-	cfg := InitEmptyConfig()
-	cfg.VCS.Github.Token = "abc"
-	err := cfg.ValidateConfig()
-	assert.EqualError(t, err, "token for Buildkite not configured")
-}
-
-func TestValidateConfig_Ok(t *testing.T) {
-	cfg := InitEmptyConfig()
-	cfg.CI.Gitlab.Token = "abc"
-	cfg.VCS.Gitlab.Group = "group"
-	cfg.VCS.Gitlab.Token = "abc"
-	err := cfg.ValidateConfig()
-	assert.NoError(t, err)
-}
-*/
 func TestConfigure(t *testing.T) {
 	cfg := InitEmptyConfig()
 	cfg.CurrentCI = &mockCi{}

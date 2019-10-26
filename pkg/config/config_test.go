@@ -231,3 +231,67 @@ environments:
 	assert.Equal(t, "def", cfg.Environments["local"].Context)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mMerging with config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
+
+func TestLoad_YAML_Multiple_Registry(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+registry:
+  ecr:
+    url: 1234.ecr
+    region: eu-west-1
+  dockerhub:
+    repository: dockerhub
+environments:
+  local:
+    context: docker-desktop
+  dev:
+    context: docker-desktop
+    namespace: dev
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	_, err := Load(name, out)
+	assert.EqualError(t, err, "registry alread defined, please check configuration")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+}
+
+func TestLoad_YAML_Scaffold_Multiple_CI(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+scaffold:
+  ci: 
+    gitlab:
+      group: group
+      token: token
+    buildkite:
+      token: token
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	_, err := Load(name, out)
+	assert.EqualError(t, err, "scaffold CI already defined, please check configuration")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+}
+
+func TestLoad_YAML_Scaffold_Multiple_VCS(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+scaffold:
+  vcs: 
+    gitlab:
+      group: group
+    github:
+      token: token
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	_, err := Load(name, out)
+	assert.EqualError(t, err, "scaffold VCS already defined, please check configuration")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+}
