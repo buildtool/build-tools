@@ -6,13 +6,14 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
-	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client); err != nil {
+	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client, out, eout); err != nil {
 		return err
 	}
 
@@ -27,11 +28,11 @@ func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client 
 	return nil
 }
 
-func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl.Kubectl) error {
+func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
 			if info.Name() == targetEnvironment && info.IsDir() {
-				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, targetEnvironment, client); err != nil {
+				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, targetEnvironment, client, out, eout); err != nil {
 					return err
 				}
 			} else if fileIsForEnvironment(info, targetEnvironment) {
@@ -42,12 +43,23 @@ func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl
 						return err
 					}
 				}
+			} else if fileIsScriptForEnvironment(info, targetEnvironment) {
+				if err := execFile(filepath.Join(dir, info.Name()), out, eout); err != nil {
+					return err
+				}
 			}
 		}
 		return nil
 	} else {
 		return err
 	}
+}
+
+func execFile(file string, out, eout io.Writer) error {
+	cmd := exec.Command(file)
+	cmd.Stdout = out
+	cmd.Stderr = eout
+	return cmd.Run()
 }
 
 func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl) error {
@@ -65,4 +77,8 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 
 func fileIsForEnvironment(info os.FileInfo, env string) bool {
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
+}
+
+func fileIsScriptForEnvironment(info os.FileInfo, env string) bool {
+	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env)) || (strings.HasSuffix(info.Name(), ".sh") && !strings.Contains(info.Name(), "-"))
 }
