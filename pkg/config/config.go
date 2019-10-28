@@ -7,6 +7,8 @@ import (
 	"github.com/liamg/tml"
 	"github.com/sparetimecoders/build-tools/pkg/ci"
 	"github.com/sparetimecoders/build-tools/pkg/config/scaffold"
+	sci "github.com/sparetimecoders/build-tools/pkg/config/scaffold/ci"
+	svs "github.com/sparetimecoders/build-tools/pkg/config/scaffold/vcs"
 	"github.com/sparetimecoders/build-tools/pkg/registry"
 	"github.com/sparetimecoders/build-tools/pkg/vcs"
 	"gopkg.in/yaml.v2"
@@ -14,6 +16,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 type Config struct {
@@ -182,6 +185,43 @@ func parseConfig(content []byte, config *Config) error {
 		if err := mergo.Merge(config, temp); err != nil {
 			return err
 		}
-		return nil
+		return validate(config)
 	}
+}
+
+func validate(config *Config) error {
+	elem := reflect.ValueOf(config.Registry).Elem()
+	found := false
+	for i := 0; i < elem.NumField(); i++ {
+		f := elem.Field(i)
+		if f.Interface().(registry.Registry).Configured() {
+			if found {
+				return fmt.Errorf("registry alread defined, please check configuration")
+			}
+			found = true
+		}
+	}
+
+	elem = reflect.ValueOf(config.Scaffold.CI).Elem()
+	for i := 0; i < elem.NumField(); i++ {
+		currentCI := elem.Field(i).Interface().(sci.CI)
+		if currentCI.ValidateConfig() == nil {
+			if config.Scaffold.CurrentCI != nil && config.Scaffold.CurrentCI != currentCI {
+				return fmt.Errorf("scaffold CI already defined, please check configuration")
+			}
+			config.Scaffold.CurrentCI = currentCI
+		}
+	}
+
+	elem = reflect.ValueOf(config.Scaffold.VCS).Elem()
+	for i := 0; i < elem.NumField(); i++ {
+		currentVCS := elem.Field(i).Interface().(svs.VCS)
+		if currentVCS.ValidateConfig() == nil {
+			if config.Scaffold.CurrentVCS != nil && config.Scaffold.CurrentVCS != currentVCS {
+				return fmt.Errorf("scaffold VCS already defined, please check configuration")
+			}
+			config.Scaffold.CurrentVCS = currentVCS
+		}
+	}
+	return nil
 }

@@ -25,13 +25,11 @@ type Config struct {
 }
 
 type VCSConfig struct {
-	Selected string      `yaml:"selected" env:"VCS"`
-	Github   *vcs.Github `yaml:"github"`
-	Gitlab   *vcs.Gitlab `yaml:"gitlab"`
+	Github *vcs.Github `yaml:"github"`
+	Gitlab *vcs.Gitlab `yaml:"gitlab"`
 }
 
 type CIConfig struct {
-	Selected  string        `yaml:"selected" env:"CI"`
 	Buildkite *ci.Buildkite `yaml:"buildkite"`
 	Gitlab    *ci.Gitlab    `yaml:"gitlab"`
 }
@@ -42,27 +40,13 @@ func (c *Config) Configure() error {
 }
 
 func (c *Config) ValidateConfig() error {
-	switch c.VCS.Selected {
-	case "github":
-		c.CurrentVCS = c.VCS.Github
-	case "gitlab":
-		c.CurrentVCS = c.VCS.Gitlab
-	default:
+	if c.CurrentVCS == nil {
 		return errors.New("no VCS configured")
 	}
-	switch c.CI.Selected {
-	case "buildkite":
-		c.CurrentCI = c.CI.Buildkite
-	case "gitlab":
-		c.CurrentCI = c.CI.Gitlab
-	default:
+	if c.CurrentCI == nil {
 		return errors.New("no CI configured")
 	}
-
-	if err := c.CurrentVCS.ValidateConfig(); err != nil {
-		return err
-	}
-	return c.CurrentCI.ValidateConfig()
+	return nil
 }
 
 func (c *Config) Validate(name string) error {
@@ -137,12 +121,10 @@ func (c *Config) Scaffold(dir, name string, stack stack.Stack, out io.Writer) in
 func InitEmptyConfig() *Config {
 	return &Config{
 		VCS: &VCSConfig{
-			Selected: "",
-			Github:   &vcs.Github{},
-			Gitlab:   &vcs.Gitlab{},
+			Github: &vcs.Github{},
+			Gitlab: &vcs.Gitlab{},
 		},
 		CI: &CIConfig{
-			Selected:  "",
 			Buildkite: &ci.Buildkite{},
 			Gitlab:    &ci.Gitlab{},
 		},
