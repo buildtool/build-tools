@@ -198,7 +198,7 @@ func TestLoad_YAML_DirStructure(t *testing.T) {
   registry: quay.io
 registry:
   dockerhub:
-    repository: test
+    namespace: test
 environments:
   test:
     context: abc
@@ -241,7 +241,7 @@ registry:
     url: 1234.ecr
     region: eu-west-1
   dockerhub:
-    repository: dockerhub
+    namespace: dockerhub
 environments:
   local:
     context: docker-desktop

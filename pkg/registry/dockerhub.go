@@ -12,9 +12,9 @@ import (
 
 type Dockerhub struct {
 	dockerRegistry
-	Repository string `yaml:"repository" env:"DOCKERHUB_REPOSITORY"`
-	Username   string `yaml:"username" env:"DOCKERHUB_USERNAME"`
-	Password   string `yaml:"password" env:"DOCKERHUB_PASSWORD"`
+	Namespace string `yaml:"namespace" env:"DOCKERHUB_NAMESPACE"`
+	Username  string `yaml:"username" env:"DOCKERHUB_USERNAME"`
+	Password  string `yaml:"password" env:"DOCKERHUB_PASSWORD"`
 }
 
 var _ Registry = &Dockerhub{}
@@ -24,7 +24,7 @@ func (r Dockerhub) Name() string {
 }
 
 func (r Dockerhub) Configured() bool {
-	return len(r.Repository) > 0
+	return len(r.Namespace) > 0
 }
 
 func (r Dockerhub) Login(client docker.Client, out io.Writer) error {
@@ -47,7 +47,7 @@ func (r Dockerhub) authConfig() types.AuthConfig {
 }
 
 func (r Dockerhub) RegistryUrl() string {
-	return r.Repository
+	return r.Namespace
 }
 
 func (r *Dockerhub) Create(repository string) error {

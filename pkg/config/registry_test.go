@@ -11,7 +11,7 @@ import (
 )
 
 func TestDockerhub_Identify(t *testing.T) {
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -25,7 +25,7 @@ func TestDockerhub_Identify(t *testing.T) {
 }
 
 func TestDockerhub_Name(t *testing.T) {
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 

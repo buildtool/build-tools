@@ -80,7 +80,7 @@ to build, push and deploy the project to a Kubernetes cluster.
 * The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used to determine the name of the project being built)
 * The current commit id will be used as docker tag
 
-Take a look at the build-tools-example repository (*TODO link*) to try it out.
+Take a look at the [build-tools-example repository](https://github.com/sparetimecoders/build-tools-examples) to try it out.
 
 ### Project structure
 The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
@@ -113,7 +113,7 @@ Or they can be defined using a `-<environment>` suffix, i.e. `ingress-prod.yaml`
 Configuration and setup is done in `.buildtools.yaml` files. 
 Those files must be present in the project folder or upwards in the directory structure. 
 This lets you create a common `.buildtools.yaml` file to be used for a set of projects.
-The `.buildtools.yaml` files will be merged together, with the file closest to the project being applied last.
+The `.buildtools.yaml` files will be merged together, and settings from file closest to the project being used first.
 
 Example:
 
@@ -163,9 +163,91 @@ Here we can choose to put a `.buildtools.yaml` file in the different `customer` 
         
 Context and namespaces must be provided/created/configured elsewhere.
 
+# .build-tools.yaml
+
+`environments` specifies the different deployment 'targets' to use for the project.
+The environments matches Kubernetes cluster [configurations](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/#define-clusters-users-and-contexts) to deploy projects.
+The only required configuration is `context`.
+
+    environments:
+      <name>:
+        context:
+        namespace:
+        kubeconfig:
+
+
+| Parameter     | Default                                | Description                                           |
+| :------------ | :------------------------------------- | :---------------------------------------------------  |
+| `context`     |                                        | Which context in the Kubernetes configuration to use  |
+| `namespace`   | `default`                              | Specific namespace to deploy to                       |
+| `kubeconfig`  | value of `KUBECONFIG` `ENV` variable   | Full path to a specific kubeconfig file to use        |
+
+
+The `registry` defines the docker registry used for the project. This will primarily be used for CI pipelines to push built docker images.
+Locally it can be used to build images with correct tags, making it possible to deploy locally built images.
+
+*TODO* Resulting image names for different providers?
+
+The following registries are supported:
+
+`dockerhub`
+
+[Docker hub](https://hub.docker.com/) registry
+
+| Parameter         | Description                           |
+| :---------------- | :-----------------------------------  |
+| `namespace`       |  The namespace to publish to          |
+| `username`        |  User to authenticate                 |
+| `password`        |  Password for `user` authentication   |
+
+`ecr`
+
+AWS [ECR](https://docs.aws.amazon.com/ecr/index.html) docker registry.
+AWS Credentials must be supplied as `ENV` variables, read more [here](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).
+
+| Parameter | Description                                                                                |
+| :-------- | :----------------------------------------------------------------------------------------- |
+| `url`     | The ECR registry URL                                                                       |
+| `region`  | Specify a region (if it's possible to derive from the `url` parameter it can be omitted)   |
+
+
+`github`
+
+Github [package registry](https://help.github.com/en/github/managing-packages-with-github-package-registry/about-github-package-registry).
+
+To authenticate `token` or a combination of `username` and `password` must be provided.
+
+| Parameter       | Description                                           |
+| :-------------- | :---------------------------------------------------  |
+| `repository`    | The repository part of the docker image name          |
+| `username`      | User to authenticate                                  |
+| `password`      | Password for `user` authentication                    |
+| `token`         | A personal access token to use for authentication     |
+
+
+`gitlab`
+
+Gitlab [container registry](https://docs.gitlab.com/ee/user/packages/container_registry/).
+
+| Parameter        | Description                                           |
+| :--------------- | :---------------------------------------------------  |
+| `registry`       | The repository part of the docker image name          |
+| `repository`     | The repository part of the docker image name          |
+| `token`          | A personal access token to use for authentication     |
+
+`quay`
+
+Quay [docker registry](https://docs.quay.io/)
+
+| Parameter       | Description                                           |
+| :-------------- | :---------------------------------------------------  |
+| `repository`    | The repository part of the docker image name          |
+| `username`      | User to authenticate                                  |
+| `password`      | Password for `user` authentication                    |
+
 ### Example
 
-After [installing](#installation) the tools, clone the build-tools-example repository (*TODO link*), cd into it and execute the `build` command.
+After [installing](#installation) the tools, clone the [build-tools-example repository](https://github.com/sparetimecoders/build-tools-examples), cd into it and execute the `build` command.
 
     $ build
     Using CI none
@@ -231,7 +313,7 @@ By following the conventions no additional flags are needed, but the following f
     $ push -f docker/Dockerfile.build 
     
 ## deploy
-Deploys the built application to a Kubernetes cluster. Normal usage `deploy <environment>`, but additional flags can be used:
+Deploys the built application to a Kubernetes cluster. Normal usage `deploy <environment>`, but additional flags can be used to override:
 
 |      Flag                          |                   Description                                 |
 | :--------------------------------- | :------------------------------------------------------------ |
