@@ -83,12 +83,10 @@ func TestScaffold_Missing_Token(t *testing.T) {
 	yaml := `
 scaffold:
   ci:
-    selected: buildkite
     buildkite:
       organisation: example
       token: abc
   vcs:
-    selected: github
     github:
       organisation: example
       token: abc
@@ -107,8 +105,6 @@ scaffold:
 
 func TestScaffold_Configure_Error(t *testing.T) {
 	cfg := scaffold2.InitEmptyConfig()
-	cfg.VCS.Selected = "mock"
-	cfg.CI.Selected = "mock"
 	cfg.CurrentCI = &mockCi{configErr: errors.New("config error")}
 	cfg.CurrentVCS = &mockVcs{}
 	out := &bytes.Buffer{}
@@ -119,8 +115,6 @@ func TestScaffold_Configure_Error(t *testing.T) {
 
 func TestScaffold_Ok(t *testing.T) {
 	cfg := scaffold2.InitEmptyConfig()
-	cfg.VCS.Selected = "mock"
-	cfg.CI.Selected = "mock"
 	cfg.CurrentCI = &mockCi{}
 	cfg.CurrentVCS = &mockVcs{}
 	out := &bytes.Buffer{}

@@ -21,6 +21,13 @@ func TestGitlab_Configure(t *testing.T) {
 	assert.NotNil(t, vcs.groupsService)
 }
 
+func TestGitlab_ValidateConfig_Ok(t *testing.T) {
+	vcs := &Gitlab{Group: "group"}
+
+	err := vcs.ValidateConfig()
+
+	assert.Nil(t, err)
+}
 func TestGitlab_ValidateConfig_Return_Error_If_Group_Not_Set(t *testing.T) {
 	vcs := &Gitlab{}
 
