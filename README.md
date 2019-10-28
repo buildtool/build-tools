@@ -1,8 +1,8 @@
 
 <p align="center">
   <a href="https://github.com/sparetimecoders/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="releases" src="https://img.shields.io/github/release/sparetimecoders/build-tools.svg?maxAge=43200"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="Github All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total.svg?maxAge=43200"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/sparetimecoders/build-tools"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total"></a>
   <a href="pulls"><img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/sparetimecoders/build-tools"></a>
 </p>
 
@@ -24,25 +24,148 @@ The only hard requirement is to provide a [Dockerfile](https://docs.docker.com/e
 
 The configuration needed is done by environment variables (most likely for CI/CD) and yaml files (for local use).
 
-# Available commands
+# Installation
+You can install the pre-compiled binary (in several different ways), use Docker or compile from source.
 
-## build
-## push
-## deploy
+Here are the steps for each of them:
 
-# Conventions
+## Homebrew tap
 
-* `Dockerfile` must be present in the root of the project directory (*TODO Override name of file*). The `Dockerfile` will be used to build the project into a runnable docker image.
-* The name of the directory will be used as the name of the docker image (*TODO Override by ENV*)
+    $ brew install sparetimecoders/taps/build-tools
+## Shell script
+
+    $ curl -sfL https://raw.githubusercontent.com/sparetimecoders/build-tools/master/install.sh | sh
+## Manually
+
+Download the pre-compiled binaries from the [releases](https://github.com/sparetimecoders/build-tools/releases) page and copy to the desired location.
+## Docker
+You can also use it within a Docker container. To do that, you’ll need to execute something more-or-less like the following:
+
+    $ docker run --rm --privileged \
+      -v $PWD:/repo \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -w /repo \
+      -e DOCKER_USERNAME \
+      -e DOCKER_PASSWORD \
+      sparetimecoders/build-tools build
+      
+## Compiling from source
+
+    # clone it outside GOPATH
+    $ git clone https://github.com/sparetimecoders/build-tools
+    $ cd build-tools
+    
+    # get dependencies using go modules (needs go 1.11+)
+    $ go get ./...
+    
+    # build
+    $ go build ./cmd/build
+    
+    # check it works
+    ./build -version
+    
+# Usage
+If the project follow the conventions and some configuration for the CI/CD tool are present (probably using `ENV` variables), a pipeline could be as simple as:
+
+    $ build
+    $ push
+    $ deploy <environment>
+    
+to build, push and deploy the project to a Kubernetes cluster.    
+
+## Conventions
+
+* `Dockerfile` must be present in the root of the project directory (this can be overriden with [flags](#build)). The `Dockerfile` will be used to build the project into a runnable docker image.
+* Kubernetes descriptor files must be located in the `k8s` folder
+* The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used to determine the name of the project being built)
 * The current commit id will be used as docker tag
-* Kubernetes descriptor files must be located in the `k8s` folder under the root
 
 Take a look at the build-tools-example repository (*TODO link*) to try it out.
 
-## Using in CI/CD pipelines
+### Project structure
+The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
 
-## Example usage
-After installing (*TODO link*) the tools, clone the build-tools-example repository (*TODO link*), cd into it and execute the `build` command.
+There must be a `k8s` directory in the root of your project. This directory contains all the `yaml` files used to describe the Kubernetes tasks needed to run this service.
+Environment specific files can be handled in two different ways depending on personal preference. 
+They can either be located in sub-directories, for example `k8s/local` for local setup.
+
+    $ cd projecct
+    $ tree
+    .
+    └── k8s
+        ├── deploy.yaml
+        ├── local
+        │   ├── ingress.yaml
+        └── prod
+            └── ingress.yaml
+
+Or they can be defined using a `-<environment>` suffix, i.e. `ingress-prod.yaml`
+
+    $ cd projecct
+    $ tree
+    .
+    └── k8s
+        ├── deploy.yaml
+        ├── ingress-local.yaml
+        ├── ingress-prod.yaml
+
+### Configuration
+Configuration and setup is done in `.buildtools.yaml` files. 
+Those files must be present in the project folder or upwards in the directory structure. 
+This lets you create a common `.buildtools.yaml` file to be used for a set of projects.
+The `.buildtools.yaml` files will be merged together, with the file closest to the project being applied last.
+
+Example:
+
+    $ pwd
+    ~/source/
+    $ tree
+    .
+    ├── customer1
+    │   ├── project1
+    │   └── project2
+    └── customer2
+        └── project1
+        
+Here we can choose to put a `.buildtools.yaml` file in the different `customer` directories since they (most likely) have different deployment configuration.
+
+    $ pwd
+    ~/source/
+    $ cat .buildtools.yaml
+    registry:
+      dockerhub:
+        repository: sparetimecoders
+    environments:
+      - name: local
+        context: docker-desktop
+        namespace: default
+
+    $ cd customer1
+    $ cat .buildtools.yaml
+    environments:
+      - name: prod
+        context: production
+        namespace: default
+        kubeconfig: ~/.kube/config.d/production.yaml
+
+    $ cd project2
+    $ cat .buildtools.yaml
+    environments:
+      - name: staging
+        context: staging
+        namespace: project2
+
+    $ build -printconfig
+    
+    $ cd ..
+    
+    $ build -printconfig
+        
+Context and namespaces must be provided/created/configured elsewhere.
+
+### Example
+
+After [installing](#installation) the tools, clone the build-tools-example repository (*TODO link*), cd into it and execute the `build` command.
 
     $ build
     Using CI none
@@ -83,3 +206,49 @@ Now that we have a docker image, let's publish it to the docker repository (this
     
 *TODO Link to more environment variables and stuff*
 
+# Available commands
+
+## build
+Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image. By following the conventions no additional flags are needed, but the following flags are available:
+
+|      Flag                        |                   Description                                        |
+| :------------------------------- | :-------------------------------------------------------------------- |
+| `-f/--file <path to Dockerfile>` | Used to override the default `Dockerfile` location (which is `$PWD`) | 
+| `-skiplogin`                     | Disables login to docker registry (good for local testing)           | 
+| `-build-arg key=value`           | Additional Docker [build-arg](https://docs.docker.com/engine/reference/commandline/#set-build-time-variables---build-arg) |
+
+    $ build -f docker/Dockerfile.build -skiplogin -build-arg AUTH_TOKEN=abc
+    
+## push
+Performs a `docker push` of the image created by `build`.
+
+By following the conventions no additional flags are needed, but the following flags are available:
+
+|      Flag                       |                   Description                                       |
+| :------------------------------ | :------------------------------------------------------------------ |
+| `-f/--file <path to Dockerfile>`| Used to override the default `Dockerfile` location (which is `$PWD`)|
+
+    $ push -f docker/Dockerfile.build 
+    
+## deploy
+Deploys the built application to a Kubernetes cluster. Normal usage `deploy <environment>`, but additional flags can be used:
+
+|      Flag                          |                   Description                                 |
+| :--------------------------------- | :------------------------------------------------------------ |
+| `-c/--context`                     | Use a different context than the one found in configuration   |
+| `-n/--namespace`                   | Use a different namespace than the one found in configuration |
+
+    $ deploy -n testing_namespace local 
+
+## service-setup
+Setup a new git repository and scaffolds the project.
+
+Basic usage `service-setup <name>`, it's also possible to scaffold for a certain stack. Supported stacks:
+* go
+* scala
+
+    $ service-setup -s go test
+## kubecmd
+
+
+### Using in CI/CD pipelines

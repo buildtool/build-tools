@@ -2,6 +2,11 @@ name: Go
 
 on:
   push:
+    paths-ignore:
+    - '*.md'
+    - '.editorconfig'
+    - 'LICENSE'
+    - 'install.sh'
 
 jobs:
   build_and_test:
