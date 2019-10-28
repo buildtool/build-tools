@@ -1,14 +1,16 @@
 
 <p align="center">
-  <a href="https://github.com/sparetimecoders/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/actions"><img alt="GitHub Actions" src="https://github.com/sparetimecoders/build-tools/workflows/Go/badge.svg"></a>
   <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/sparetimecoders/build-tools"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total"></a>
   <a href="pulls"><img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/sparetimecoders/build-tools"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/sparetimecoders/build-tools/actions"><img alt="GitHub Actions" src="https://github.com/sparetimecoders/build-tools/workflows/Go/badge.svg"></a>
+  <a href="https://github.com/sparetimecoders/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
   <a href="https://codecov.io/github/sparetimecoders/build-tools"><img alt="Coverage Status" src="https://codecov.io/gh/sparetimecoders/build-tools/branch/master/graph/badge.svg"></a>
+  <a href="https://codebeat.co/projects/github-com-sparetimecoders-build-tools-master"><img alt="codebeat badge" src="https://codebeat.co/badges/434836f7-e0ab-4af9-8ef8-60cde2738764" /></a>
+  <a href="https://goreportcard.com/report/github.com/sparetimecoders/build-tools"><img alt="goreportcard badge" src="https://goreportcard.com/badge/github.com/sparetimecoders/build-tools" /></a>
   <a href="https://libraries.io/github/sparetimecoders/build-tools"><img alt="" src="https://img.shields.io/librariesio/github/sparetimecoders/build-tools"></a>
 </p>
 
@@ -323,13 +325,19 @@ Deploys the built application to a Kubernetes cluster. Normal usage `deploy <env
     $ deploy -n testing_namespace local 
 
 ## service-setup
-Setup a new git repository and scaffolds the project.
+Setup a new local git repository and scaffolds the project.
+Remote Git repository and CI pipeline will be created and configured based on the `.buildtools.yaml` settings. 
 
 Basic usage `service-setup <name>`, it's also possible to scaffold for a certain stack. Supported stacks:
 * go
 * scala
 
+This will generate some basic project files for the different stacks, example
+
     $ service-setup -s go test
+    $ tree test
+    *TODO*
+
 ## kubecmd
 
 

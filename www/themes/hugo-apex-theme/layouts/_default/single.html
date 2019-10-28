@@ -1,0 +1,15 @@
+{{ define "main" }}
+	<div class="Page" id="{{ .Slug }}">
+		<h1>{{ .Title }}</h1>
+		{{ .Content }}
+
+		<blockquote>
+			<p>
+				{{- with .GitInfo -}}
+				Last updated by {{ .AuthorName }} on {{ .AuthorDate.Format "January 2, 2006" }}.
+				{{- end }}
+				<a href="{{ .Site.Params.ghdocsrepo }}/content/{{ .File.Path }}">Improve this page</a>.
+			</p>
+		</blockquote>
+	</div>
+{{ end }}

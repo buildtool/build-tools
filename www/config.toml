@@ -1,0 +1,13 @@
+#baseURL = "https://sparetimecoders.github.io/"
+languageCode = "en-us"
+title = "build-tools"
+copyright = "© 2019 Sparetimecoders"
+theme = "hugo-apex-theme"
+pygmentsCodeFences = true
+pygmentsStyle = "dracula"
+
+[params]
+name = "build-tools"
+description = "desc"
+logo = "https://github.com/sparetimecoders.png"
+ghdocsrepo = "https://github.com/sparetimecoders/build-tools/edit/master/www"
