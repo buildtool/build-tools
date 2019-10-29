@@ -1,8 +1,8 @@
 package main
 
 import (
-	service "github.com/sparetimecoders/build-tools/pkg/service-setup"
-	ver "github.com/sparetimecoders/build-tools/pkg/version"
+	service "github.com/buildtool/build-tools/pkg/service-setup"
+	ver "github.com/buildtool/build-tools/pkg/version"
 	"io"
 	"os"
 )

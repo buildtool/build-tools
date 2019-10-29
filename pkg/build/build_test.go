@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/sparetimecoders/build-tools/pkg"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -82,7 +82,7 @@ func TestBuild_LoginError(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -101,7 +101,7 @@ func TestBuild_BuildError(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -120,7 +120,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -139,7 +139,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -158,7 +158,7 @@ func TestBuild_WithBuildArgs(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
@@ -175,7 +175,7 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
@@ -193,7 +193,7 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
@@ -207,7 +207,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -239,7 +239,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 
 func TestBuild_DockerTagOverride(t *testing.T) {
 	defer pkg.SetEnv("DOCKER_TAG", "override")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
@@ -256,7 +256,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -310,7 +310,7 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -328,7 +328,7 @@ func TestBuild_HandleCaching(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
@@ -369,7 +369,7 @@ func TestBuild_BrokenStage(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
-	defer pkg.SetEnv("DOCKERHUB_REPOSITORY", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 

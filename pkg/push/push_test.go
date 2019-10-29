@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg"
-	"github.com/sparetimecoders/build-tools/pkg/config"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
-	"github.com/sparetimecoders/build-tools/pkg/file"
-	"github.com/sparetimecoders/build-tools/pkg/registry"
-	"github.com/sparetimecoders/build-tools/pkg/vcs"
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/file"
+	"github.com/buildtool/build-tools/pkg/registry"
+	"github.com/buildtool/build-tools/pkg/vcs"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -108,7 +108,7 @@ func TestPush_PushError(t *testing.T) {
 	cfg := config.InitEmptyConfig()
 	cfg.CI.Gitlab.CIBuildName = "project"
 	cfg.VCS.VCS = &no{}
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
@@ -130,7 +130,7 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "feature1"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
@@ -152,7 +152,7 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, 0, exitCode)
@@ -174,7 +174,7 @@ func TestPush_DockerTagOverride(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, 0, exitCode)
@@ -204,7 +204,7 @@ COPY --from=test file2 .
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
@@ -264,7 +264,7 @@ func TestPush_Output(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
@@ -286,7 +286,7 @@ func TestPush_BrokenOutput(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -7, exitCode)
@@ -305,7 +305,7 @@ func TestPush_ErrorDetail(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -7, exitCode)
@@ -326,7 +326,7 @@ func TestPush_Create_Error(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -4, exitCode)
@@ -346,7 +346,7 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	cfg.CI.Gitlab.CIBuildName = "reponame"
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Repository = "repo"
+	cfg.Registry.Dockerhub.Namespace = "repo"
 	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
 
 	assert.Equal(t, -5, exitCode)

@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"io"
 	"regexp"
 	"strings"

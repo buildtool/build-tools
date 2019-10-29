@@ -2,7 +2,7 @@ package deploy
 
 import (
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg/kubectl"
+	"github.com/buildtool/build-tools/pkg/kubectl"
 	"io"
 	"io/ioutil"
 	"os"

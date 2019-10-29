@@ -3,10 +3,10 @@ package service_setup
 import (
 	"flag"
 	"fmt"
+	"github.com/buildtool/build-tools/pkg/config"
+	scaffold2 "github.com/buildtool/build-tools/pkg/config/scaffold"
+	"github.com/buildtool/build-tools/pkg/stack"
 	"github.com/liamg/tml"
-	"github.com/sparetimecoders/build-tools/pkg/config"
-	scaffold2 "github.com/sparetimecoders/build-tools/pkg/config/scaffold"
-	"github.com/sparetimecoders/build-tools/pkg/stack"
 	"io"
 	"sort"
 	"strings"

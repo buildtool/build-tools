@@ -2,7 +2,7 @@ project_name: build-tools
 
 before:
   hooks:
-  - docker login -u sparetimecoders -p  {{ .Env.DOCKERHUB_PASSWORD }}
+  - docker login -u buildtool-p  {{ .Env.DOCKERHUB_PASSWORD }}
 
 env:
   - CGO_ENABLED=0
@@ -80,14 +80,14 @@ dockers:
     - kubecmd
     - service-setup
     image_templates:
-    - "sparetimecoders/{{ .ProjectName }}:latest"
-    - "sparetimecoders/{{ .ProjectName }}:{{ .Tag }}"
-    - "sparetimecoders/{{ .ProjectName }}:{{ .Version }}"
+    - "buildtool{{ .ProjectName }}:latest"
+    - "buildtool{{ .ProjectName }}:{{ .Tag }}"
+    - "buildtool{{ .ProjectName }}:{{ .Version }}"
 
 brews:
   - name: build-tools
     github:
-      owner: sparetimecoders
+      owner: buildtool
       name: homebrew-taps
     folder: Formula
     commit_author:

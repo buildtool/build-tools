@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/buildkite/go-buildkite/buildkite"
-	"github.com/sparetimecoders/build-tools/pkg"
-	"github.com/sparetimecoders/build-tools/pkg/file"
-	"github.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/file"
+	"github.com/buildtool/build-tools/pkg/templating"
 	"path/filepath"
 )
 

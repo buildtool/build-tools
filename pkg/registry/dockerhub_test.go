@@ -3,14 +3,14 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestDockerhub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &Dockerhub{Repository: "repo", Username: "user", Password: "pass"}
+	registry := &Dockerhub{Namespace: "repo", Username: "user", Password: "pass"}
 	out := &bytes.Buffer{}
 	err := registry.Login(client, out)
 	assert.Nil(t, err)
@@ -30,7 +30,7 @@ func TestDockerhub_LoginError(t *testing.T) {
 }
 
 func TestDockerhub_GetAuthInfo(t *testing.T) {
-	registry := &Dockerhub{Repository: "repo", Username: "user", Password: "pass"}
+	registry := &Dockerhub{Namespace: "repo", Username: "user", Password: "pass"}
 	auth := registry.GetAuthInfo()
 	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InBhc3MifQ==", auth)
 }

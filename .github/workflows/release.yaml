@@ -26,3 +26,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2.2.2
+        with:
+          hugo-version: '0.58.3'
+
+      - name: Build site
+        run: hugo --enableGitInfo --source www --minify
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v2.5.0
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_DIR: ./www/public
+          PUBLISH_BRANCH: master
+          EXTERNAL_REPOSITORY: buildtool/buildtool.github.io
+

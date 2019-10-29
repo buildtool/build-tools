@@ -1,4 +1,4 @@
-module github.com/sparetimecoders/build-tools
+module github.com/buildtool/build-tools
 
 go 1.12
 
