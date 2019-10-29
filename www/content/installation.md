@@ -10,7 +10,7 @@ You can install the pre-compiled binary (in several different ways), use Docker 
 **Homebrew tap**
 
 ```sh 
-$ brew install buildtooltaps/build-tools
+$ brew install buildtool/taps/build-tools
 ```
 
 **Shell script**
