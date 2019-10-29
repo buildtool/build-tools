@@ -3,6 +3,7 @@ name: Go
 on:
   push:
     paths-ignore:
+    - 'www/**'
     - '*.md'
     - '.editorconfig'
     - 'LICENSE'
