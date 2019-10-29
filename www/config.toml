@@ -1,4 +1,4 @@
-baseURL = "https://buildtool.github.io/"
+baseURL = "https://buildtools.io/"
 languageCode = "en-us"
 title = "build-tools"
 copyright = "© 2019 buildtool"
