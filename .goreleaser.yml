@@ -80,9 +80,9 @@ dockers:
     - kubecmd
     - service-setup
     image_templates:
-    - "buildtool{{ .ProjectName }}:latest"
-    - "buildtool{{ .ProjectName }}:{{ .Tag }}"
-    - "buildtool{{ .ProjectName }}:{{ .Version }}"
+    - "buildtool/{{ .ProjectName }}:latest"
+    - "buildtool/{{ .ProjectName }}:{{ .Tag }}"
+    - "buildtool/{{ .ProjectName }}:{{ .Version }}"
 
 brews:
   - name: build-tools
