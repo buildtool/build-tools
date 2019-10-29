@@ -2,7 +2,7 @@ project_name: build-tools
 
 before:
   hooks:
-  - docker login -u buildtool-p  {{ .Env.DOCKERHUB_PASSWORD }}
+  - docker login -u sparetimecoders -p  {{ .Env.DOCKERHUB_PASSWORD }}
 
 env:
   - CGO_ENABLED=0
