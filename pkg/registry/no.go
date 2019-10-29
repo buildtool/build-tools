@@ -2,8 +2,8 @@ package registry
 
 import (
 	"fmt"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/liamg/tml"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"io"
 )
 

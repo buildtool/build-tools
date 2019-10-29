@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/sparetimecoders/build-tools/pkg/build"
-	ver "github.com/sparetimecoders/build-tools/pkg/version"
+	"github.com/buildtool/build-tools/pkg/build"
+	ver "github.com/buildtool/build-tools/pkg/version"
 	"io"
 	"os"
 )

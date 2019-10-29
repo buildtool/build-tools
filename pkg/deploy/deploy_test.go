@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg/kubectl"
+	"github.com/buildtool/build-tools/pkg/kubectl"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

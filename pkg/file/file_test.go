@@ -2,7 +2,7 @@ package file
 
 import (
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/buildtool/build-tools/pkg/templating"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

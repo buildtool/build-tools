@@ -9,4 +9,4 @@ weight: 3
 * The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used to determine the name of the project being built)
 * The current commit id will be used as docker tag
 
-Take a look at the [build-tools-example repository](https://github.com/sparetimecoders/build-tools-examples) to try it out.
+Take a look at the [build-tools-example repository](https://github.com/buildtool/build-tools-examples) to try it out.

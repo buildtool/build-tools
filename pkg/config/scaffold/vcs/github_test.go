@@ -3,10 +3,10 @@ package vcs
 import (
 	"context"
 	"fmt"
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/config/scaffold/vcs/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-github/v28/github"
-	"github.com/sparetimecoders/build-tools/pkg"
-	"github.com/sparetimecoders/build-tools/pkg/config/scaffold/vcs/mocks"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"

@@ -1,8 +1,8 @@
 package stack
 
 import (
-	"github.com/sparetimecoders/build-tools/pkg/file"
-	"github.com/sparetimecoders/build-tools/pkg/templating"
+	"github.com/buildtool/build-tools/pkg/file"
+	"github.com/buildtool/build-tools/pkg/templating"
 	"path/filepath"
 )
 

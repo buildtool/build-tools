@@ -3,7 +3,7 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/buildtool/build-tools/pkg"
 	"github.com/google/go-github/v28/github"
-	"github.com/sparetimecoders/build-tools/pkg"
 	"golang.org/x/oauth2"
 	"net/http"
 )

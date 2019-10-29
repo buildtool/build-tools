@@ -1,17 +1,17 @@
 
 <p align="center">
-  <a href="https://github.com/sparetimecoders/build-tools/actions"><img alt="GitHub Actions" src="https://github.com/sparetimecoders/build-tools/workflows/Go/badge.svg"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/sparetimecoders/build-tools"></a>
-  <a href="pulls"><img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/sparetimecoders/build-tools"></a>
-  <a href="https://github.com/sparetimecoders/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/sparetimecoders/build-tools/total"></a>
+  <a href="https://github.com/buildtool/build-tools/actions"><img alt="GitHub Actions" src="https://github.com/buildtool/build-tools/workflows/Go/badge.svg"></a>
+  <a href="https://github.com/buildtool/build-tools/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/buildtool/build-tools"></a>
+  <a href="pulls"><img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/buildtool/build-tools"></a>
+  <a href="https://github.com/buildtool/build-tools/releases"><img alt="GitHub All Releases" src="https://img.shields.io/github/downloads/buildtool/build-tools/total"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/sparetimecoders/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
-  <a href="https://codecov.io/github/sparetimecoders/build-tools"><img alt="Coverage Status" src="https://codecov.io/gh/sparetimecoders/build-tools/branch/master/graph/badge.svg"></a>
-  <a href="https://codebeat.co/projects/github-com-sparetimecoders-build-tools-master"><img alt="codebeat badge" src="https://codebeat.co/badges/434836f7-e0ab-4af9-8ef8-60cde2738764" /></a>
-  <a href="https://goreportcard.com/report/github.com/sparetimecoders/build-tools"><img alt="goreportcard badge" src="https://goreportcard.com/badge/github.com/sparetimecoders/build-tools" /></a>
-  <a href="https://libraries.io/github/sparetimecoders/build-tools"><img alt="" src="https://img.shields.io/librariesio/github/sparetimecoders/build-tools"></a>
+  <a href="https://github.com/buildtool/build-tools/blob/master/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
+  <a href="https://codecov.io/github/buildtool/build-tools"><img alt="Coverage Status" src="https://codecov.io/gh/buildtool/build-tools/branch/master/graph/badge.svg"></a>
+  <a href="https://codebeat.co/projects/github-com-buildtoolbuild-tools-master"><img alt="codebeat badge" src="https://codebeat.co/badges/434836f7-e0ab-4af9-8ef8-60cde2738764" /></a>
+  <a href="https://goreportcard.com/report/github.com/buildtool/build-tools"><img alt="goreportcard badge" src="https://goreportcard.com/badge/github.com/buildtool/build-tools" /></a>
+  <a href="https://libraries.io/github/buildtool/build-tools"><img alt="" src="https://img.shields.io/librariesio/github/buildtool/build-tools"></a>
 </p>
 
 
@@ -33,13 +33,13 @@ Here are the steps for each of them:
 
 ## Homebrew tap
 
-    $ brew install sparetimecoders/taps/build-tools
+    $ brew install buildtooltaps/build-tools
 ## Shell script
 
-    $ curl -sfL https://raw.githubusercontent.com/sparetimecoders/build-tools/master/install.sh | sh
+    $ curl -sfL https://raw.githubusercontent.com/buildtool/build-tools/master/install.sh | sh
 ## Manually
 
-Download the pre-compiled binaries from the [releases](https://github.com/sparetimecoders/build-tools/releases) page and copy to the desired location.
+Download the pre-compiled binaries from the [releases](https://github.com/buildtool/build-tools/releases) page and copy to the desired location.
 ## Docker
 You can also use it within a Docker container. To do that, you’ll need to execute something more-or-less like the following:
 
@@ -49,12 +49,12 @@ You can also use it within a Docker container. To do that, you’ll need to exec
       -w /repo \
       -e DOCKER_USERNAME \
       -e DOCKER_PASSWORD \
-      sparetimecoders/build-tools build
+      buildtool/build-tools build
       
 ## Compiling from source
 
     # clone it outside GOPATH
-    $ git clone https://github.com/sparetimecoders/build-tools
+    $ git clone https://github.com/buildtool/build-tools
     $ cd build-tools
     
     # get dependencies using go modules (needs go 1.11+)
@@ -82,7 +82,7 @@ to build, push and deploy the project to a Kubernetes cluster.
 * The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used to determine the name of the project being built)
 * The current commit id will be used as docker tag
 
-Take a look at the [build-tools-example repository](https://github.com/sparetimecoders/build-tools-examples) to try it out.
+Take a look at the [build-tools-example repository](https://github.com/buildtool/build-tools-examples) to try it out.
 
 ### Project structure
 The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit.
@@ -136,7 +136,7 @@ Here we can choose to put a `.buildtools.yaml` file in the different `customer` 
     $ cat .buildtools.yaml
     registry:
       dockerhub:
-        repository: sparetimecoders
+        repository: buildtool
     environments:
       - name: local
         context: docker-desktop
@@ -249,7 +249,7 @@ Quay [docker registry](https://docs.quay.io/)
 
 ### Example
 
-After [installing](#installation) the tools, clone the [build-tools-example repository](https://github.com/sparetimecoders/build-tools-examples), cd into it and execute the `build` command.
+After [installing](#installation) the tools, clone the [build-tools-example repository](https://github.com/buildtool/build-tools-examples), cd into it and execute the `build` command.
 
     $ build
     Using CI none
@@ -259,7 +259,7 @@ After [installing](#installation) the tools, clone the [build-tools-example repo
 Since we we haven't setup a`.buildtools.yaml` (*TODO LINK in doc*) file, nothing has been configured, and to be able to build a docker image we must specify where we (potentially) want to push it later. In other words, setting the [tags](https://docs.docker.com/engine/reference/commandline/tag/) of the created image.
 Luckily we can use environment variables as well, let's try:
 
-    $ DOCKERHUB_REPOSITORY=sparetimecoders build
+    $ DOCKERHUB_REPOSITORY=buildtoolbuild
     Using CI none
     
     Using registry Dockerhub
@@ -271,18 +271,18 @@ As we can see, the `build` command identified that we are using Dockerhub, and e
 Notice that the name of the current directory is used as the image name.
 After the successful build the image is tagged with the commit id and branch.
 
-    Successfully tagged sparetimecoders/buildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e
-    Successfully tagged sparetimecoders/buildtools-examples:master
-    Successfully tagged sparetimecoders/buildtools-examples:latest
+    Successfully tagged buildtoolbuildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e
+    Successfully tagged buildtoolbuildtools-examples:master
+    Successfully tagged buildtoolbuildtools-examples:latest
 
 
 
     
 Now that we have a docker image, let's publish it to the docker repository (this of course requires write access to the repository).
 
-    $ DOCKERHUB_REPOSITORY=sparetimecoders DOCKERHUB_PASSWORD=<PASSWORD> DOCKERHUB_USERNAME=<USERNAME> push
+    $ DOCKERHUB_REPOSITORY=buildtoolDOCKERHUB_PASSWORD=<PASSWORD> DOCKERHUB_USERNAME=<USERNAME> push
     ...
-    Pushing tag 'sparetimecoders/buildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e'
+    Pushing tag 'buildtoolbuildtools-examples:7c76db502b4a70df5480d6ff438ae10e374b420e'
     ...
 
     

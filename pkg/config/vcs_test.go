@@ -2,7 +2,7 @@ package config
 
 import (
 	"bytes"
-	"github.com/sparetimecoders/build-tools/pkg/vcs"
+	"github.com/buildtool/build-tools/pkg/vcs"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"

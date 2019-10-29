@@ -10,16 +10,16 @@ You can install the pre-compiled binary (in several different ways), use Docker 
 **Homebrew tap**
 
 ```sh 
-$ brew install sparetimecoders/taps/build-tools
+$ brew install buildtooltaps/build-tools
 ```
 
 **Shell script**
 ```sh
-$ curl -sfL https://raw.githubusercontent.com/sparetimecoders/build-tools/master/install.sh | sh
+$ curl -sfL https://raw.githubusercontent.com/buildtool/build-tools/master/install.sh | sh
 ```
 **Manually**
 
-Download the pre-compiled binaries from the [releases](https://github.com/sparetimecoders/build-tools/releases) page and copy to the desired location.
+Download the pre-compiled binaries from the [releases](https://github.com/buildtool/build-tools/releases) page and copy to the desired location.
 
 ## Docker
 You can also use it within a Docker container. To do that, you’ll need to execute something more-or-less like the following:
@@ -30,14 +30,14 @@ $ docker run --rm --privileged \
   -w /repo \
   -e DOCKER_USERNAME \
   -e DOCKER_PASSWORD \
-  sparetimecoders/build-tools build
+  buildtool/build-tools build
 ```
       
 ## Compiling from source
 ```sh
 
     # clone it outside GOPATH
-    $ git clone https://github.com/sparetimecoders/build-tools
+    $ git clone https://github.com/buildtool/build-tools
     $ cd build-tools
     
     # get dependencies using go modules (needs go 1.11+)

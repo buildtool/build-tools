@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/sparetimecoders/build-tools/pkg"
-	"github.com/sparetimecoders/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
