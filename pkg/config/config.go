@@ -3,9 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/ci"
-	"github.com/buildtool/build-tools/pkg/config/scaffold"
-	sci "github.com/buildtool/build-tools/pkg/config/scaffold/ci"
-	svs "github.com/buildtool/build-tools/pkg/config/scaffold/vcs"
 	"github.com/buildtool/build-tools/pkg/registry"
 	"github.com/buildtool/build-tools/pkg/vcs"
 	"github.com/caarlos0/env"
@@ -24,7 +21,6 @@ type Config struct {
 	CI                  *CIConfig              `yaml:"ci"`
 	Registry            *RegistryConfig        `yaml:"registry"`
 	Environments        map[string]Environment `yaml:"environments"`
-	Scaffold            *scaffold.Config       `yaml:"scaffold"`
 	AvailableCI         []ci.CI
 	AvailableRegistries []registry.Registry
 }
@@ -99,7 +95,6 @@ func InitEmptyConfig() *Config {
 			Gitlab:    &registry.Gitlab{},
 			Quay:      &registry.Quay{},
 		},
-		Scaffold: scaffold.InitEmptyConfig(),
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity, c.CI.Github}
 	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay}
@@ -196,32 +191,11 @@ func validate(config *Config) error {
 		f := elem.Field(i)
 		if f.Interface().(registry.Registry).Configured() {
 			if found {
-				return fmt.Errorf("registry alread defined, please check configuration")
+				return fmt.Errorf("registry already defined, please check configuration")
 			}
 			found = true
 		}
 	}
 
-	elem = reflect.ValueOf(config.Scaffold.CI).Elem()
-	for i := 0; i < elem.NumField(); i++ {
-		currentCI := elem.Field(i).Interface().(sci.CI)
-		if currentCI.ValidateConfig() == nil {
-			if config.Scaffold.CurrentCI != nil && config.Scaffold.CurrentCI != currentCI {
-				return fmt.Errorf("scaffold CI already defined, please check configuration")
-			}
-			config.Scaffold.CurrentCI = currentCI
-		}
-	}
-
-	elem = reflect.ValueOf(config.Scaffold.VCS).Elem()
-	for i := 0; i < elem.NumField(); i++ {
-		currentVCS := elem.Field(i).Interface().(svs.VCS)
-		if currentVCS.ValidateConfig() == nil {
-			if config.Scaffold.CurrentVCS != nil && config.Scaffold.CurrentVCS != currentVCS {
-				return fmt.Errorf("scaffold VCS already defined, please check configuration")
-			}
-			config.Scaffold.CurrentVCS = currentVCS
-		}
-	}
 	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -120,7 +119,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		key := split[0]
 		value := strings.Join(split[1:], "=")
 		if len(split) > 1 && len(value) > 0 {
-			buildArgs[key] = pkg.String(value)
+			buildArgs[key] = &value
 		} else {
 			_, _ = fmt.Fprintf(out, "ignoring build-arg %s\n", key)
 		}

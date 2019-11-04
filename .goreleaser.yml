@@ -44,18 +44,6 @@ builds:
       - darwin
     goarch:
       - amd64
-  - id: service-setup
-    main: ./cmd/service-setup/service-setup.go
-    binary: service-setup
-    flags:
-      - -tags=prod
-    ldflags:
-      - -s -w
-    goos:
-      - linux
-      - darwin
-    goarch:
-      - amd64
   - id: kubecmd
     main: ./cmd/kubecmd/kubecmd.go
     binary: kubecmd
@@ -78,7 +66,6 @@ dockers:
     - push
     - deploy
     - kubecmd
-    - service-setup
     image_templates:
     - "buildtool/{{ .ProjectName }}:latest"
     - "buildtool/{{ .ProjectName }}:{{ .Tag }}"
