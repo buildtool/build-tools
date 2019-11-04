@@ -43,7 +43,7 @@ func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl
 						return err
 					}
 				}
-			} else if fileIsScriptForEnvironment(info, targetEnvironment) {
+			} else if fileIsScriptForEnvironment(info, targetEnvironment, dir) {
 				if err := execFile(filepath.Join(dir, info.Name()), out, eout); err != nil {
 					return err
 				}
@@ -79,6 +79,6 @@ func fileIsForEnvironment(info os.FileInfo, env string) bool {
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
 }
 
-func fileIsScriptForEnvironment(info os.FileInfo, env string) bool {
-	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env)) || (strings.HasSuffix(info.Name(), ".sh") && !strings.Contains(info.Name(), "-"))
+func fileIsScriptForEnvironment(info os.FileInfo, env, dir string) bool {
+	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env)) || (strings.HasSuffix(info.Name(), ".sh") && !strings.Contains(info.Name(), "-") && filepath.Base(dir) != "k8s")
 }

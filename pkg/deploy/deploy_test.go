@@ -238,6 +238,28 @@ echo "Prod-script with suffix"`
 	assert.Equal(t, "", eout.String())
 }
 
+func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
+	client := &kubectl.MockKubectl{
+		Responses: []error{nil},
+	}
+
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	script := `#!/usr/bin/env bash
+echo "Script without suffix should not execute"`
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "setup.sh"), []byte(script), 0777)
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(client.Inputs))
+	assert.Equal(t, "", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
 func TestDeploy_ScriptExecution_NotExecutable(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
