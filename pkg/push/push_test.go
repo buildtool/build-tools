@@ -7,7 +7,6 @@ import (
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/buildtool/build-tools/pkg/file"
 	"github.com/buildtool/build-tools/pkg/registry"
 	"github.com/buildtool/build-tools/pkg/vcs"
 	"github.com/stretchr/testify/assert"
@@ -15,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -54,7 +54,7 @@ func TestPush(t *testing.T) {
 func TestPush_BrokenConfig(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: [] `
-	_ = file.Write(name, ".buildtools.yaml", yaml)
+	_ = write(name, ".buildtools.yaml", yaml)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -67,7 +67,7 @@ func TestPush_BrokenConfig(t *testing.T) {
 
 func TestPush_NoRegistry(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -100,7 +100,7 @@ func TestPush_LoginFailure(t *testing.T) {
 
 func TestPush_PushError(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -120,7 +120,7 @@ func TestPush_PushError(t *testing.T) {
 
 func TestPush_PushFeatureBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -142,7 +142,7 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 
 func TestPush_PushMasterBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -164,7 +164,7 @@ func TestPush_PushMasterBranch(t *testing.T) {
 func TestPush_DockerTagOverride(t *testing.T) {
 	defer pkg.SetEnv("DOCKER_TAG", "override")()
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -194,7 +194,7 @@ FROM scratch
 COPY --from=build file .
 COPY --from=test file2 .
 `
-	_ = file.Write(name, "Dockerfile", dockerfile)
+	_ = write(name, "Dockerfile", dockerfile)
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -216,7 +216,7 @@ COPY --from=test file2 .
 
 func TestPush_Output(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -276,7 +276,7 @@ func TestPush_Output(t *testing.T) {
 
 func TestPush_BrokenOutput(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -295,7 +295,7 @@ func TestPush_BrokenOutput(t *testing.T) {
 
 func TestPush_ErrorDetail(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -315,7 +315,7 @@ func TestPush_ErrorDetail(t *testing.T) {
 
 func TestPush_Create_Error(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = file.Write(name, "Dockerfile", "FROM scratch")
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
@@ -402,3 +402,10 @@ func (v no) Name() string {
 }
 
 var _ vcs.VCS = &no{}
+
+func write(dir, file, content string) error {
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+}
