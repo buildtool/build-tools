@@ -8,7 +8,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e // indirect
 	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/Sirupsen/logrus v0.0.0-00010101000000-000000000000 // indirect
-	github.com/aws/aws-sdk-go v1.19.25
+	github.com/aws/aws-sdk-go v1.25.24
 	github.com/buildkite/go-buildkite v2.2.0+incompatible
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
