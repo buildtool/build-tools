@@ -5,4 +5,4 @@ RUN apt-get update && \
     useradd -m -u 1001 vsts_VSTSContainer
 
 
-COPY build push deploy kubecmd service-setup /usr/local/bin/
+COPY build push deploy kubecmd /usr/local/bin/
