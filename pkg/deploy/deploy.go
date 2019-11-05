@@ -31,11 +31,7 @@ func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client 
 func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
-			if info.Name() == targetEnvironment && info.IsDir() {
-				if err := processDir(filepath.Join(dir, info.Name()), commit, timestamp, targetEnvironment, client, out, eout); err != nil {
-					return err
-				}
-			} else if fileIsForEnvironment(info, targetEnvironment) {
+			if fileIsForEnvironment(info, targetEnvironment) {
 				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				} else {
@@ -80,5 +76,5 @@ func fileIsForEnvironment(info os.FileInfo, env string) bool {
 }
 
 func fileIsScriptForEnvironment(info os.FileInfo, env, dir string) bool {
-	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env)) || (strings.HasSuffix(info.Name(), ".sh") && !strings.Contains(info.Name(), "-") && filepath.Base(dir) != "k8s")
+	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env))
 }

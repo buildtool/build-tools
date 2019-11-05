@@ -114,34 +114,6 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	assert.Equal(t, "", eout.String())
 }
 
-func TestDeploy_EnvSpecificFilesInSubDirectory(t *testing.T) {
-	client := &kubectl.MockKubectl{
-		Responses: []error{nil},
-	}
-
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "dummy"), 0777)
-	yaml := `
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dummy
-`
-	deployFile := filepath.Join(name, "k8s", "dummy", "ns.yaml")
-	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
-
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(client.Inputs))
-	assert.Equal(t, yaml, client.Inputs[0])
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
-}
-
 func TestDeploy_EnvSpecificFilesWithSuffix(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
@@ -191,28 +163,6 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, "prod content", client.Inputs[0])
 	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
-}
-
-func TestDeploy_ScriptExecution_SubDirectory(t *testing.T) {
-	client := &kubectl.MockKubectl{
-		Responses: []error{nil},
-	}
-
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
-	script := `#!/usr/bin/env bash
-echo "Prod-script in subdir"`
-	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "prod", "setup.sh"), []byte(script), 0777)
-
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout)
-
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(client.Inputs))
-	assert.Equal(t, "Prod-script in subdir\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -300,32 +250,6 @@ metadata:
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout)
-
-	assert.EqualError(t, err, "apply failed")
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
-}
-
-func TestDeploy_ErrorFromApplyInSubDirectory(t *testing.T) {
-	client := &kubectl.MockKubectl{
-		Responses: []error{errors.New("apply failed")},
-	}
-
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
-	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "dummy"), 0777)
-	yaml := `
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: dummy
-`
-	deployFile := filepath.Join(name, "k8s", "dummy", "ns.yaml")
-	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
-
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout)
 
 	assert.EqualError(t, err, "apply failed")
 	assert.Equal(t, "", out.String())
