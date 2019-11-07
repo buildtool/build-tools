@@ -13,8 +13,6 @@ builds:
     binary: build
     flags:
       - -tags=prod
-    ldflags:
-      - -s -w
     goos:
       - linux
       - darwin
@@ -25,8 +23,6 @@ builds:
     binary: push
     flags:
       - -tags=prod
-    ldflags:
-      - -s -w
     goos:
       - linux
       - darwin
@@ -37,8 +33,6 @@ builds:
     binary: deploy
     flags:
       - -tags=prod
-    ldflags:
-      - -s -w
     goos:
       - linux
       - darwin
@@ -49,8 +43,6 @@ builds:
     binary: kubecmd
     flags:
       - -tags=prod
-    ldflags:
-      - -s -w
     goos:
       - linux
       - darwin
