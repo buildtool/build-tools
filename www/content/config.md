@@ -8,7 +8,7 @@ Configuration and setup is done in `.buildtools.yaml` files.
 Those files must be present in the project folder or upwards in the directory structure. 
 This lets you create a common `.buildtools.yaml` file to be used for a set of projects.
 The `.buildtools.yaml` files will be merged together, and settings from file closest to the project being used first.
-
+ 
 Example:
 ```sh
 $ pwd
@@ -57,7 +57,7 @@ $ cd ..
 $ build -printconfig
 ```
 
-### .buildtools.yaml
+### `.buildtools.yaml`
 A typical configuration file consists of a `registry` config and a list of `environments` to use.
 
 ```yaml
@@ -71,5 +71,18 @@ environments:
     context: staging-aws-eu-west-1
     namespace: my-test 
 ```    
+
+### Configuration from environment
+As an option file can be created by defining an environment variable in the build pipeline named `BUILDTOOLS_CONTENT`. 
+The value should be a base64-encoded string. On MacOS the value can be created and copied to the clipboard using the following snippet:
+
+```sh
+$ cat - <<EOF | base64 -w0 | pbcopy
+environments:
+  local-test:
+    context: docker-desktop
+)
+EOF
+```
 
 See the following sections for information on how to configure the different parts of the configuration files.
