@@ -38,8 +38,19 @@ func TestGithub_BranchReplaceSlash(t *testing.T) {
 	assert.Equal(t, "feature_xyz", ci.BranchReplaceSlash())
 }
 
-func TestGithub_Branch(t *testing.T) {
+func TestGithub_Branch_Ref(t *testing.T) {
 	ci := &Github{CIBranchName: "refs/heads/feature1"}
+
+	assert.Equal(t, "feature1", ci.Branch())
+}
+
+func TestGithub_Branch_Tag(t *testing.T) {
+	ci := &Github{CIBranchName: "refs/tags/feature1"}
+
+	assert.Equal(t, "feature1", ci.Branch())
+}
+func TestGithub_Branch(t *testing.T) {
+	ci := &Github{CIBranchName: "feature1"}
 
 	assert.Equal(t, "feature1", ci.Branch())
 }

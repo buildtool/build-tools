@@ -26,7 +26,13 @@ func (c *Github) BuildName() string {
 }
 
 func (c *Github) Branch() string {
-	return c.Common.Branch(strings.TrimPrefix(c.CIBranchName, "refs/heads/"))
+	if strings.HasPrefix(c.CIBranchName, "refs/heads") {
+		return c.Common.Branch(strings.TrimPrefix(c.CIBranchName, "refs/heads/"))
+	} else if strings.HasPrefix(c.CIBranchName, "refs/tags") {
+		return c.Common.Branch(strings.TrimPrefix(c.CIBranchName, "refs/tags/"))
+	} else {
+		return c.Common.Branch(c.CIBranchName)
+	}
 }
 
 func (c *Github) Commit() string {
