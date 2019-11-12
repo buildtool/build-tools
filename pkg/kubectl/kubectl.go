@@ -3,6 +3,7 @@ package kubectl
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/liamg/tml"
@@ -38,11 +39,11 @@ var newKubectlCmd = cmd.NewKubectlCommand
 func New(environment *config.Environment, out, eout io.Writer) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	arg := argsFromEnvironment(environment, name, out)
+	arg := argsFromEnvironment(environment, name, out, eout)
 	return &kubectl{args: arg, tempDir: name, out: out, eout: eout}
 }
 
-func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) map[string]string {
+func argsFromEnvironment(e *config.Environment, tempDir string, out, eout io.Writer) map[string]string {
 	kubeConfigArg := "kubeconfig"
 	args := make(map[string]string)
 	if len(e.Context) > 0 {
@@ -51,11 +52,19 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) m
 	if len(e.Namespace) > 0 {
 		args["namespace"] = e.Namespace
 	}
-	if content, exist := os.LookupEnv(envKubeConfigContent); exist {
+	if content, exist := os.LookupEnv(envKubeConfigContentBase64); exist {
+		// Not a file, create file from Base64 encoded content
+		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envKubeConfigContentBase64)
+		bytes, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			_, _ = fmt.Fprintln(eout, tml.Sprintf("Failed to decode content %+v", err))
+			return nil
+		}
+		args[kubeConfigArg] = writeKubeConfigFile(tempDir, kubeConfigArg, bytes)
+	} else if content, exist := os.LookupEnv(envKubeConfigContent); exist {
 		// Not a file, create file from content
-		kubeconfigFile := filepath.Join(tempDir, kubeConfigArg)
-		_ = ioutil.WriteFile(kubeconfigFile, []byte(content), 0777)
-		args[kubeConfigArg] = kubeconfigFile
+		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envKubeConfigContent)
+		args[kubeConfigArg] = writeKubeConfigFile(tempDir, kubeConfigArg, []byte(content))
 	} else if len(e.Kubeconfig) > 0 {
 		args[kubeConfigArg] = e.Kubeconfig
 	}
@@ -64,6 +73,12 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out io.Writer) m
 	}
 
 	return args
+}
+
+func writeKubeConfigFile(tempDir string, kubeConfigArg string, content []byte) string {
+	kubeconfigFile := filepath.Join(tempDir, kubeConfigArg)
+	_ = ioutil.WriteFile(kubeconfigFile, content, 0777)
+	return kubeconfigFile
 }
 
 func (k kubectl) defaultArgs() (args []string) {
@@ -167,3 +182,4 @@ func (k kubectl) extractEvents(output string) string {
 var _ Kubectl = &kubectl{}
 
 const envKubeConfigContent = "KUBECONFIG_CONTENT"
+const envKubeConfigContentBase64 = "KUBECONFIG_CONTENT_BASE64"
