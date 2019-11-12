@@ -2,6 +2,7 @@ package kubectl
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg"
@@ -209,6 +210,35 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
 	assert.Equal(t, kubeConfigFile, k.(*kubectl).args["kubeconfig"])
+	k.Cleanup()
+}
+
+func TestKubectl_KubeconfigBase64Set(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	yaml := `contexts:
+- context:
+    cluster: k8s.prod
+    user: user@example.org
+`
+	defer pkg.SetEnv(envKubeConfigContentBase64, base64.StdEncoding.EncodeToString([]byte(yaml)))()
+	k := New(&config.Environment{}, out, eout)
+
+	kubeConfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
+	fileContent, err := ioutil.ReadFile(kubeConfigFile)
+	assert.NoError(t, err)
+	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
+	assert.Equal(t, kubeConfigFile, k.(*kubectl).args["kubeconfig"])
+	k.Cleanup()
+}
+
+func TestKubectl_KubeconfigInvalidBase64Set(t *testing.T) {
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	defer pkg.SetEnv(envKubeConfigContentBase64, "äö")()
+	k := New(&config.Environment{}, out, eout)
+	assert.Equal(t, "\x1b[0mFailed to decode content illegal base64 data at input byte 0\x1b[0m\n", eout.String())
+
 	k.Cleanup()
 }
 
