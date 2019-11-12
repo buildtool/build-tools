@@ -44,7 +44,7 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 
 func TestDeploy_MissingEnvironment(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -0, code)
+		assert.Equal(t, -2, code)
 	}
 
 	oldPwd, _ := os.Getwd()
@@ -61,7 +61,7 @@ func TestDeploy_MissingEnvironment(t *testing.T) {
 
 func TestDeploy_NoCI(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -2, code)
+		assert.Equal(t, -3, code)
 	}
 
 	oldPwd, _ := os.Getwd()
@@ -85,7 +85,7 @@ environments:
 
 func TestDeploy_NoEnv(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -0, code)
+		assert.Equal(t, -1, code)
 	}
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
@@ -112,7 +112,7 @@ environments:
 
 func TestDeploy_NoOptions(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -3, code)
+		assert.Equal(t, -4, code)
 	}
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
@@ -139,7 +139,7 @@ environments:
 
 func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -3, code)
+		assert.Equal(t, -4, code)
 	}
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()

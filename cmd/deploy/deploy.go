@@ -48,6 +48,7 @@ func doDeploy() int {
 	_ = set.Parse(os.Args[1:])
 	if set.NArg() < 1 {
 		set.Usage()
+		return -1
 	} else {
 		environment := set.Args()[0]
 		dir, _ := os.Getwd()
@@ -58,6 +59,7 @@ func doDeploy() int {
 		} else {
 			if env, err := cfg.CurrentEnvironment(environment); err != nil {
 				fmt.Println(err.Error())
+				return -2
 			} else {
 				if context != "" {
 					env.Context = context
@@ -68,7 +70,7 @@ func doDeploy() int {
 				currentCI := cfg.CurrentCI()
 				if !ci.IsValid(currentCI) {
 					_, _ = fmt.Println(tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
-					return -2
+					return -3
 				}
 
 				tstamp := time.Now().Format(time.RFC3339)
@@ -76,7 +78,7 @@ func doDeploy() int {
 				defer client.Cleanup()
 				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, os.Stdout, os.Stderr); err != nil {
 					fmt.Println(err.Error())
-					return -3
+					return -4
 				}
 			}
 		}
