@@ -83,6 +83,7 @@ func TestGitlab_Identify(t *testing.T) {
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "registry.gitlab.com/group", registry.RegistryUrl())
+	assert.Equal(t, "eyJ1c2VybmFtZSI6ImdpdGxhYi1jaS10b2tlbiIsInBhc3N3b3JkIjoidG9rZW4iLCJzZXJ2ZXJhZGRyZXNzIjoicmVnaXN0cnkuZ2l0bGFiLmNvbSJ9", registry.GetAuthInfo())
 	assert.Equal(t, "", out.String())
 }
 
