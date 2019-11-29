@@ -29,7 +29,7 @@ $ pwd
 $ cat .buildtools.yaml
 registry:
   dockerhub:
-    repository: buildtool
+    namespace: buildtool
 environments:
   - name: local
     context: docker-desktop
@@ -63,7 +63,7 @@ A typical configuration file consists of a `registry` config and a list of `envi
 ```yaml
 registry:
   dockerhub:
-    repository: buildtool
+    namespace: buildtool
 environments:
   local-test:
     context: docker-desktop
