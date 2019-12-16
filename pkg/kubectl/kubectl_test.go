@@ -26,7 +26,7 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "missing", k.(*kubectl).args["context"])
 	assert.Equal(t, "dev", k.(*kubectl).args["namespace"])
 	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestNew_NoNamespace(t *testing.T) {
@@ -100,7 +100,7 @@ func TestKubectl_Environment(t *testing.T) {
 
 	assert.Equal(t, "", k.(*kubectl).args["namespace"])
 	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_DeploymentExistsTrue(t *testing.T) {
@@ -117,7 +117,7 @@ func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_DeploymentExistsFalse(t *testing.T) {
@@ -135,7 +135,7 @@ func TestKubectl_DeploymentExistsFalse(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_RolloutStatusSuccess(t *testing.T) {
@@ -152,7 +152,7 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_RolloutStatusFailure(t *testing.T) {
@@ -170,7 +170,7 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_RolloutStatusFatal(t *testing.T) {
@@ -191,7 +191,7 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_KubeconfigSet(t *testing.T) {
@@ -237,7 +237,7 @@ func TestKubectl_KubeconfigInvalidBase64Set(t *testing.T) {
 	eout := &bytes.Buffer{}
 	defer pkg.SetEnv(envKubeConfigContentBase64, "äö")()
 	k := New(&config.Environment{}, out, eout)
-	assert.Equal(t, "\x1b[0mFailed to decode content illegal base64 data at input byte 0\x1b[0m\n", eout.String())
+	assert.Equal(t, "Failed to decode content: illegal base64 data at input byte 0\n", eout.String())
 
 	k.Cleanup()
 }
@@ -272,7 +272,7 @@ func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_DeploymentEvents_NoEvents(t *testing.T) {
@@ -295,7 +295,7 @@ Events:          <none>
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_DeploymentEvents_SomeEvents(t *testing.T) {
@@ -324,7 +324,7 @@ Events:
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe deployment image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_PodEvents_Error(t *testing.T) {
@@ -343,7 +343,7 @@ func TestKubectl_PodEvents_Error(t *testing.T) {
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_PodEvents_NoEvents(t *testing.T) {
@@ -366,7 +366,7 @@ Events:          <none>
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 func TestKubectl_PodEvents_SomeEvents(t *testing.T) {
@@ -394,7 +394,7 @@ Events:
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
 	assert.Equal(t, "kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 
 var calls [][]string
