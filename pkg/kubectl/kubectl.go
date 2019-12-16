@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/liamg/tml"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -52,20 +53,13 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out, eout io.Wri
 	if len(e.Namespace) > 0 {
 		args["namespace"] = e.Namespace
 	}
-	if content, exist := os.LookupEnv(envKubeConfigContentBase64); exist {
-		// Not a file, create file from Base64 encoded content
-		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envKubeConfigContentBase64)
-		bytes, err := base64.StdEncoding.DecodeString(content)
-		if err != nil {
-			_, _ = fmt.Fprintln(eout, tml.Sprintf("Failed to decode content %+v", err))
-			return nil
-		}
-		args[kubeConfigArg] = writeKubeConfigFile(tempDir, kubeConfigArg, bytes)
-	} else if content, exist := os.LookupEnv(envKubeConfigContent); exist {
-		// Not a file, create file from content
-		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envKubeConfigContent)
-		args[kubeConfigArg] = writeKubeConfigFile(tempDir, kubeConfigArg, []byte(content))
-	} else if len(e.Kubeconfig) > 0 {
+
+	if file, err := getKubeconfigFileFromEnvs(tempDir, out); err != nil {
+		_, _ = fmt.Fprintln(eout, err.Error())
+	} else {
+		args[kubeConfigArg] = file
+	}
+	if len(e.Kubeconfig) > 0 {
 		args[kubeConfigArg] = e.Kubeconfig
 	}
 	if _, exists := args[kubeConfigArg]; exists {
@@ -75,10 +69,10 @@ func argsFromEnvironment(e *config.Environment, tempDir string, out, eout io.Wri
 	return args
 }
 
-func writeKubeConfigFile(tempDir string, kubeConfigArg string, content []byte) string {
-	kubeconfigFile := filepath.Join(tempDir, kubeConfigArg)
-	_ = ioutil.WriteFile(kubeconfigFile, content, 0777)
-	return kubeconfigFile
+func writeKubeConfigFile(tempDir string, content []byte) (string, error) {
+	kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
+	err := ioutil.WriteFile(kubeconfigFile, content, 0777)
+	return kubeconfigFile, err
 }
 
 func (k kubectl) defaultArgs() (args []string) {
@@ -183,3 +177,30 @@ var _ Kubectl = &kubectl{}
 
 const envKubeConfigContent = "KUBECONFIG_CONTENT"
 const envKubeConfigContentBase64 = "KUBECONFIG_CONTENT_BASE64"
+
+func getKubeconfigFileFromEnvs(tempDir string, out io.Writer) (string, error) {
+	if content, exists := getEnv(envKubeConfigContentBase64, out); exists {
+		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
+			return "", errors.Wrap(err, "Failed to decode content")
+		} else {
+			return writeKubeConfigFile(tempDir, decoded)
+		}
+	}
+
+	if content, exists := getEnv(envKubeConfigContent, out); exists {
+		return writeKubeConfigFile(tempDir, []byte(content))
+	}
+	return "", errors.New("failed to get kubeconfig from environment")
+}
+
+func getEnv(env string, out io.Writer) (string, bool) {
+	if value, exists := os.LookupEnv(env); exists {
+		if len(value) > 0 {
+			_, _ = fmt.Fprintf(out, "Found content in env: %s\n", env)
+			return value, true
+		} else {
+			_, _ = fmt.Fprintf(out, "environment variable %s is set but has no value\n", env)
+		}
+	}
+	return "", false
+}
