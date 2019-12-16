@@ -28,7 +28,7 @@ We appreciate your contribution. Please refer to our [contributing guidelines](C
 
 ## Get build-tools
 
-- [On my machine](https://buildtool.github.io/install/)
+- [On my machine](https://buildtool.github.io/installation/)
 
 ## Documentation
 
