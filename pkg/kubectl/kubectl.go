@@ -23,7 +23,7 @@ type Kubectl interface {
 	Apply(input string) error
 	Cleanup()
 	DeploymentExists(name string) bool
-	RolloutStatus(name string) bool
+	RolloutStatus(name, timeout string) bool
 	DeploymentEvents(name string) string
 	PodEvents(name string) string
 }
@@ -114,9 +114,9 @@ func (k kubectl) DeploymentExists(name string) bool {
 	return c.Execute() == nil
 }
 
-func (k kubectl) RolloutStatus(name string) bool {
+func (k kubectl) RolloutStatus(name, timeout string) bool {
 	args := k.defaultArgs()
-	args = append(args, "rollout", "status", "deployment", "--timeout=2m", name)
+	args = append(args, "rollout", "status", "deployment", fmt.Sprintf("--timeout=%s", timeout), name)
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
 	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
 	c.SetArgs(args)

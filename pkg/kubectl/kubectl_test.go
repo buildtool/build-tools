@@ -147,7 +147,7 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
-	result := k.RolloutStatus("image")
+	result := k.RolloutStatus("image", "2m")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
@@ -165,7 +165,7 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
-	result := k.RolloutStatus("image")
+	result := k.RolloutStatus("image", "2m")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
@@ -186,11 +186,11 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
-	result := k.RolloutStatus("image")
+	result := k.RolloutStatus("image", "3m")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
-	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
+	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "3m0s"}, calls[0])
+	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=3m image\n", out.String())
 	assert.Equal(t, "failed to get kubeconfig from environment\n", eout.String())
 }
 

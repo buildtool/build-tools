@@ -21,7 +21,7 @@ func (m *MockKubectl) DeploymentExists(name string) bool {
 	return m.Deployment
 }
 
-func (m *MockKubectl) RolloutStatus(name string) bool {
+func (m *MockKubectl) RolloutStatus(name, timeout string) bool {
 	return m.Status
 }
 

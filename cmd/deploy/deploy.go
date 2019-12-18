@@ -31,10 +31,11 @@ func main() {
 }
 
 func doDeploy() int {
-	var context, namespace string
+	var context, namespace, timeout string
 	const (
 		contextUsage   = "override the context for default environment deployment target"
 		namespaceUsage = "override the namespace for default environment deployment target"
+		timeoutUsage   = "override the default deployment timeout (2 minutes)"
 	)
 	set := flag.NewFlagSet("deploy", flag.ExitOnError)
 	set.Usage = func() {
@@ -45,6 +46,8 @@ func doDeploy() int {
 	set.StringVar(&context, "c", "", contextUsage+" (shorthand)")
 	set.StringVar(&namespace, "namespace", "", namespaceUsage)
 	set.StringVar(&namespace, "n", "", namespaceUsage+" (shorthand)")
+	set.StringVar(&timeout, "timeout", "", timeoutUsage)
+	set.StringVar(&timeout, "t", "", timeoutUsage+" (shorthand)")
 	_ = set.Parse(os.Args[1:])
 	if set.NArg() < 1 {
 		set.Usage()
@@ -67,6 +70,9 @@ func doDeploy() int {
 				if namespace != "" {
 					env.Namespace = namespace
 				}
+				if timeout == "" {
+					timeout = "2m"
+				}
 				currentCI := cfg.CurrentCI()
 				if !ci.IsValid(currentCI) {
 					_, _ = fmt.Println(tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
@@ -76,7 +82,7 @@ func doDeploy() int {
 				tstamp := time.Now().Format(time.RFC3339)
 				client := kubectl.New(env, os.Stdout, os.Stderr)
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, os.Stdout, os.Stderr); err != nil {
+				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, os.Stdout, os.Stderr, timeout); err != nil {
 					fmt.Println(err.Error())
 					return -4
 				}
