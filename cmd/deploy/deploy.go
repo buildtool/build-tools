@@ -35,7 +35,7 @@ func doDeploy() int {
 	const (
 		contextUsage   = "override the context for default environment deployment target"
 		namespaceUsage = "override the namespace for default environment deployment target"
-		timeoutUsage   = "override the default deployment timeout (2 minutes)"
+		timeoutUsage   = "override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)"
 	)
 	set := flag.NewFlagSet("deploy", flag.ExitOnError)
 	set.Usage = func() {

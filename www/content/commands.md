@@ -42,7 +42,7 @@ Deploys the built application to a Kubernetes cluster. Normal usage `deploy <env
 | :--------------------------------- | :-------------------------------------------------------------------------------|
 | `-c/--context`                     | Use a different context than the one found in configuration                     |
 | `-n/--namespace`                   | Use a different namespace than the one found in configuration                   |
-| `-t/--timeout`                     | Override the default deployment waiting time for completion (default 2 minutes) |
+| `-t/--timeout`                     | Override the default deployment waiting time for completion (default 2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h) |
 
 ```sh
 $ deploy -n testing_namespace local 
