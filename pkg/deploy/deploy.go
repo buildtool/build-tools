@@ -11,14 +11,14 @@ import (
 	"strings"
 )
 
-func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
+func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer, timeout string) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
 	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client, out, eout); err != nil {
 		return err
 	}
 
 	if client.DeploymentExists(buildName) {
-		if !client.RolloutStatus(buildName) {
+		if !client.RolloutStatus(buildName, timeout) {
 			_, _ = fmt.Fprint(out, "Rollout failed. Fetching events.")
 			_, _ = fmt.Fprint(out, client.DeploymentEvents(buildName))
 			_, _ = fmt.Fprint(out, client.PodEvents(buildName))

@@ -163,3 +163,30 @@ environments:
 	os.Args = []string{"deploy", "-c", "other", "-n", "dev", "dummy"}
 	main()
 }
+
+func TestDeploy_Timeout(t *testing.T) {
+	exitFunc = func(code int) {
+		assert.Equal(t, -4, code)
+	}
+
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "dummy")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
+	oldPwd, _ := os.Getwd()
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+environments:
+  dummy:
+    context: missing
+    namespace: none
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	err := os.Chdir(name)
+	assert.NoError(t, err)
+	defer func() { _ = os.Chdir(oldPwd) }()
+
+	os.Args = []string{"deploy", "-t", "20s", "dummy"}
+	main()
+}
