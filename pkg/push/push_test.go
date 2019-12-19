@@ -136,7 +136,7 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:feature1\x1b[39m'\x1b[0m\nPush successful\n", out.String())
+	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:feature1\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -157,7 +157,7 @@ func TestPush_PushMasterBranch(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\nPush successful\n", out.String())
+	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -179,7 +179,7 @@ func TestPush_DockerTagOverride(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:override"}, client.Images)
-	assert.Equal(t, "Logged in\noverriding docker tags with value from env DOCKER_TAG override\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:override\x1b[39m'\x1b[0m\nPush successful\n", out.String())
+	assert.Equal(t, "Logged in\noverriding docker tags with value from env DOCKER_TAG override\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:override\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -210,7 +210,7 @@ COPY --from=test file2 .
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:test", "repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:build\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:test\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\nPush successful\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\nPush successful\n", out.String())
+	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:build\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:test\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -270,7 +270,7 @@ func TestPush_Output(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\nThe push refers to repository [registry.gitlab.com/project/image]\nc49bda176134: Preparing\ncb13bd9b95b6: Preparing\n5905e8d02856: Preparing\ne3ef84c7b541: Preparing\n6096558c3d50: Preparing\n3b12aae5d4ca: Preparing\nac7b6b272904: Preparing\n5b1304247ae3: Preparing\n75e70aa52609: Preparing\ndda151859818: Preparing\nfbd2732ad777: Preparing\nba9de9d8475e: Preparing\ndda151859818: Waiting\n3b12aae5d4ca: Waiting\nac7b6b272904: Waiting\nba9de9d8475e: Waiting\n5b1304247ae3: Waiting\n75e70aa52609: Waiting\nfbd2732ad777: Waiting\n6096558c3d50: Layer already exists\nc49bda176134: Layer already exists\ne3ef84c7b541: Layer already exists\ncb13bd9b95b6: Pushing [=>                                                 ]     512B/13.09kB\ncb13bd9b95b6: Pushing [==================================================>]   16.9kB\n5905e8d02856: Pushing [=======>                                           ]     512B/3.511kB\n5905e8d02856: Pushing [==================================================>]  6.144kB\nac7b6b272904: Layer already exists\n3b12aae5d4ca: Layer already exists\n5b1304247ae3: Layer already exists\n75e70aa52609: Layer already exists\ndda151859818: Layer already exists\nfbd2732ad777: Layer already exists\nba9de9d8475e: Layer already exists\n5905e8d02856: Pushed\ncb13bd9b95b6: Pushed\ncd38b8b25e3e62d05589ad6b4639e2e222086604: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828\n", out.String())
+	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
