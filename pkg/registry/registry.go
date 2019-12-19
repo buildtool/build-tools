@@ -54,15 +54,7 @@ func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eo
 				_, _ = fmt.Fprintf(eout, "Unable to parse response: %s, Error: %v\n", string(response), err)
 				return err
 			} else {
-				if len(r.Status) != 0 {
-					if len(r.Id) == 0 {
-						_, _ = fmt.Fprintln(ow, r.Status)
-					} else if len(r.Progress) == 0 {
-						_, _ = fmt.Fprintf(ow, "%s: %s\n", r.Id, r.Status)
-					} else {
-						_, _ = fmt.Fprintf(ow, "%s: %s %s\n", r.Id, r.Status, r.Progress)
-					}
-				} else if r.ErrorDetail != nil {
+				if r.ErrorDetail != nil {
 					return errors.New(r.ErrorDetail.Message)
 				}
 			}
