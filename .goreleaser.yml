@@ -93,6 +93,6 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - 'Merge'
+    - '^Merge'
     - '^docs:'
     - '^test:'
