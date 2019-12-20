@@ -39,7 +39,7 @@ steps:
     branches: "master"
 
   - command: |-
-      ${BUILD_TOOLS_PATH}/deploy prod
+      deploy prod
     label: Deploy PROD
     branches: "master"
     plugins:
