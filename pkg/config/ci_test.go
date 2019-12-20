@@ -97,7 +97,7 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 func TestIdentify_Buildkite(t *testing.T) {
 	defer pkg.SetEnv("BUILDKITE_COMMIT", "abc123")()
 	defer pkg.SetEnv("BUILDKITE_PIPELINE_SLUG", "reponame")()
-	defer pkg.SetEnv("BUILDKITE_BRANCH_NAME", "feature/first test")()
+	defer pkg.SetEnv("BUILDKITE_BRANCH", "feature/first test")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)

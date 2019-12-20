@@ -4,7 +4,7 @@ type Buildkite struct {
 	*Common
 	CICommit     string `env:"BUILDKITE_COMMIT"`
 	CIBuildName  string `env:"BUILDKITE_PIPELINE_SLUG"`
-	CIBranchName string `env:"BUILDKITE_BRANCH_NAME"`
+	CIBranchName string `env:"BUILDKITE_BRANCH"`
 }
 
 var _ CI = &Buildkite{}

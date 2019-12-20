@@ -27,13 +27,13 @@ steps:
       build
       push
     label: build
-
+    plugins:
+      - docker#v3.3.0:
+          image: buildtool/build-tools
+          volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+          propagate-environment: true
   - wait
-
-  - command: |-
-      ${BUILD_TOOLS_PATH}/deploy staging
-    label: Deploy to staging
-    branches: "master"
 
   - block: ":rocket: Release PROD"
     branches: "master"
@@ -42,6 +42,12 @@ steps:
       ${BUILD_TOOLS_PATH}/deploy prod
     label: Deploy PROD
     branches: "master"
+    plugins:
+      - docker#v3.3.0:
+          image: buildtool/build-tools
+          volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+          propagate-environment: true
 ```
 
 ### Gitlab CI
