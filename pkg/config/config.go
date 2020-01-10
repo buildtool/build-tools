@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/registry"
@@ -8,6 +9,7 @@ import (
 	"github.com/caarlos0/env"
 	"github.com/imdario/mergo"
 	"github.com/liamg/tml"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -56,8 +58,12 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 	if content, ok := os.LookupEnv("BUILDTOOLS_CONTENT"); ok {
 		_, _ = fmt.Fprintln(out, "Parsing config from env: BUILDTOOLS_CONTENT")
-		if err := parseConfig([]byte(content), cfg); err != nil {
-			return cfg, err
+		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
+			return nil, errors.Wrap(err, "Failed to decode content")
+		} else {
+			if err := parseConfig([]byte(decoded), cfg); err != nil {
+				return cfg, err
+			}
 		}
 	} else {
 		err := parseConfigFiles(dir, out, func(dir string) error {
