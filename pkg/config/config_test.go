@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg"
@@ -140,7 +141,7 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -150,6 +151,22 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+}
+
+func TestLoad_YAML_From_Env_Invalid_Base64(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+environments:
+  local:
+    context: docker-desktop
+`
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
+
+	out := &bytes.Buffer{}
+	_, err := Load(name, out)
+	assert.Error(t, err)
+	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 13")
 }
 
 func TestLoad_YAML_From_Env(t *testing.T) {
@@ -163,7 +180,7 @@ environments:
     context: docker-desktop
     namespace: dev
 `
-	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
