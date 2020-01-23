@@ -43,10 +43,12 @@ func (r Github) password() string {
 	}
 	return r.Password
 }
+func (r Github) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}
+}
 
 func (r Github) GetAuthInfo() string {
-	auth := types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}
-	authBytes, _ := json.Marshal(auth)
+	authBytes, _ := json.Marshal(r.GetAuthConfig())
 	return base64.URLEncoding.EncodeToString(authBytes)
 }
 

@@ -28,7 +28,7 @@ func (r Dockerhub) Configured() bool {
 }
 
 func (r Dockerhub) Login(client docker.Client, out io.Writer) error {
-	if ok, err := client.RegistryLogin(context.Background(), r.authConfig()); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
 		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
@@ -37,13 +37,13 @@ func (r Dockerhub) Login(client docker.Client, out io.Writer) error {
 	}
 }
 
-func (r Dockerhub) GetAuthInfo() string {
-	authBytes, _ := json.Marshal(r.authConfig())
-	return base64.URLEncoding.EncodeToString(authBytes)
+func (r Dockerhub) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{Username: r.Username, Password: r.Password}
 }
 
-func (r Dockerhub) authConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.Password}
+func (r Dockerhub) GetAuthInfo() string {
+	authBytes, _ := json.Marshal(r.GetAuthConfig())
+	return base64.URLEncoding.EncodeToString(authBytes)
 }
 
 func (r Dockerhub) RegistryUrl() string {
