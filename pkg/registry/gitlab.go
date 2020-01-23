@@ -37,9 +37,12 @@ func (r Gitlab) Login(client docker.Client, out io.Writer) error {
 	}
 }
 
+func (r Gitlab) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}
+}
+
 func (r Gitlab) GetAuthInfo() string {
-	auth := types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}
-	authBytes, _ := json.Marshal(auth)
+	authBytes, _ := json.Marshal(r.GetAuthConfig())
 	return base64.URLEncoding.EncodeToString(authBytes)
 }
 

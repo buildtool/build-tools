@@ -2,6 +2,7 @@ package push
 
 import (
 	"bytes"
+	"docker.io/go-docker/api/types"
 	"errors"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg"
@@ -366,6 +367,10 @@ func (m mockRegistry) Name() string {
 
 func (m mockRegistry) Login(client docker.Client, out io.Writer) error {
 	return nil
+}
+
+func (m mockRegistry) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{}
 }
 
 func (m mockRegistry) GetAuthInfo() string {

@@ -28,7 +28,7 @@ func (r *Quay) Configured() bool {
 }
 
 func (r *Quay) Login(client docker.Client, out io.Writer) error {
-	if ok, err := client.RegistryLogin(context.Background(), r.authConfig()); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
 		_, _ = fmt.Fprintln(out, ok.Status)
 		return nil
 	} else {
@@ -36,14 +36,13 @@ func (r *Quay) Login(client docker.Client, out io.Writer) error {
 	}
 }
 
-func (r Quay) GetAuthInfo() string {
-	auth := r.authConfig()
-	authBytes, _ := json.Marshal(auth)
-	return base64.URLEncoding.EncodeToString(authBytes)
+func (r Quay) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "quay.io"}
 }
 
-func (r Quay) authConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "quay.io"}
+func (r Quay) GetAuthInfo() string {
+	authBytes, _ := json.Marshal(r.GetAuthConfig())
+	return base64.URLEncoding.EncodeToString(authBytes)
 }
 
 func (r Quay) RegistryUrl() string {

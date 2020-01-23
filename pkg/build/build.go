@@ -81,6 +81,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 
 	currentRegistry := cfg.CurrentRegistry()
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>", currentRegistry.Name()))
+	authConfigs := make(map[string]types.AuthConfig)
 	if skipLogin {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <yellow>disabled</yellow>"))
 	} else {
@@ -89,6 +90,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -4
 		}
+		authConfigs[currentRegistry.Name()] = currentRegistry.GetAuthConfig()
 	}
 
 	var buf bytes.Buffer
@@ -127,7 +129,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, out, eout); err != nil {
+		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, out); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -7
 		}
@@ -152,7 +154,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 
 		caches = append([]string{branchTag, latestTag}, caches...)
 	}
-	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", out, eout); err != nil {
+	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", authConfigs, out); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -7
 	}
@@ -160,17 +162,18 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	return 0
 }
 
-func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, out, eout io.Writer) error {
+func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, out io.Writer) error {
 	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
-		BuildArgs:  args,
-		CacheFrom:  caches,
-		Dockerfile: dockerfile,
-		Memory:     3 * 1024 * 1024 * 1024,
-		MemorySwap: -1,
-		Remove:     true,
-		ShmSize:    256 * 1024 * 1024,
-		Tags:       tags,
-		Target:     target,
+		AuthConfigs: authConfigs,
+		BuildArgs:   args,
+		CacheFrom:   caches,
+		Dockerfile:  dockerfile,
+		Memory:      3 * 1024 * 1024 * 1024,
+		MemorySwap:  -1,
+		Remove:      true,
+		ShmSize:     256 * 1024 * 1024,
+		Tags:        tags,
+		Target:      target,
 	})
 
 	if err != nil {

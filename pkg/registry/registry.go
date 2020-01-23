@@ -15,6 +15,7 @@ type Registry interface {
 	Configured() bool
 	Name() string
 	Login(client docker.Client, out io.Writer) error
+	GetAuthConfig() types.AuthConfig
 	GetAuthInfo() string
 	RegistryUrl() string
 	Create(repository string) error

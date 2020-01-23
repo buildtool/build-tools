@@ -77,9 +77,12 @@ func (r *ECR) Login(client docker.Client, out io.Writer) error {
 	}
 }
 
+func (r *ECR) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{Username: r.username, Password: r.password}
+}
+
 func (r *ECR) GetAuthInfo() string {
-	auth := types.AuthConfig{Username: r.username, Password: r.password}
-	authBytes, _ := json.Marshal(auth)
+	authBytes, _ := json.Marshal(r.GetAuthConfig())
 	return base64.URLEncoding.EncodeToString(authBytes)
 }
 

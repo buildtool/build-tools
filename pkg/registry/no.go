@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"docker.io/go-docker/api/types"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/liamg/tml"
@@ -20,6 +21,10 @@ func (n NoDockerRegistry) Name() string {
 func (n NoDockerRegistry) Login(client docker.Client, out io.Writer) error {
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Authentication <yellow>not supported</yellow> for registry <green>%s</green>", n.Name()))
 	return nil
+}
+
+func (n NoDockerRegistry) GetAuthConfig() types.AuthConfig {
+	return types.AuthConfig{}
 }
 
 func (n NoDockerRegistry) GetAuthInfo() string {
