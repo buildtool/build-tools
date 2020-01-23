@@ -90,7 +90,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -4
 		}
-		authConfigs[currentRegistry.Name()] = currentRegistry.GetAuthConfig()
+		authConfigs[currentRegistry.RegistryUrl()] = currentRegistry.GetAuthConfig()
 	}
 
 	var buf bytes.Buffer
