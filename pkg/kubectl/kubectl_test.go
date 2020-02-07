@@ -108,6 +108,10 @@ func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	eout := &bytes.Buffer{}
 	calls = [][]string{}
 	cmdError = nil
+	o := `NAME          READY   UP-TO-DATE   AVAILABLE   AGE
+api           1/1     1            1           2d11h
+`
+	cmdOut = &o
 	newKubectlCmd = mockCmd
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
@@ -115,8 +119,8 @@ func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	result := k.DeploymentExists("image")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default"}, calls[0])
-	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
+	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--ignore-not-found"}, calls[0])
+	assert.Equal(t, "kubectl --context missing --namespace default get deployment image --ignore-not-found\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -133,8 +137,8 @@ func TestKubectl_DeploymentExistsFalse(t *testing.T) {
 	result := k.DeploymentExists("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default"}, calls[0])
-	assert.Equal(t, "kubectl --context missing --namespace default get deployment image\n", out.String())
+	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--ignore-not-found"}, calls[0])
+	assert.Equal(t, "kubectl --context missing --namespace default get deployment image --ignore-not-found\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
@@ -297,7 +301,7 @@ Name:               gpe-core
 Namespace:          default
 Events:          <none>
 `
-	events = &e
+	cmdOut = &e
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
@@ -326,7 +330,7 @@ Events:
   Normal  ScalingReplicaSet  61s   deployment-controller  Scaled up replica set gpe-core-c8798ff88 to 1
   Normal  ScalingReplicaSet  61s   deployment-controller  Scaled down replica set gpe-core-5cb459ff7d to 0
 `
-	events = &e
+	cmdOut = &e
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
@@ -368,7 +372,7 @@ Name:               gpe-core
 Namespace:          default
 Events:          <none>
 `
-	events = &e
+	cmdOut = &e
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
@@ -396,7 +400,7 @@ Events:
   Normal   Created    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Created container
   Normal   Started    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Started container
   Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container`
-	events = &e
+	cmdOut = &e
 
 	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
 
@@ -410,13 +414,14 @@ Events:
 
 var calls [][]string
 var cmdError *string
-var events *string
+var cmdOut *string
 var fatal = false
 
 func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 	var ctx, ns, file *string
 	var timeout *time.Duration
 	var showEvents *bool
+	var ignoreNotFound *bool
 	var selector *string
 	var kubeconfig *string
 
@@ -442,6 +447,9 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 			if *showEvents {
 				call = append(call, "--show-events", "true")
 			}
+			if *ignoreNotFound {
+				call = append(call, "--ignore-not-found")
+			}
 			if *selector != "" {
 				call = append(call, "--selector", fmt.Sprintf("%v", *selector))
 			}
@@ -455,8 +463,8 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 			if cmdError != nil {
 				return errors.New(*cmdError)
 			}
-			if events != nil {
-				_, _ = out.Write([]byte(*events))
+			if cmdOut != nil {
+				_, _ = out.Write([]byte(*cmdOut))
 			}
 			return nil
 		},
@@ -467,6 +475,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 	file = cmd.Flags().StringP("filename", "f", "", "")
 	timeout = cmd.Flags().DurationP("timeout", "t", 0*time.Second, "")
 	showEvents = cmd.Flags().BoolP("show-events", "", false, "")
+	ignoreNotFound = cmd.Flags().BoolP("ignore-not-found", "", false, "")
 	selector = cmd.Flags().StringP("selector", "l", "", "")
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 
