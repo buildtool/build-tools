@@ -107,11 +107,13 @@ func (k kubectl) Cleanup() {
 
 func (k kubectl) DeploymentExists(name string) bool {
 	args := k.defaultArgs()
-	args = append(args, "get", "deployment", name)
+	args = append(args, "get", "deployment", name, "--ignore-not-found")
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
-	c := newKubectlCmd(os.Stdin, k.out, k.eout)
+	buffer := bytes.Buffer{}
+	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
 	c.SetArgs(args)
-	return c.Execute() == nil
+	_ = c.Execute()
+	return buffer.Len() > 0
 }
 
 func (k kubectl) RolloutStatus(name, timeout string) bool {
