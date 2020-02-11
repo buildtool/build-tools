@@ -1,3 +1,7 @@
+FROM golang:1.13 as go-build
+
+RUN go get sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator
+
 FROM debian:stretch-slim
 
 RUN apt-get update && \
@@ -6,3 +10,5 @@ RUN apt-get update && \
 
 
 COPY build push deploy kubecmd /usr/local/bin/
+COPY --from=go-build /go/bin/aws-iam-authenticator /usr/local/bin/
+
