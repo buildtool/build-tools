@@ -38,7 +38,7 @@ func ParseDockerignore(dir string) ([]string, error) {
 	if file, err := ioutil.ReadFile(filePath); err != nil {
 		return defaultIgnore, err
 	} else {
-		var result []string
+		var result = defaultIgnore
 		scanner := bufio.NewScanner(bytes.NewReader(file))
 		for scanner.Scan() {
 			text := scanner.Text()
