@@ -13,10 +13,10 @@ func TestParseDockerignore_FileMissing(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
-	var empty []string
+	defaultIgnores := []string{"k8s"}
 	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
-	assert.Equal(t, empty, result)
+	assert.Equal(t, defaultIgnores, result)
 }
 
 func TestParseDockerignore_EmptyFile(t *testing.T) {
@@ -26,10 +26,10 @@ func TestParseDockerignore_EmptyFile(t *testing.T) {
 	content := ``
 	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
-	var empty []string
+	defaultIgnores := []string{"k8s"}
 	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
-	assert.Equal(t, empty, result)
+	assert.Equal(t, defaultIgnores, result)
 }
 
 func TestParseDockerignore_UnreadableFile(t *testing.T) {
@@ -53,5 +53,5 @@ node_modules
 
 	result, err := ParseDockerignore(name)
 	assert.NoError(t, err)
-	assert.Equal(t, []string{"node_modules", "*.swp"}, result)
+	assert.Equal(t, []string{"k8s", "node_modules", "*.swp"}, result)
 }
