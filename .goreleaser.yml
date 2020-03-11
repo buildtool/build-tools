@@ -16,6 +16,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
   - id: push
@@ -26,6 +27,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
   - id: deploy
@@ -36,6 +38,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
   - id: kubecmd
