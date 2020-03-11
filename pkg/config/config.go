@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 type Config struct {
@@ -147,7 +148,7 @@ func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 		return err
 	}
 	var files []string
-	for parent != "/" {
+	for !strings.HasSuffix(filepath.Clean(parent), string(os.PathSeparator)) {
 		filename := filepath.Join(parent, ".buildtools.yaml")
 		if _, err := os.Stat(filename); !os.IsNotExist(err) {
 			files = append(files, filename)
