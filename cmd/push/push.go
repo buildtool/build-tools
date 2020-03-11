@@ -3,16 +3,16 @@ package main
 import (
 	"github.com/buildtool/build-tools/pkg/push"
 	ver "github.com/buildtool/build-tools/pkg/version"
-	"io"
+	"github.com/mattn/go-colorable"
 	"os"
 )
 
 var (
-	version            = "dev"
-	commit             = "none"
-	date               = "unknown"
-	exitFunc           = os.Exit
-	out      io.Writer = os.Stdout
+	version  = "dev"
+	commit   = "none"
+	date     = "unknown"
+	exitFunc = os.Exit
+	out      = colorable.NewColorableStdout()
 )
 
 func main() {
@@ -20,6 +20,6 @@ func main() {
 		exitFunc(0)
 	} else {
 		dir, _ := os.Getwd()
-		exitFunc(push.Push(dir, os.Stdout, os.Stderr, os.Args[1:]...))
+		exitFunc(push.Push(dir, out, colorable.NewColorableStderr(), os.Args[1:]...))
 	}
 }
