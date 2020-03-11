@@ -58,7 +58,7 @@ func createBuildContext(dir string) (io.ReadCloser, error) {
 func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, args ...string) int {
 	var dockerfile string
 	var buildArgsFlags arrayFlags
-	var skipLogin bool
+	var skipLogin, noPull bool
 	const (
 		defaultDockerfile = "Dockerfile"
 		usage             = "name of the Dockerfile to use"
@@ -69,6 +69,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
 	set.Var(&buildArgsFlags, "build-arg", "")
 	set.BoolVar(&skipLogin, "skiplogin", false, "disable login to docker registry")
+	set.BoolVar(&noPull, "nopull", false, "disable pulling latest from docker registry")
 
 	_ = set.Parse(args)
 	cfg, err := config.Load(dir, out)
@@ -129,7 +130,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, out); err != nil {
+		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, out, !noPull); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
 			return -7
 		}
@@ -154,7 +155,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 
 		caches = append([]string{branchTag, latestTag}, caches...)
 	}
-	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", authConfigs, out); err != nil {
+	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, tags, caches, "", authConfigs, out, !noPull); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -7
 	}
@@ -162,12 +163,13 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	return 0
 }
 
-func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, out io.Writer) error {
+func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, out io.Writer, pullParent bool) error {
 	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
 		AuthConfigs: authConfigs,
 		BuildArgs:   args,
 		CacheFrom:   caches,
 		Dockerfile:  dockerfile,
+		PullParent:  pullParent,
 		Memory:      3 * 1024 * 1024 * 1024,
 		MemorySwap:  -1,
 		Remove:      true,
