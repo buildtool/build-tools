@@ -40,6 +40,24 @@ func TestGit_Identify(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestGit_Identify_Subdirectory(t *testing.T) {
+	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(dir) }()
+
+	hash, _ := InitRepoWithCommit(dir)
+
+	subdir := filepath.Join(dir, "subdir")
+	_ = os.Mkdir(subdir, 0777)
+
+	out := &bytes.Buffer{}
+	result := vcs.Identify(subdir, out)
+	assert.NotNil(t, result)
+	assert.Equal(t, "Git", result.Name())
+	assert.Equal(t, hash.String(), result.Commit())
+	assert.Equal(t, "master", result.Branch())
+	assert.Equal(t, "", out.String())
+}
+
 func TestGit_MissingRepo(t *testing.T) {
 	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(dir)
@@ -51,7 +69,7 @@ func TestGit_MissingRepo(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
-	assert.Equal(t, "Unable to open repository: repository does not exist\n", out.String())
+	assert.Equal(t, "", out.String())
 }
 
 func TestGit_NoCommit(t *testing.T) {

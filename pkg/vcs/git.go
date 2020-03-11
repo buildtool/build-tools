@@ -4,8 +4,6 @@ import (
 	"fmt"
 	git2 "gopkg.in/src-d/go-git.v4"
 	"io"
-	"os"
-	"path/filepath"
 )
 
 type git struct {
@@ -14,12 +12,9 @@ type git struct {
 }
 
 func (v *git) Identify(dir string, out io.Writer) bool {
-	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
-		return false
-	}
-	repo, err := git2.PlainOpen(dir)
+	options := &git2.PlainOpenOptions{DetectDotGit: true}
+	repo, err := git2.PlainOpenWithOptions(dir, options)
 	if err != nil {
-		_, _ = fmt.Fprintf(out, "Unable to open repository: %s\n", err)
 		return false
 	}
 	v.repo = repo
