@@ -29,15 +29,16 @@ func Tag(registry, image, tag string) string {
 }
 
 func ParseDockerignore(dir string) ([]string, error) {
-	var empty []string
+	var defaultIgnore = []string{"k8s"}
 	filePath := filepath.Join(dir, ".dockerignore")
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return empty, nil
+		return defaultIgnore, nil
 	}
+
 	if file, err := ioutil.ReadFile(filePath); err != nil {
-		return empty, err
+		return defaultIgnore, err
 	} else {
-		var result []string
+		var result = defaultIgnore
 		scanner := bufio.NewScanner(bytes.NewReader(file))
 		for scanner.Scan() {
 			text := scanner.Text()
