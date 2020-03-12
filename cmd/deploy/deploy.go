@@ -9,17 +9,17 @@ import (
 	"github.com/buildtool/build-tools/pkg/kubectl"
 	ver "github.com/buildtool/build-tools/pkg/version"
 	"github.com/liamg/tml"
-	"io"
+	"github.com/mattn/go-colorable"
 	"os"
 	"time"
 )
 
 var (
-	version            = "dev"
-	commit             = "none"
-	date               = "unknown"
-	exitFunc           = os.Exit
-	out      io.Writer = os.Stdout
+	version  = "dev"
+	commit   = "none"
+	date     = "unknown"
+	exitFunc = os.Exit
+	out      = colorable.NewColorableStdout()
 )
 
 func main() {
@@ -39,7 +39,8 @@ func doDeploy() int {
 	)
 	set := flag.NewFlagSet("deploy", flag.ExitOnError)
 	set.Usage = func() {
-		fmt.Printf("Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
+		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
+		set.SetOutput(out)
 		set.PrintDefaults()
 	}
 	set.StringVar(&context, "context", "", contextUsage)
@@ -56,12 +57,12 @@ func doDeploy() int {
 		environment := set.Args()[0]
 		dir, _ := os.Getwd()
 
-		if cfg, err := config.Load(dir, os.Stdout); err != nil {
-			fmt.Println(err.Error())
+		if cfg, err := config.Load(dir, out); err != nil {
+			_, _ = fmt.Fprintln(out, err.Error())
 			return -1
 		} else {
 			if env, err := cfg.CurrentEnvironment(environment); err != nil {
-				fmt.Println(err.Error())
+				_, _ = fmt.Fprintln(out, err.Error())
 				return -2
 			} else {
 				if context != "" {
@@ -75,15 +76,15 @@ func doDeploy() int {
 				}
 				currentCI := cfg.CurrentCI()
 				if !ci.IsValid(currentCI) {
-					_, _ = fmt.Println(tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+					_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
 					return -3
 				}
 
 				tstamp := time.Now().Format(time.RFC3339)
-				client := kubectl.New(env, os.Stdout, os.Stderr)
+				client := kubectl.New(env, out, colorable.NewColorableStderr())
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, os.Stdout, os.Stderr, timeout); err != nil {
-					fmt.Println(err.Error())
+				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
+					_, _ = fmt.Fprintln(out, err.Error())
 					return -4
 				}
 			}

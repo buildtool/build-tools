@@ -146,16 +146,17 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	calls = [][]string{}
+	cmdOut = nil
 	cmdError = nil
 	newKubectlCmd = mockCmd
 
-	k := New(&config.Environment{Context: "missing", Namespace: "default"}, out, eout)
+	k := New(&config.Environment{Context: "missing", Namespace: "other"}, out, eout)
 
 	result := k.RolloutStatus("image", "2m")
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
-	assert.Equal(t, "kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n", out.String())
+	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "other", "--timeout", "2m0s"}, calls[0])
+	assert.Equal(t, "kubectl --context missing --namespace other rollout status deployment --timeout=2m image\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 

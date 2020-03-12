@@ -96,7 +96,7 @@ func (k kubectl) Apply(input string) error {
 	}
 
 	args := append(k.defaultArgs(), "apply", "-f", file)
-	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
+	c := newKubectlCmd(os.Stdin, k.out, k.eout)
 	c.SetArgs(args)
 	return c.Execute()
 }
@@ -120,7 +120,7 @@ func (k kubectl) RolloutStatus(name, timeout string) bool {
 	args := k.defaultArgs()
 	args = append(args, "rollout", "status", "deployment", fmt.Sprintf("--timeout=%s", timeout), name)
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
-	c := newKubectlCmd(os.Stdin, os.Stdout, os.Stderr)
+	c := newKubectlCmd(os.Stdin, k.out, k.eout)
 	c.SetArgs(args)
 	success := true
 	cmdutil.BehaviorOnFatal(func(str string, code int) {

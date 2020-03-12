@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/kubecmd"
 	ver "github.com/buildtool/build-tools/pkg/version"
-	"io"
+	"github.com/mattn/go-colorable"
 	"os"
 )
 
 var (
-	version            = "dev"
-	commit             = "none"
-	date               = "unknown"
-	exitFunc           = os.Exit
-	out      io.Writer = os.Stdout
+	version  = "dev"
+	commit   = "none"
+	date     = "unknown"
+	exitFunc = os.Exit
+	out      = colorable.NewColorableStdout()
 )
 
 func main() {
@@ -21,8 +21,8 @@ func main() {
 		exitFunc(0)
 	} else {
 		dir, _ := os.Getwd()
-		if cmd := kubecmd.Kubecmd(dir, os.Stderr, os.Args[1:]...); cmd != nil {
-			fmt.Fprintf(out, *cmd)
+		if cmd := kubecmd.Kubecmd(dir, colorable.NewColorableStderr(), os.Args[1:]...); cmd != nil {
+			_, _ = fmt.Fprintf(out, *cmd)
 		}
 	}
 }
