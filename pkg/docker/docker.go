@@ -28,7 +28,7 @@ func Tag(registry, image, tag string) string {
 	return fmt.Sprintf("%s/%s:%s", registry, image, tag)
 }
 
-func ParseDockerignore(dir string) ([]string, error) {
+func ParseDockerignore(dir, dockerfile string) ([]string, error) {
 	var defaultIgnore = []string{"k8s"}
 	filePath := filepath.Join(dir, ".dockerignore")
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -42,7 +42,7 @@ func ParseDockerignore(dir string) ([]string, error) {
 		scanner := bufio.NewScanner(bytes.NewReader(file))
 		for scanner.Scan() {
 			text := scanner.Text()
-			if len(text) > 0 {
+			if len(text) > 0 && text != dockerfile {
 				result = append(result, text)
 			}
 		}

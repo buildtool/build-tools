@@ -30,32 +30,6 @@ type responsetype struct {
 }
 
 func DoBuild(dir string, out, eout io.Writer, args ...string) int {
-	if client, err := dockerClient(); err != nil {
-		_, _ = fmt.Fprintln(out, err.Error())
-		return -1
-	} else {
-		if buildContext, err := createBuildContext(dir); err != nil {
-			_, _ = fmt.Fprintln(out, err.Error())
-			return -2
-		} else {
-			return build(client, dir, buildContext, out, eout, args...)
-		}
-	}
-}
-
-var dockerClient = func() (docker.Client, error) {
-	return dkr.NewEnvClient()
-}
-
-func createBuildContext(dir string) (io.ReadCloser, error) {
-	if ignored, err := docker.ParseDockerignore(dir); err != nil {
-		return nil, err
-	} else {
-		return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
-	}
-}
-
-func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, args ...string) int {
 	var dockerfile string
 	var buildArgsFlags arrayFlags
 	var skipLogin, noPull bool
@@ -72,6 +46,33 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	set.BoolVar(&noPull, "nopull", false, "disable pulling latest from docker registry")
 
 	_ = set.Parse(args)
+
+	if client, err := dockerClient(); err != nil {
+		_, _ = fmt.Fprintln(out, err.Error())
+		return -1
+	} else {
+		if buildContext, err := createBuildContext(dir, dockerfile); err != nil {
+			_, _ = fmt.Fprintln(out, err.Error())
+			return -2
+		} else {
+			return build(client, dir, buildContext, out, eout, dockerfile, buildArgsFlags, skipLogin, noPull)
+		}
+	}
+}
+
+var dockerClient = func() (docker.Client, error) {
+	return dkr.NewEnvClient()
+}
+
+func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
+	if ignored, err := docker.ParseDockerignore(dir, dockerfile); err != nil {
+		return nil, err
+	} else {
+		return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
+	}
+}
+
+func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, dockerfile string, buildArgsFlags arrayFlags, skipLogin, noPull bool) int {
 	cfg, err := config.Load(dir, out)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
