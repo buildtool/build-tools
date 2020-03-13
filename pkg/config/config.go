@@ -46,6 +46,7 @@ type RegistryConfig struct {
 	Github    *registry.Github    `yaml:"github"`
 	Gitlab    *registry.Gitlab    `yaml:"gitlab"`
 	Quay      *registry.Quay      `yaml:"quay"`
+	GCR       *registry.GCR       `yaml:"gcr"`
 }
 
 type Environment struct {
@@ -101,10 +102,11 @@ func InitEmptyConfig() *Config {
 			Github:    &registry.Github{},
 			Gitlab:    &registry.Gitlab{},
 			Quay:      &registry.Quay{},
+			GCR:       &registry.GCR{},
 		},
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity, c.CI.Github}
-	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay}
+	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay, c.Registry.GCR}
 	return c
 }
 
