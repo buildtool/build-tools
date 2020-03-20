@@ -215,7 +215,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout,"Dockerfile", arrayFlags{}, false, false)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "Dockerfile", arrayFlags{}, false, false)
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)

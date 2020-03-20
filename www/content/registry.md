@@ -72,4 +72,4 @@ GCP Credentials must be supplied as [service account json key](https://cloud.goo
 | Parameter         | Description                       | Env variable           |
 | :---------------- | :-------------------------------- | :--------------------- |
 | `url`             | The GCR registry URL              | `GCR_URL`              |
-| `keyfileContent`  | ServiceAccount kyefile content    | `GCR_KEYFILE_CONTENT`  | 
+| `keyfileContent`  | ServiceAccount keyfile content    | `GCR_KEYFILE_CONTENT`  | 
