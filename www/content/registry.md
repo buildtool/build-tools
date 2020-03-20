@@ -16,6 +16,7 @@ The following registries are supported:
 | [`github`](#github) | [Github package registry](https://help.github.com/en/github/managing-packages-with-github-package-registry/about-github-package-registry) |
 | [`gitlab`](#gitlab) | [Gitlab container registry](https://docs.gitlab.com/ee/user/packages/container_registry/) |
 | [`quay`](#quay) | [Quay docker registry](https://docs.quay.io/) |
+| [`gcr`](#gcr) | [Google Container registry](https://cloud.google.com/container-registry) |
 
 ### dockerhub
 
@@ -63,3 +64,12 @@ To authenticate `token` or a combination of `username` and `password` must be pr
 | `repository`    | The repository part of the docker image name         | `QUAY_REPOSITORY`    |
 | `username`      | User to authenticate                                 | `QUAY_USERNAME`      |
 | `password`      | Password for `user` authentication                   | `QUAY_PASSWORD`      |
+
+### gcr
+
+GCP Credentials must be supplied as [service account json key](https://cloud.google.com/container-registry/docs/advanced-authentication#json-key) (Base64 encoded)
+
+| Parameter         | Description                       | Env variable           |
+| :---------------- | :-------------------------------- | :--------------------- |
+| `url`             | The GCR registry URL              | `GCR_URL`              |
+| `keyfileContent`  | ServiceAccount keyfile content    | `GCR_KEYFILE_CONTENT`  | 
