@@ -171,7 +171,6 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 		CacheFrom:   caches,
 		Dockerfile:  dockerfile,
 		PullParent:  pullParent,
-		Memory:      3 * 1024 * 1024 * 1024,
 		MemorySwap:  -1,
 		Remove:      true,
 		ShmSize:     256 * 1024 * 1024,
