@@ -5,7 +5,7 @@ RUN go get sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator
 FROM debian:stretch-slim
 
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
+    apt-get install -y ca-certificates curl && \
     useradd -m -u 1001 vsts_VSTSContainer
 
 
