@@ -187,7 +187,7 @@ environments:
 	assert.NoError(t, err)
 	defer func() { _ = os.Chdir(oldPwd) }()
 
-	os.Args = []string{"deploy", "--tag", "20s", "dummy"}
+	os.Args = []string{"deploy", "--timeout", "20s", "dummy"}
 	main()
 }
 
