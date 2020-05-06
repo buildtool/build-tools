@@ -176,15 +176,17 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
 	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("buildargs4", "env-value")()
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "Dockerfile", arrayFlags{"buildargs1=1=1", "buildargs2", "buildargs3="}, false, false)
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "Dockerfile", arrayFlags{"buildargs1=1=1", "buildargs2", "buildargs3=", "buildargs4"}, false, false)
 	assert.Equal(t, 0, code)
 
-	assert.Equal(t, 3, len(client.BuildOptions[0].BuildArgs))
+	assert.Equal(t, 4, len(client.BuildOptions[0].BuildArgs))
 	assert.Equal(t, "1=1", *client.BuildOptions[0].BuildArgs["buildargs1"])
+	assert.Equal(t, "env-value", *client.BuildOptions[0].BuildArgs["buildargs4"])
 	assert.Equal(t, "", eout.String())
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32msha\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nignoring build-arg buildargs2\nignoring build-arg buildargs3\nBuild successful", out.String())
 }
@@ -222,13 +224,11 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, 2, len(client.BuildOptions[0].BuildArgs))
 	assert.Equal(t, "abc123", *client.BuildOptions[0].BuildArgs["CI_COMMIT"])
 	assert.Equal(t, "feature1", *client.BuildOptions[0].BuildArgs["CI_BRANCH"])
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
 	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
 	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
@@ -268,7 +268,6 @@ func TestBuild_MasterBranch(t *testing.T) {
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
 	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
@@ -350,7 +349,6 @@ COPY --from=test file2 .
 
 	assert.Equal(t, 0, code)
 	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
-	assert.Equal(t, int64(3*1024*1024*1024), client.BuildOptions[0].Memory)
 	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)

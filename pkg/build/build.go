@@ -125,7 +125,11 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		if len(split) > 1 && len(value) > 0 {
 			buildArgs[key] = &value
 		} else {
-			_, _ = fmt.Fprintf(out, "ignoring build-arg %s\n", key)
+			if env, exists := os.LookupEnv(key); exists {
+				buildArgs[key] = &env
+			} else {
+				_, _ = fmt.Fprintf(out, "ignoring build-arg %s\n", key)
+			}
 		}
 	}
 	for _, stage := range stages {
@@ -171,7 +175,6 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 		CacheFrom:   caches,
 		Dockerfile:  dockerfile,
 		PullParent:  pullParent,
-		Memory:      3 * 1024 * 1024 * 1024,
 		MemorySwap:  -1,
 		Remove:      true,
 		ShmSize:     256 * 1024 * 1024,
