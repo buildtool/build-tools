@@ -31,25 +31,26 @@ func main() {
 }
 
 func doDeploy() int {
-	var context, namespace, timeout string
+	var context, namespace, timeout, tag string
 	const (
 		contextUsage   = "override the context for default environment deployment target"
+		tagUsage       = "override the tag to deploy, not using the CI or VCS evaluated value"
 		namespaceUsage = "override the namespace for default environment deployment target"
 		timeoutUsage   = "override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)"
 	)
-	set := flag.NewFlagSet("deploy", flag.ExitOnError)
+	set := flag.NewFlagSet("deploy", flag.ContinueOnError)
 	set.Usage = func() {
 		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
 		set.SetOutput(out)
 		set.PrintDefaults()
 	}
 	set.StringVar(&context, "context", "", contextUsage)
-	set.StringVar(&context, "c", "", contextUsage+" (shorthand)")
 	set.StringVar(&namespace, "namespace", "", namespaceUsage)
-	set.StringVar(&namespace, "n", "", namespaceUsage+" (shorthand)")
 	set.StringVar(&timeout, "timeout", "", timeoutUsage)
-	set.StringVar(&timeout, "t", "", timeoutUsage+" (shorthand)")
-	_ = set.Parse(os.Args[1:])
+	set.StringVar(&tag, "tag", "", tagUsage)
+	if err := set.Parse(os.Args[1:]); err != nil {
+		return -1
+	}
 	if set.NArg() < 1 {
 		set.Usage()
 		return -1
@@ -75,15 +76,20 @@ func doDeploy() int {
 					timeout = "2m"
 				}
 				currentCI := cfg.CurrentCI()
-				if !ci.IsValid(currentCI) {
-					_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
-					return -3
+				if tag == "" {
+					if !ci.IsValid(currentCI) {
+						_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+						return -3
+					}
+					tag = currentCI.Commit()
+				} else {
+					_, _ = fmt.Fprintln(out, tml.Sprintf("Using passed tag <green>%s</green> to deploy", tag))
 				}
 
 				tstamp := time.Now().Format(time.RFC3339)
 				client := kubectl.New(env, out, colorable.NewColorableStderr())
 				defer client.Cleanup()
-				if err := deploy.Deploy(dir, currentCI.Commit(), currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
+				if err := deploy.Deploy(dir, tag, currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
 					_, _ = fmt.Fprintln(out, err.Error())
 					return -4
 				}
