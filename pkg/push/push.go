@@ -20,11 +20,12 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 		defaultDockerfile = "Dockerfile"
 		usage             = "name of the Dockerfile to use"
 	)
-	set := flag.NewFlagSet("push", flag.ExitOnError)
+	set := flag.NewFlagSet("push", flag.ContinueOnError)
 	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
-	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
-	_ = set.Parse(args)
 
+	if err := set.Parse(args); err != nil {
+		return -1
+	}
 	client, err := docker2.NewEnvClient()
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))

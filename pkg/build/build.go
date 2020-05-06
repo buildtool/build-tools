@@ -38,15 +38,15 @@ func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 		usage             = "name of the Dockerfile to use"
 	)
 
-	set := flag.NewFlagSet("build", flag.ExitOnError)
+	set := flag.NewFlagSet("build", flag.ContinueOnError)
 	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
-	set.StringVar(&dockerfile, "f", defaultDockerfile, usage+" (shorthand)")
 	set.Var(&buildArgsFlags, "build-arg", "")
 	set.BoolVar(&skipLogin, "skiplogin", false, "disable login to docker registry")
 	set.BoolVar(&noPull, "nopull", false, "disable pulling latest from docker registry")
 
-	_ = set.Parse(args)
-
+	if err := set.Parse(args); err != nil {
+		return -1
+	}
 	if client, err := dockerClient(); err != nil {
 		_, _ = fmt.Fprintln(out, err.Error())
 		return -1
