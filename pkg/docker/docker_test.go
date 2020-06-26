@@ -70,3 +70,47 @@ Dockerfile
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"k8s", "node_modules", "*.swp"}, result)
 }
+
+func Test_slugify(t *testing.T) {
+	type args struct {
+		tag string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "valid tags are left intact",
+			args: args{tag: "valid-tag"},
+			want: "valid-tag",
+		},
+		{
+			name: "leading .'s are removed",
+			args: args{tag: "....leading"},
+			want: "leading",
+		},
+		{
+			name: "leading -'s are removed",
+			args: args{tag: "---leading"},
+			want: "leading",
+		},
+		{
+			name: "invalid characters are removed",
+			args: args{tag: "ab!€#%&/()=?`´'^¨:;<>§°"},
+			want: "ab",
+		},
+		{
+			name: "tags longer than 128 chars are truncated",
+			args: args{tag: "abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijklmnopqrstuvwxyz0123456789.-_"},
+			want: "abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijklmnopqrstuvwxyz0123456789.-_abcdefghijk",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SlugifyTag(tt.args.tag); got != tt.want {
+				t.Errorf("SlugifyTag() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

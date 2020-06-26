@@ -8,6 +8,7 @@ import (
 	"docker.io/go-docker/api/types"
 	"docker.io/go-docker/api/types/registry"
 	"fmt"
+	"github.com/liamg/tml"
 	"io"
 	"io/ioutil"
 	"os"
@@ -24,8 +25,23 @@ type Client interface {
 
 var _ Client = &docker.Client{}
 
-func Tag(registry, image, tag string) string {
-	return fmt.Sprintf("%s/%s:%s", registry, image, tag)
+func Tag(registry, image, tag string, eout io.Writer) string {
+	slug := SlugifyTag(tag)
+	if slug != tag {
+		_, _ = fmt.Fprint(eout, tml.Sprintf("<yellow>Warning: tag was changed from '%s' to '%s' due to Dockers rules.</yellow>", tag, slug))
+	}
+	return fmt.Sprintf("%s/%s:%s", registry, image, slug)
+}
+
+func SlugifyTag(tag string) string {
+	validChars := regexp.MustCompile(`(?i)[^a-zA-Z0-9.\-_]`)
+	temp := validChars.ReplaceAllString(tag, "")
+	leading := regexp.MustCompile(`^([.-]*)([a-zA-Z0-9.\-_]*)$`)
+	result := leading.FindStringSubmatch(temp)[2]
+	if len(result) > 128 {
+		return result[:128]
+	}
+	return result
 }
 
 func ParseDockerignore(dir, dockerfile string) ([]string, error) {
