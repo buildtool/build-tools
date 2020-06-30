@@ -133,7 +133,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		}
 	}
 	for _, stage := range stages {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage, eout)
 		caches = append([]string{tag}, caches...)
 		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, out, !noPull); err != nil {
 			_, _ = fmt.Fprintln(eout, err.Error())
@@ -143,15 +143,15 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 
 	var tags []string
 	if len(dockerTagOverride) > 0 {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTagOverride)
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTagOverride, eout)
 		caches = append([]string{tag}, caches...)
 		tags = append(tags, tag)
-		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTagOverride)
+		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", docker.SlugifyTag(dockerTagOverride))
 	} else {
-		branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
-		latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
+		branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch, eout)
+		latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout)
 		tags = append(tags, []string{
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit, eout),
 			branchTag,
 		}...)
 		if currentCI.Branch() == "master" {

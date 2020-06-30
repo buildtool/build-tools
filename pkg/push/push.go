@@ -64,11 +64,11 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 
 	var tags []string
 	for _, stage := range stages {
-		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage))
+		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage, eout))
 	}
 
 	if dockerTag := os.Getenv("DOCKER_TAG"); len(dockerTag) > 0 {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag)
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag, eout)
 		tags = append(tags, tag)
 		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
 	} else {
@@ -77,11 +77,11 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 			return -6
 		}
 		tags = append(tags,
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit(), eout),
+			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash(), eout),
 		)
 		if currentCI.Branch() == "master" {
-			tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
+			tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout))
 		}
 	}
 	for _, tag := range tags {
