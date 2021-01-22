@@ -1,0 +1,51 @@
+site_name: buildtools
+site_description: Build services and deploy to Kubernetes - fast and easy
+copyright: Made with ❤️ by build-tools contributors.
+repo_name: buildtool/build-tools
+repo_url: https://github.com/buildtool/build-tools
+edit_uri: edit/main/www/docs/
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  logo: assets/images/logo.png
+  favicon: assets/images/favicon.ico
+  include_search_page: false
+  search_index_only: true
+
+plugins:
+  - search:
+      prebuild_index: python
+      lang:
+      - en
+  - minify:
+      minify_html: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github-alt
+      link: https://github.com/buildtool
+      
+nav:
+- Home: index.md
+- introduction.md
+- installation.md
+- quickstart.md
+- conventions.md
+- commands.md
+- ci.md
+- config.md
+- registry.md
+- environments.md
+- k8s.md
+- contributing.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.tabbed
+  - pymdownx.superfences

@@ -1,8 +1,4 @@
----
-title: Installation
-weight: 2
-menu: true
----
+# Installation
 
 You can install the pre-compiled binary (in several different ways), use Docker or compile from source.
 
@@ -34,18 +30,35 @@ $ docker run --rm --privileged \
 ```
       
 ## Compiling from source
-```sh
 
-    # clone it outside GOPATH
-    $ git clone https://github.com/buildtool/build-tools
-    $ cd build-tools
-    
-    # get dependencies using go modules (needs go 1.11+)
-    $ go get ./...
-    
-    # build
-    $ go build ./cmd/build
-    
-    # check it works
-    ./build -version
+Here you have two options:
+
+If you want to contribute to the project, please follow the
+steps on our [contributing guide](/contributing).
+
+If you just want to build from source for whatever reason, follow these steps:
+
+**Clone:**
+
+```sh
+git clone https://github.com/buildtool/build-tools
+cd build-tools
+```
+
+**Get the dependencies:**
+
+```sh
+go get ./...
+```
+
+**Build:**
+
+```sh
+go build  ./cmd/build/build.go
+```
+
+**Verify it works:**
+
+```sh
+./build --version
 ```
