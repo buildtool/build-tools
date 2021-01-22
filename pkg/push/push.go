@@ -1,17 +1,18 @@
 package push
 
 import (
-	docker2 "docker.io/go-docker"
 	"flag"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/ci"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/liamg/tml"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	docker2 "docker.io/go-docker"
+	"github.com/buildtool/build-tools/pkg/ci"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/liamg/tml"
 )
 
 func Push(dir string, out, eout io.Writer, args ...string) int {
@@ -80,7 +81,7 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit(), eout),
 			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash(), eout),
 		)
-		if currentCI.Branch() == "master" {
+		if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
 			tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout))
 		}
 	}
