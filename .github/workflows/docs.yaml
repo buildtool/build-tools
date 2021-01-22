@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     paths:
-      - 'www/**'
+#      - 'www/**'
       - '.github/workflows/docs.yaml'
 jobs:
   docs:
