@@ -24,10 +24,10 @@ jobs:
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
-        env:
-          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          PUBLISH_DIR: ./www/public
-          PUBLISH_BRANCH: main
-          EXTERNAL_REPOSITORY: buildtool/buildtool.github.io
+        with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          publish_dir: ./www/public
+          publish_branch: main
+          external_repository: buildtool/buildtool.github.io
 
 
