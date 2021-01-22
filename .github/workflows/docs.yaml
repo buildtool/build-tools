@@ -2,9 +2,8 @@ name: docs
 
 on:
   push:
-    paths:
-#      - 'www/**'
-      - '.github/workflows/docs.yaml'
+#    paths:
+#      - './**'
 jobs:
   docs:
     runs-on: ubuntu-latest
