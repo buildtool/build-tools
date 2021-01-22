@@ -36,12 +36,12 @@ steps:
   - wait
 
   - block: ":rocket: Release PROD"
-    branches: "master"
+    branches: "main"
 
   - command: |-
       deploy prod
     label: Deploy PROD
-    branches: "master"
+    branches: "main"
     plugins:
       - docker#v3.3.0:
           image: buildtool/build-tools
@@ -91,7 +91,7 @@ deploy-to-prod:
   environment:
     name: prod
   only:
-    - master
+    - main
 ````
 
 ### Github Actions

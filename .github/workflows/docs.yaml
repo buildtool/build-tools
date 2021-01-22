@@ -26,7 +26,7 @@ jobs:
         env:
           ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           PUBLISH_DIR: ./www/public
-          PUBLISH_BRANCH: master
+          PUBLISH_BRANCH: main
           EXTERNAL_REPOSITORY: buildtool/buildtool.github.io
 
 
