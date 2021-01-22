@@ -1,8 +1,5 @@
----
-title: Conventions
-menu: true
-weight: 3
----
+# Conventions
+
 
 * The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit
 * `Dockerfile` must be present in the root of the project directory (this can be overriden with [flags](/commands\#build)). The `Dockerfile` will be used to build the project into a runnable docker image.

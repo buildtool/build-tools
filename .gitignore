@@ -7,4 +7,5 @@
 /service-setup
 coverage.txt
 dist
-www/public
+www/site
+.DS_Store

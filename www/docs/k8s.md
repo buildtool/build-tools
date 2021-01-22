@@ -1,10 +1,6 @@
----
-title: Kubernetes
-menu: true
-weight: 14
----
+# Kubernetes
 
-here must be a `k8s` directory in the root of your project file. 
+There must be a `k8s` directory in the root of your project file. 
 This directory contains all the yaml files used to describe the Kubernetes deployment tasks needed to run this service. 
 Environment specific files are handled by using a `-<environment>` suffix, i.e. `ingress-prod.yaml`.
 

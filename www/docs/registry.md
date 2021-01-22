@@ -1,8 +1,4 @@
----
-title: Registry
-menu: true
-weight: 11
----
+# Registry
 
 The `registry` key in `.buildtools.yaml` defines the docker registry used for the project. This will primarily be used for CI pipelines to push built docker images.
 Locally it can be used to build images with correct tags, making it possible to deploy locally built images.

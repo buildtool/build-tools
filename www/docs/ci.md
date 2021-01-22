@@ -1,8 +1,4 @@
----
-title: Continuous Integration
-menu: true
-weight: 9
----
+# Continuous Integration
 
 Commands recognize which CI/CD environment they are executed in based on which environment variables are present.
 

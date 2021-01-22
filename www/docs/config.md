@@ -1,8 +1,4 @@
----
-title: Configuration files
-menu: true
-weight: 10
----
+# Configuration files
 
 Configuration and setup is done in `.buildtools.yaml` files. 
 Those files must be present in the project folder or upwards in the directory structure. 

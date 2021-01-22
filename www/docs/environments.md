@@ -1,8 +1,4 @@
----
-title: Environments
-menu: true
-weight: 12
----
+# Environments
 
 `environments` specifies the different deployment 'targets' to use for the project.
 The environments matches Kubernetes cluster [configurations](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/#define-clusters-users-and-contexts) to deploy projects.
