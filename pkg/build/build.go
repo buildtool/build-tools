@@ -4,20 +4,21 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	dkr "docker.io/go-docker"
-	"docker.io/go-docker/api/types"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+
+	dkr "docker.io/go-docker"
+	"docker.io/go-docker/api/types"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/buildtool/build-tools/pkg/tar"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/liamg/tml"
-	"io"
-	"os"
-	"strings"
 )
 
 type responsetype struct {
@@ -154,7 +155,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit, eout),
 			branchTag,
 		}...)
-		if currentCI.Branch() == "master" {
+		if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
 			tags = append(tags, latestTag)
 		}
 

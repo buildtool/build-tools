@@ -6,15 +6,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/docker/docker/pkg/archive"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/docker/docker/pkg/archive"
+	"github.com/stretchr/testify/assert"
 )
 
 var name string
@@ -289,6 +290,30 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successful", out.String())
+	assert.Equal(t, "", eout.String())
+}
+
+func TestBuild_MainBranch(t *testing.T) {
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "main")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, "Dockerfile", arrayFlags{}, false, false)
+
+	assert.Equal(t, 0, code)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
+	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmain\x1b[39m\x1b[0m\nBuild successful", out.String())
 	assert.Equal(t, "", eout.String())
 }
 
