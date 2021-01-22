@@ -2,21 +2,22 @@ package push
 
 import (
 	"bytes"
-	"docker.io/go-docker/api/types"
 	"errors"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/buildtool/build-tools/pkg/registry"
-	"github.com/buildtool/build-tools/pkg/vcs"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"docker.io/go-docker/api/types"
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/registry"
+	"github.com/buildtool/build-tools/pkg/vcs"
+	"github.com/stretchr/testify/assert"
 )
 
 var name string
@@ -159,6 +160,26 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
 	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
+	assert.Equal(t, "", eout.String())
+}
+func TestPush_PushMainBranch(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	out := &bytes.Buffer{}
+	eout := &bytes.Buffer{}
+	pushOut := `{"status":"Push successful"}`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "main"
+	cfg.Registry.Dockerhub.Namespace = "repo"
+	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+
+	assert.Equal(t, 0, exitCode)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.Images)
+	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:main\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
 	assert.Equal(t, "", eout.String())
 }
 

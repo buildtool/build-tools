@@ -9,5 +9,6 @@ weight: 3
 * Kubernetes descriptor files must be located in the `k8s` folder
 * The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used to determine the name of the project being built)
 * The current commit id will be used as docker tag
+* If the `push` command is used on the `master` or `main` branch the tag `latest` will also be pushed.
 
 Take a look at the [build-tools-example repository](https://github.com/buildtool/build-tools-examples) to try it out.

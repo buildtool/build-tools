@@ -15,7 +15,7 @@ $ brew install buildtool/taps/build-tools
 
 **Shell script**
 ```sh
-$ curl -sfL https://raw.githubusercontent.com/buildtool/build-tools/master/install.sh | sh
+$ curl -sfL https://raw.githubusercontent.com/buildtool/build-tools/main/install.sh | sh
 ```
 **Manually**
 
