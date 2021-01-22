@@ -68,13 +68,14 @@ dockers:
 
 brews:
   - name: build-tools
-    github:
-      owner: buildtool
+    tap:
+      owner: github.com/buildtool
       name: homebrew-taps
     folder: Formula
     commit_author:
       name: peter-stc
       email: peter@sparetimecoders.com
+    homepage: "https://buildtools.io/"
 
 archives:
 
