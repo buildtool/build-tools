@@ -49,6 +49,7 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
 dockers:
@@ -56,11 +57,7 @@ dockers:
     goos: linux
     goarch: amd64
     dockerfile: Dockerfile
-    binaries:
-    - build
-    - push
-    - deploy
-    - kubecmd
+    ids: ["build", "push", "deploy", "kubecmd"]
     image_templates:
     - "buildtool/{{ .ProjectName }}:latest"
     - "buildtool/{{ .ProjectName }}:{{ .Tag }}"
@@ -69,7 +66,7 @@ dockers:
 brews:
   - name: build-tools
     tap:
-      owner: github.com/buildtool
+      owner: buildtool
       name: homebrew-taps
     folder: Formula
     commit_author:
