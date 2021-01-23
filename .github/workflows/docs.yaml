@@ -2,8 +2,8 @@ name: docs
 
 on:
   push:
-#    paths:
-#      - './**'
+    paths:
+      - './**'
 jobs:
   docs:
     runs-on: ubuntu-latest
