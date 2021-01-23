@@ -14,7 +14,7 @@ jobs:
           python-version: 3.x
       - run: |
           pip install mkdocs-material
-          pip install mkdocs-material
+          pip install mkdocs-minify-plugin
       - run: |
           cd www
           mkdocs build
