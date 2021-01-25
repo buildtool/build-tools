@@ -38,14 +38,14 @@ type kubectl struct {
 
 var newKubectlCmd = cmd.NewKubectlCommand
 
-func New(environment *config.Environment, out, eout io.Writer) Kubectl {
+func New(target *config.Target, out, eout io.Writer) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	arg := argsFromEnvironment(environment, name, out, eout)
+	arg := argsFromTarget(target, name, out, eout)
 	return &kubectl{args: arg, tempDir: name, out: out, eout: eout}
 }
 
-func argsFromEnvironment(e *config.Environment, tempDir string, out, eout io.Writer) map[string]string {
+func argsFromTarget(e *config.Target, tempDir string, out, eout io.Writer) map[string]string {
 	kubeconfigArg := "kubeconfig"
 	args := make(map[string]string)
 	if len(e.Context) > 0 {

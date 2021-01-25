@@ -104,7 +104,7 @@ registry:
   ecr:
     url: 1234.ecr
     region: eu-west-1
-environments:
+targets:
   local:
     context: docker-desktop
   dev:
@@ -123,16 +123,16 @@ environments:
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
 	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
-	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments["dev"])
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
 
-	currentEnv, err := cfg.CurrentEnvironment("dev")
+	currentEnv, err := cfg.CurrentTarget("dev")
 	assert.NoError(t, err)
 	assert.Equal(t, &devEnv, currentEnv)
-	_, err = cfg.CurrentEnvironment("missing")
-	assert.EqualError(t, err, "no environment matching missing found")
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
 }
 
@@ -157,7 +157,7 @@ func TestLoad_YAML_From_Env_Invalid_Base64(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   local:
     context: docker-desktop
 `
@@ -166,14 +166,14 @@ environments:
 	out := &bytes.Buffer{}
 	_, err := Load(name, out)
 	assert.Error(t, err)
-	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 13")
+	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 8")
 }
 
 func TestLoad_YAML_From_Env(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   local:
     context: docker-desktop
   dev:
@@ -186,16 +186,16 @@ environments:
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
-	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments["dev"])
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
 
-	currentEnv, err := cfg.CurrentEnvironment("dev")
+	currentEnv, err := cfg.CurrentTarget("dev")
 	assert.NoError(t, err)
 	assert.Equal(t, &devEnv, currentEnv)
-	_, err = cfg.CurrentEnvironment("missing")
-	assert.EqualError(t, err, "no environment matching missing found")
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
 	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
 }
 
@@ -207,7 +207,7 @@ func TestLoad_YAML_DirStructure(t *testing.T) {
 registry:
   dockerhub:
     namespace: test
-environments:
+targets:
   test:
     context: abc
   local:
@@ -217,7 +217,7 @@ environments:
 	subdir := "sub"
 	_ = os.Mkdir(filepath.Join(name, subdir), 0777)
 	yaml2 := `
-environments:
+targets:
   test:
     context: ghi
 `
@@ -232,9 +232,9 @@ environments:
 	assert.NotNil(t, cfg.Registry)
 	currentRegistry := cfg.CurrentRegistry()
 	assert.NotNil(t, currentRegistry)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, "ghi", cfg.Environments["test"].Context)
-	assert.Equal(t, "def", cfg.Environments["local"].Context)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, "ghi", cfg.Targets["test"].Context)
+	assert.Equal(t, "def", cfg.Targets["local"].Context)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mMerging with config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
 
@@ -248,7 +248,7 @@ registry:
     region: eu-west-1
   dockerhub:
     namespace: dockerhub
-environments:
+targets:
   local:
     context: docker-desktop
   dev:

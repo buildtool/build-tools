@@ -42,7 +42,7 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 	main()
 }
 
-func TestDeploy_MissingEnvironmentAndContext(t *testing.T) {
+func TestDeploy_MissingTargetAndContext(t *testing.T) {
 	exitFunc = func(code int) {
 		assert.Equal(t, -5, code)
 	}
@@ -68,7 +68,7 @@ func TestDeploy_NoCI(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none
@@ -95,7 +95,7 @@ func TestDeploy_NoEnv(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   - name: dummy
     context: missing
     namespace: none
@@ -122,7 +122,7 @@ func TestDeploy_NoOptions(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none
@@ -149,7 +149,7 @@ func TestDeploy_ContextAndNamespaceSpecified(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none
@@ -176,7 +176,7 @@ func TestDeploy_Timeout(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none
@@ -199,7 +199,7 @@ func TestDeploy_Tag(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none

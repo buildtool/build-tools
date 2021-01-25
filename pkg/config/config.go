@@ -20,10 +20,10 @@ import (
 )
 
 type Config struct {
-	VCS                 *VCSConfig             `yaml:"vcs"`
-	CI                  *CIConfig              `yaml:"ci"`
-	Registry            *RegistryConfig        `yaml:"registry"`
-	Environments        map[string]Environment `yaml:"environments"`
+	VCS                 *VCSConfig        `yaml:"vcs"`
+	CI                  *CIConfig         `yaml:"ci"`
+	Registry            *RegistryConfig   `yaml:"registry"`
+	Targets             map[string]Target `yaml:"targets"`
 	AvailableCI         []ci.CI
 	AvailableRegistries []registry.Registry
 }
@@ -49,7 +49,7 @@ type RegistryConfig struct {
 	GCR       *registry.GCR       `yaml:"gcr"`
 }
 
-type Environment struct {
+type Target struct {
 	Context    string `yaml:"context"`
 	Namespace  string `yaml:"namespace"`
 	Kubeconfig string `yaml:"kubeconfig"`
@@ -135,11 +135,11 @@ func (c *Config) CurrentRegistry() registry.Registry {
 	return registry.NoDockerRegistry{}
 }
 
-func (c *Config) CurrentEnvironment(environment string) (*Environment, error) {
-	if e, exists := c.Environments[environment]; exists {
+func (c *Config) CurrentTarget(target string) (*Target, error) {
+	if e, exists := c.Targets[target]; exists {
 		return &e, nil
 	}
-	return nil, fmt.Errorf("no environment matching %s found", environment)
+	return nil, fmt.Errorf("no target matching %s found", target)
 }
 
 var abs = filepath.Abs
