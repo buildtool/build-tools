@@ -42,9 +42,9 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 	main()
 }
 
-func TestDeploy_MissingEnvironment(t *testing.T) {
+func TestDeploy_MissingEnvironmentAndContext(t *testing.T) {
 	exitFunc = func(code int) {
-		assert.Equal(t, -2, code)
+		assert.Equal(t, -5, code)
 	}
 
 	oldPwd, _ := os.Getwd()

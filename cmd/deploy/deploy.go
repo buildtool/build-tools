@@ -51,49 +51,55 @@ func doDeploy() int {
 	if err := set.Parse(os.Args[1:]); err != nil {
 		return -1
 	}
+
+	var environment string
 	if set.NArg() < 1 {
-		set.Usage()
+		environment = "local"
+	} else {
+		environment = set.Args()[0]
+	}
+	dir, _ := os.Getwd()
+
+	if cfg, err := config.Load(dir, out); err != nil {
+		_, _ = fmt.Fprintln(out, err.Error())
 		return -1
 	} else {
-		environment := set.Args()[0]
-		dir, _ := os.Getwd()
-
-		if cfg, err := config.Load(dir, out); err != nil {
+		var env *config.Environment
+		if env, err = cfg.CurrentEnvironment(environment); err != nil {
 			_, _ = fmt.Fprintln(out, err.Error())
-			return -1
-		} else {
-			if env, err := cfg.CurrentEnvironment(environment); err != nil {
-				_, _ = fmt.Fprintln(out, err.Error())
-				return -2
-			} else {
-				if context != "" {
-					env.Context = context
-				}
-				if namespace != "" {
-					env.Namespace = namespace
-				}
-				if timeout == "" {
-					timeout = "2m"
-				}
-				currentCI := cfg.CurrentCI()
-				if tag == "" {
-					if !ci.IsValid(currentCI) {
-						_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
-						return -3
-					}
-					tag = currentCI.Commit()
-				} else {
-					_, _ = fmt.Fprintln(out, tml.Sprintf("Using passed tag <green>%s</green> to deploy", tag))
-				}
-
-				tstamp := time.Now().Format(time.RFC3339)
-				client := kubectl.New(env, out, colorable.NewColorableStderr())
-				defer client.Cleanup()
-				if err := deploy.Deploy(dir, tag, currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
-					_, _ = fmt.Fprintln(out, err.Error())
-					return -4
-				}
+			env = &config.Environment{}
+		}
+		if context != "" {
+			env.Context = context
+		}
+		if env.Context == "" {
+			_, _ = fmt.Fprintf(out, "context is mandatory, not found in configuration for %s and not passed as parameter\n", environment)
+			return -5
+		}
+		if namespace != "" {
+			env.Namespace = namespace
+		}
+		if timeout == "" {
+			timeout = "2m"
+		}
+		currentCI := cfg.CurrentCI()
+		if tag == "" {
+			if !ci.IsValid(currentCI) {
+				_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+				return -3
 			}
+			tag = currentCI.Commit()
+		} else {
+			_, _ = fmt.Fprintln(out, tml.Sprintf("Using passed tag <green>%s</green> to deploy", tag))
+		}
+
+		tstamp := time.Now().Format(time.RFC3339)
+		client := kubectl.New(env, out, colorable.NewColorableStderr())
+		defer client.Cleanup()
+		if err := deploy.Deploy(dir, tag, currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
+			_, _ = fmt.Fprintln(out, err.Error())
+			return -4
+
 		}
 	}
 	return 0
