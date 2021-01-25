@@ -5,7 +5,7 @@ You can install the pre-compiled binary (in several different ways), use Docker 
 ## Installation pre-built binaries
 **Homebrew tap**
 
-```sh 
+```sh
 $ brew install buildtool/taps/build-tools
 ```
 
@@ -17,7 +17,7 @@ $ curl -sfL https://raw.githubusercontent.com/buildtool/build-tools/main/install
 
 Download the pre-compiled binaries from the [releases](https://github.com/buildtool/build-tools/releases) page and copy to the desired location.
 
-## Docker
+## Running with Docker
 You can also use it within a Docker container. To do that, you’ll need to execute something more-or-less like the following:
 ```sh
 $ docker run --rm --privileged \
@@ -28,7 +28,7 @@ $ docker run --rm --privileged \
   -e DOCKER_PASSWORD \
   buildtool/build-tools build
 ```
-      
+
 ## Compiling from source
 
 Here you have two options:
