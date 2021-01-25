@@ -1,8 +1,20 @@
 # Registry
 
-The `registry` key in `.buildtools.yaml` defines the docker registry used for the project. This will primarily be used for CI pipelines to push built docker images.
-Locally it can be used to build images with correct tags, making it possible to deploy locally built images.
+The `registry` key in `.buildtools.yaml` defines the docker registry used for the project.
+This will primarily be used for CI pipelines to push built docker images.
 
+Locally it can be used to build images with correct tags,
+making it possible to deploy locally built images.
+
+Each supported registry has it's own configuration keys, typically the setup looks like this:
+
+````yaml
+registry:
+  <registry name>:
+    <specific config>
+````
+
+## Supported registries
 The following registries are supported:
 
 | Config key| Container registry    |
@@ -29,7 +41,7 @@ AWS Credentials must be supplied as `ENV` variables, read more [here](https://do
 | Parameter | Description                                                                                | Env variable           |
 | :-------- | :----------------------------------------------------------------------------------------- | :--------------------- |
 | `url`     | The ECR registry URL                                                                       | `ECR_URL`              |
-| `region`  | Specify a region (if it's possible to derive from the `url` parameter it can be omitted)   | `ECR_REGION`           | 
+| `region`  | Specify a region (if it's possible to derive from the `url` parameter it can be omitted)   | `ECR_REGION`           |
 
 ### github
 
@@ -68,4 +80,4 @@ GCP Credentials must be supplied as [service account json key](https://cloud.goo
 | Parameter         | Description                       | Env variable           |
 | :---------------- | :-------------------------------- | :--------------------- |
 | `url`             | The GCR registry URL              | `GCR_URL`              |
-| `keyfileContent`  | ServiceAccount keyfile content    | `GCR_KEYFILE_CONTENT`  | 
+| `keyfileContent`  | ServiceAccount keyfile content    | `GCR_KEYFILE_CONTENT`  |
