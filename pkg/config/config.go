@@ -67,6 +67,7 @@ func Load(dir string, out io.Writer) (*Config, error) {
 				if strings.Contains(string(decoded), "environments:") {
 					_, _ = fmt.Fprintln(out, "BUILDTOOLS_CONTENT contains deprecated 'environments' tag, please change to 'targets'")
 				}
+				err = parseOldConfig(decoded, cfg)
 				return cfg, err
 			}
 		}

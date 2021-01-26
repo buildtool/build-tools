@@ -257,6 +257,36 @@ targets:
 	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
 }
 
+func TestLoad_Old_YAML_From_Env(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+environments:
+  local:
+    context: docker-desktop
+  dev:
+    context: docker-desktop
+    namespace: dev
+`
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
+
+	currentEnv, err := cfg.CurrentTarget("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\nBUILDTOOLS_CONTENT contains deprecated 'environments' tag, please change to 'targets'\n", out.String())
+}
+
 func TestLoad_YAML_DirStructure(t *testing.T) {
 	os.Clearenv()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
