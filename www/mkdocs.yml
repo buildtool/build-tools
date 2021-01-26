@@ -3,7 +3,7 @@ site_description: Build services and deploy to Kubernetes - fast and easy
 copyright: Made with ❤️ by build-tools contributors.
 repo_name: buildtool/build-tools
 repo_url: https://github.com/buildtool/build-tools
-edit_uri: edit/doc/www/docs/
+edit_uri: edit/main/www/docs/
 
 theme:
   name: material
