@@ -36,7 +36,7 @@ $ cat - <<EOF | base64 -w0 | pbcopy
 targets:
   local-test:
     context: docker-desktop
-)
+
 EOF
 ```
 

@@ -67,8 +67,9 @@ func Load(dir string, out io.Writer) (*Config, error) {
 				if strings.Contains(string(decoded), "environments:") {
 					_, _ = fmt.Fprintln(out, "BUILDTOOLS_CONTENT contains deprecated 'environments' tag, please change to 'targets'")
 				}
-				err = parseOldConfig(decoded, cfg)
-				return cfg, err
+				if err = parseOldConfig(decoded, cfg); err != nil {
+					return cfg, err
+				}
 			}
 		}
 	} else {
@@ -199,11 +200,9 @@ func parseOldConfig(content []byte, config *Config) error {
 	if err := yaml.UnmarshalStrict(content, oldConfig); err != nil {
 		return err
 	} else {
-		if err := mergo.Merge(config, Config{
+		if err := mergo.Merge(config, &Config{
 			Registry: oldConfig.Registry,
 			Targets:  oldConfig.Targets,
-			CI:       oldConfig.CI,
-			VCS:      oldConfig.VCS,
 		}); err != nil {
 			return err
 		}
