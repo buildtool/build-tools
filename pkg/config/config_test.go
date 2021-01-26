@@ -136,6 +136,64 @@ targets:
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
 }
 
+func TestLoad_Old_BrokenYAML(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `ci: []
+environments:
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
+	assert.NotNil(t, cfg.Registry)
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mfile: \x1b[32m'%s/.buildtools.yaml'\x1b[39m \x1b[31mcontains deprecated 'environments' tag, please change to 'targets'\x1b[39m\x1b[0m\n", name, name), out.String())
+}
+
+func TestLoad_Old_YAML(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+registry:
+  ecr:
+    url: 1234.ecr
+    region: eu-west-1
+environments:
+  local:
+    context: docker-desktop
+  dev:
+    context: docker-desktop
+    namespace: dev
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
+
+	assert.NotNil(t, cfg.Registry)
+	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
+	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
+
+	currentEnv, err := cfg.CurrentTarget("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mfile: \x1b[32m'%s/.buildtools.yaml'\x1b[39m \x1b[31mcontains deprecated 'environments' tag, please change to 'targets'\x1b[39m\x1b[0m\n", name, name), out.String())
+}
+
 func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
