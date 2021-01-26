@@ -33,7 +33,7 @@ func main() {
 func doDeploy() int {
 	var context, namespace, timeout, tag string
 	const (
-		contextUsage   = "override the context for default target deployment target"
+		contextUsage   = "override the context for default deployment target"
 		tagUsage       = "override the tag to deploy, not using the CI or VCS evaluated value"
 		namespaceUsage = "override the namespace for default deployment target"
 		timeoutUsage   = "override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)"
