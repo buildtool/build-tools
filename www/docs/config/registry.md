@@ -1,12 +1,12 @@
 # Registry
 
 The `registry` key in `.buildtools.yaml` defines the docker registry used for the project.
-This will primarily be used for CI pipelines to push built docker images.
+This will primarily be used for CI pipelines to push built docker images, i.e the `push` command.
 
 Locally it can be used to build images with correct tags,
 making it possible to deploy locally built images.
 
-Each supported registry has it's own configuration keys, typically the setup looks like this:
+Each supported registry has their own configuration keys, typically the setup looks like this:
 
 ````yaml
 registry:

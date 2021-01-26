@@ -17,3 +17,6 @@ The built image is then pushed to a [Docker Registry](https://docs.docker.com/re
 of your choosing. This is of course optional, but a necessary step to be able to deploy the
 built image on a (non-local) Kubernetes cluster.
 Finally, the code is deployed to the Kubernetes cluster using the provided descriptor files.
+
+
+<script id="asciicast-387073" src="https://asciinema.org/a/387073.js" async></script>

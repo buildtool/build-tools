@@ -40,9 +40,9 @@ nav:
   - config/k8s.md
 - conventions.md
 - Commands:
-  - build.md
-  - push.md
-  - deploy.md
+  - commands/build.md
+  - commands/push.md
+  - commands/deploy.md
 - Continuous Integration:
   - About: ci/ci.md
   - ci/buildkite.md
