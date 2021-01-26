@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer, timeout string) error {
+func Deploy(dir, commit, buildName, timestamp, target string, client kubectl.Kubectl, out, eout io.Writer, timeout string) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
-	if err := processDir(deploymentFiles, commit, timestamp, targetEnvironment, client, out, eout); err != nil {
+	if err := processDir(deploymentFiles, commit, timestamp, target, client, out, eout); err != nil {
 		return err
 	}
 
@@ -28,10 +28,10 @@ func Deploy(dir, commit, buildName, timestamp, targetEnvironment string, client 
 	return nil
 }
 
-func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl.Kubectl, out, eout io.Writer) error {
+func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl, out, eout io.Writer) error {
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
-			if fileIsForEnvironment(info, targetEnvironment) {
+			if fileIsForTarget(info, target) {
 				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				} else {
@@ -39,7 +39,7 @@ func processDir(dir, commit, timestamp, targetEnvironment string, client kubectl
 						return err
 					}
 				}
-			} else if fileIsScriptForEnvironment(info, targetEnvironment, dir) {
+			} else if fileIsScriptForTarget(info, target, dir) {
 				if err := execFile(filepath.Join(dir, info.Name()), out, eout); err != nil {
 					return err
 				}
@@ -71,10 +71,10 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 	}
 }
 
-func fileIsForEnvironment(info os.FileInfo, env string) bool {
+func fileIsForTarget(info os.FileInfo, env string) bool {
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
 }
 
-func fileIsScriptForEnvironment(info os.FileInfo, env, dir string) bool {
+func fileIsScriptForTarget(info os.FileInfo, env, dir string) bool {
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env))
 }

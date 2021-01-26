@@ -32,7 +32,7 @@ func TestKubecmd_NoOptions(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	yaml := `
-environments:
+targets:
   dummy:
     context: missing
     namespace: none
@@ -53,7 +53,7 @@ func TestKubecmd_Output(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	yaml := `
-environments:
+targets:
   dummy:
     context: local
     namespace: default

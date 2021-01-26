@@ -2,8 +2,7 @@ name: docs
 
 on:
   push:
-    tags:
-      - 'v*'
+
 jobs:
   docs:
     runs-on: ubuntu-latest
@@ -12,14 +11,22 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: 3.x
-      - run: |
+      - name: install mkdocs
+        run: |
           pip install mkdocs-material
           pip install mkdocs-minify-plugin
-      - run: |
+      - name: build site
+        run: |
           cd www
           mkdocs build
+      - name: htmltest
+        run: |
+          cd www
+          curl https://htmltest.wjdp.uk | bash
+          ./bin/htmltest -c htmltest.yaml
 
-      - name: Deploy
+      - name: Deploy site
+        if: startsWith(github.ref, 'refs/tags/')
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}

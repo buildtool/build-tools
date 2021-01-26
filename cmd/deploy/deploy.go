@@ -33,14 +33,14 @@ func main() {
 func doDeploy() int {
 	var context, namespace, timeout, tag string
 	const (
-		contextUsage   = "override the context for default environment deployment target"
+		contextUsage   = "override the context for default deployment target"
 		tagUsage       = "override the tag to deploy, not using the CI or VCS evaluated value"
-		namespaceUsage = "override the namespace for default environment deployment target"
+		namespaceUsage = "override the namespace for default deployment target"
 		timeoutUsage   = "override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)"
 	)
 	set := flag.NewFlagSet("deploy", flag.ContinueOnError)
 	set.Usage = func() {
-		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <environment>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
+		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <target>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
 		set.SetOutput(out)
 		set.PrintDefaults()
 	}
@@ -52,11 +52,11 @@ func doDeploy() int {
 		return -1
 	}
 
-	var environment string
+	var target string
 	if set.NArg() < 1 {
-		environment = "local"
+		target = "local"
 	} else {
-		environment = set.Args()[0]
+		target = set.Args()[0]
 	}
 	dir, _ := os.Getwd()
 
@@ -64,16 +64,16 @@ func doDeploy() int {
 		_, _ = fmt.Fprintln(out, err.Error())
 		return -1
 	} else {
-		var env *config.Environment
-		if env, err = cfg.CurrentEnvironment(environment); err != nil {
+		var env *config.Target
+		if env, err = cfg.CurrentTarget(target); err != nil {
 			_, _ = fmt.Fprintln(out, err.Error())
-			env = &config.Environment{}
+			env = &config.Target{}
 		}
 		if context != "" {
 			env.Context = context
 		}
 		if env.Context == "" {
-			_, _ = fmt.Fprintf(out, "context is mandatory, not found in configuration for %s and not passed as parameter\n", environment)
+			_, _ = fmt.Fprintf(out, "context is mandatory, not found in configuration for %s and not passed as parameter\n", target)
 			return -5
 		}
 		if namespace != "" {
@@ -96,7 +96,7 @@ func doDeploy() int {
 		tstamp := time.Now().Format(time.RFC3339)
 		client := kubectl.New(env, out, colorable.NewColorableStderr())
 		defer client.Cleanup()
-		if err := deploy.Deploy(dir, tag, currentCI.BuildName(), tstamp, environment, client, out, colorable.NewColorableStderr(), timeout); err != nil {
+		if err := deploy.Deploy(dir, tag, currentCI.BuildName(), tstamp, target, client, out, colorable.NewColorableStderr(), timeout); err != nil {
 			_, _ = fmt.Fprintln(out, err.Error())
 			return -4
 

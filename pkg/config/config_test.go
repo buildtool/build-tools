@@ -104,6 +104,64 @@ registry:
   ecr:
     url: 1234.ecr
     region: eu-west-1
+targets:
+  local:
+    context: docker-desktop
+  dev:
+    context: docker-desktop
+    namespace: dev
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
+
+	assert.NotNil(t, cfg.Registry)
+	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
+	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
+
+	currentEnv, err := cfg.CurrentTarget("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+}
+
+func TestLoad_Old_BrokenYAML(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `ci: []
+environments:
+`
+	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
+	assert.NotNil(t, cfg)
+	assert.NotNil(t, cfg.CI)
+	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
+	assert.NotNil(t, cfg.Registry)
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mfile: \x1b[32m'%s/.buildtools.yaml'\x1b[39m \x1b[31mcontains deprecated 'environments' tag, please change to 'targets'\x1b[39m\x1b[0m\n", name, name), out.String())
+}
+
+func TestLoad_Old_YAML(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+registry:
+  ecr:
+    url: 1234.ecr
+    region: eu-west-1
 environments:
   local:
     context: docker-desktop
@@ -123,17 +181,17 @@ environments:
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
 	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
-	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments["dev"])
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
 
-	currentEnv, err := cfg.CurrentEnvironment("dev")
+	currentEnv, err := cfg.CurrentTarget("dev")
 	assert.NoError(t, err)
 	assert.Equal(t, &devEnv, currentEnv)
-	_, err = cfg.CurrentEnvironment("missing")
-	assert.EqualError(t, err, "no environment matching missing found")
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mfile: \x1b[32m'%s/.buildtools.yaml'\x1b[39m \x1b[31mcontains deprecated 'environments' tag, please change to 'targets'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
 
 func TestLoad_BrokenYAML_From_Env(t *testing.T) {
@@ -157,7 +215,7 @@ func TestLoad_YAML_From_Env_Invalid_Base64(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
-environments:
+targets:
   local:
     context: docker-desktop
 `
@@ -166,10 +224,40 @@ environments:
 	out := &bytes.Buffer{}
 	_, err := Load(name, out)
 	assert.Error(t, err)
-	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 13")
+	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 8")
 }
 
 func TestLoad_YAML_From_Env(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+targets:
+  local:
+    context: docker-desktop
+  dev:
+    context: docker-desktop
+    namespace: dev
+`
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.NotNil(t, cfg)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
+
+	currentEnv, err := cfg.CurrentTarget("dev")
+	assert.NoError(t, err)
+	assert.Equal(t, &devEnv, currentEnv)
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+}
+
+func TestLoad_Old_YAML_From_Env(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
@@ -186,17 +274,17 @@ environments:
 	cfg, err := Load(name, out)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, Environment{Context: "docker-desktop"}, cfg.Environments["local"])
-	devEnv := Environment{Context: "docker-desktop", Namespace: "dev"}
-	assert.Equal(t, devEnv, cfg.Environments["dev"])
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
+	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
+	assert.Equal(t, devEnv, cfg.Targets["dev"])
 
-	currentEnv, err := cfg.CurrentEnvironment("dev")
+	currentEnv, err := cfg.CurrentTarget("dev")
 	assert.NoError(t, err)
 	assert.Equal(t, &devEnv, currentEnv)
-	_, err = cfg.CurrentEnvironment("missing")
-	assert.EqualError(t, err, "no environment matching missing found")
-	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+	_, err = cfg.CurrentTarget("missing")
+	assert.EqualError(t, err, "no target matching missing found")
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\nBUILDTOOLS_CONTENT contains deprecated 'environments' tag, please change to 'targets'\n", out.String())
 }
 
 func TestLoad_YAML_DirStructure(t *testing.T) {
@@ -207,7 +295,7 @@ func TestLoad_YAML_DirStructure(t *testing.T) {
 registry:
   dockerhub:
     namespace: test
-environments:
+targets:
   test:
     context: abc
   local:
@@ -217,7 +305,7 @@ environments:
 	subdir := "sub"
 	_ = os.Mkdir(filepath.Join(name, subdir), 0777)
 	yaml2 := `
-environments:
+targets:
   test:
     context: ghi
 `
@@ -232,9 +320,9 @@ environments:
 	assert.NotNil(t, cfg.Registry)
 	currentRegistry := cfg.CurrentRegistry()
 	assert.NotNil(t, currentRegistry)
-	assert.Equal(t, 2, len(cfg.Environments))
-	assert.Equal(t, "ghi", cfg.Environments["test"].Context)
-	assert.Equal(t, "def", cfg.Environments["local"].Context)
+	assert.Equal(t, 2, len(cfg.Targets))
+	assert.Equal(t, "ghi", cfg.Targets["test"].Context)
+	assert.Equal(t, "def", cfg.Targets["local"].Context)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mMerging with config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
 }
 
@@ -248,7 +336,7 @@ registry:
     region: eu-west-1
   dockerhub:
     namespace: dockerhub
-environments:
+targets:
   local:
     context: docker-desktop
   dev:

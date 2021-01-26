@@ -3,7 +3,7 @@ site_description: Build services and deploy to Kubernetes - fast and easy
 copyright: Made with ❤️ by build-tools contributors.
 repo_name: buildtool/build-tools
 repo_url: https://github.com/buildtool/build-tools
-edit_uri: edit/main/www/docs/
+edit_uri: edit/doc/www/docs/
 
 theme:
   name: material
@@ -26,19 +26,30 @@ extra:
   social:
     - icon: fontawesome/brands/github-alt
       link: https://github.com/buildtool
-      
+
 nav:
 - Home: index.md
 - introduction.md
 - installation.md
 - quickstart.md
+- Config:
+  - .buildtools.yaml: config/config.md
+  - config/targets.md
+  - config/registry.md
+  - config/files.md
+  - config/k8s.md
 - conventions.md
-- commands.md
-- ci.md
-- config.md
-- registry.md
-- environments.md
-- k8s.md
+- Commands:
+  - commands/build.md
+  - commands/push.md
+  - commands/deploy.md
+- Continuous Integration:
+  - About: ci/ci.md
+  - ci/buildkite.md
+  - ci/gitlab.md
+  - ci/github.md
+  - ci/azure.md
+  - ci/teamcity.md
 - contributing.md
 
 markdown_extensions:

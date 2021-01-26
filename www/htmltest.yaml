@@ -1,0 +1,14 @@
+DirectoryPath: ./site
+IgnoreURLs:
+- www.google-analytics.com
+- fonts.gstatic.com
+- opencollective.com
+- https://gitlab.com/profile/personal_access_tokens
+- https://twitter.com/goreleaser
+IgnoreDirs:
+- overrides
+IgnoreDirectoryMissingTrailingSlash: true
+IgnoreAltMissing: true
+HTTPHeaders:
+  "Range": "bytes=0-10"
+  "Accept": "*/*"

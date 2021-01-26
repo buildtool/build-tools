@@ -8,4 +8,6 @@
 coverage.txt
 dist
 www/site
+www/bin
+www/tmp
 .DS_Store

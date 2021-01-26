@@ -2,8 +2,10 @@
 
 ## Pre requisites:
 In order to work with these tools you need:
-* Docker - [installation](https://www.docker.com/get-started)
-* Kubernetes - if you're using for example [Docker for Mac](https://docs.docker.com/docker-for-mac/install/)
+
+- Buildtools [installed](/installation/) (of course)
+- Docker - read more about options [here](https://www.docker.com/get-started)
+- Kubernetes - if you're using for example [Docker for Mac](https://docs.docker.com/docker-for-mac/install/)
 Kubernetes can easily be enabled.
 
 In this example we will build, push and deploy a sample Go project.
