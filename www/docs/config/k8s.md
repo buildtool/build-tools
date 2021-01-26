@@ -6,7 +6,7 @@ Target specific files are handled by using a `-<target>` "suffix", i.e. `ingress
 
 Files with a `.yaml` suffix will be [applied](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#apply) to the Kubernetes cluster.
 
-Files with a `.sh` suffix will be run on the machine executing the [`deploy`](/commands#deploy) command.
+Files with a `.sh` suffix will be run on the machine executing the [`deploy`](/commands/deploy) command.
 This can be useful to setup secrets/configurations, mostly for local use.
 Note that only `.sh` files matching the `target` will be executed.
 
