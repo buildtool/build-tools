@@ -3,11 +3,11 @@ package registry
 import (
 	"bufio"
 	"context"
-	"docker.io/go-docker/api/types"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/docker/docker/api/types"
 	"io"
 )
 

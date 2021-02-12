@@ -11,12 +11,12 @@ import (
 	"os"
 	"strings"
 
-	dkr "docker.io/go-docker"
-	"docker.io/go-docker/api/types"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/buildtool/build-tools/pkg/tar"
+	"github.com/docker/docker/api/types"
+	dkr "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/liamg/tml"
 )
@@ -62,7 +62,7 @@ func DoBuild(dir string, out, eout io.Writer, args ...string) int {
 }
 
 var dockerClient = func() (docker.Client, error) {
-	return dkr.NewEnvClient()
+	return dkr.NewClientWithOpts(dkr.FromEnv)
 }
 
 func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {

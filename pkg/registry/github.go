@@ -2,11 +2,11 @@ package registry
 
 import (
 	"context"
-	"docker.io/go-docker/api/types"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/docker/docker/api/types"
 	"io"
 )
 

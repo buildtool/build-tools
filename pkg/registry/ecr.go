@@ -2,7 +2,6 @@ package registry
 
 import (
 	"context"
-	"docker.io/go-docker/api/types"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/docker/docker/api/types"
 	"io"
 	"regexp"
 	"strings"
