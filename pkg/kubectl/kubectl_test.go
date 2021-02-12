@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util"
+	"k8s.io/kubectl/pkg/cmd/util"
 	"os"
 	"path/filepath"
 	"testing"
