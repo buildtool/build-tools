@@ -4,9 +4,9 @@ package docker
 
 import (
 	"context"
-	"docker.io/go-docker/api/types"
-	"docker.io/go-docker/api/types/registry"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"io"
 	"io/ioutil"
 	"strings"

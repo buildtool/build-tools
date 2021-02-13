@@ -1,9 +1,9 @@
 package registry
 
 import (
-	"docker.io/go-docker/api/types"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/docker/docker/api/types"
 	"github.com/liamg/tml"
 	"io"
 )

@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"docker.io/go-docker/api/types"
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/buildtool/build-tools/pkg/registry"
 	"github.com/buildtool/build-tools/pkg/vcs"
+	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -8,10 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
-	docker2 "docker.io/go-docker"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
+	docker2 "github.com/docker/docker/client"
 	"github.com/liamg/tml"
 )
 
@@ -27,7 +27,7 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 	if err := set.Parse(args); err != nil {
 		return -1
 	}
-	client, err := docker2.NewEnvClient()
+	client, err := docker2.NewClientWithOpts(docker2.FromEnv)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -1

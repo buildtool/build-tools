@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"docker.io/go-docker"
-	"docker.io/go-docker/api/types"
-	"docker.io/go-docker/api/types/registry"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/docker/client"
 	"github.com/liamg/tml"
 	"io"
 	"io/ioutil"
@@ -23,7 +23,7 @@ type Client interface {
 	ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error)
 }
 
-var _ Client = &docker.Client{}
+var _ Client = &client.Client{}
 
 func Tag(registry, image, tag string, eout io.Writer) string {
 	slug := SlugifyTag(tag)
