@@ -3,6 +3,7 @@ module github.com/buildtool/build-tools
 go 1.15
 
 require (
+	cloud.google.com/go v0.76.0 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e // indirect
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/Microsoft/hcsshim v0.8.14 // indirect
