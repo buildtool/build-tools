@@ -6,7 +6,7 @@ import (
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/registry"
 	"github.com/buildtool/build-tools/pkg/vcs"
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v6"
 	"github.com/imdario/mergo"
 	"github.com/liamg/tml"
 	"github.com/pkg/errors"
