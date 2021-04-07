@@ -9,6 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/docker/docker/api/types"
 	"io"
@@ -18,11 +20,13 @@ import (
 
 type ECR struct {
 	dockerRegistry
-	Url      string `yaml:"url" env:"ECR_URL"`
-	Region   string `yaml:"region" env:"ECR_REGION"`
-	username string
-	password string
-	svc      ecriface.ECRAPI
+	Url        string `yaml:"url" env:"ECR_URL"`
+	Region     string `yaml:"region" env:"ECR_REGION"`
+	username   string
+	password   string
+	ecrSvc     ecriface.ECRAPI
+	stsSvc     stsiface.STSAPI
+	registryId *string
 }
 
 var _ Registry = &ECR{}
@@ -37,7 +41,13 @@ func (r *ECR) Configured() bool {
 		if err != nil {
 			return false
 		}
-		r.svc = awsecr.New(sess)
+		r.ecrSvc = awsecr.New(sess)
+		r.stsSvc = sts.New(sess)
+		registryId, err := r.registry()
+		if err != nil {
+			return false
+		}
+		r.registryId = registryId
 		return true
 	}
 	return false
@@ -45,7 +55,7 @@ func (r *ECR) Configured() bool {
 
 func (r *ECR) region() *string {
 	if r.Region == "" {
-		regex := regexp.MustCompile(`.*ecr.(.*).amazonaws.com`)
+		regex := regexp.MustCompile(`.*.dkr.ecr.(.*).amazonaws.com`)
 		if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
 			return &submatch[1]
 		}
@@ -53,10 +63,18 @@ func (r *ECR) region() *string {
 	return &r.Region
 }
 
+func (r *ECR) registry() (*string, error) {
+	regex := regexp.MustCompile(`(.*).dkr.ecr..*.amazonaws.com`)
+	if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
+		return &submatch[1], nil
+	}
+	return nil, fmt.Errorf("failed to extract registryid from string %s", r.Url)
+}
+
 func (r *ECR) Login(client docker.Client, out io.Writer) error {
 	input := &awsecr.GetAuthorizationTokenInput{}
 
-	result, err := r.svc.GetAuthorizationToken(input)
+	result, err := r.ecrSvc.GetAuthorizationToken(input)
 	if err != nil {
 		return err
 	}
@@ -91,16 +109,32 @@ func (r ECR) RegistryUrl() string {
 }
 
 func (r ECR) Create(repository string) error {
-	if _, err := r.svc.DescribeRepositories(&awsecr.DescribeRepositoriesInput{RepositoryNames: []*string{&repository}}); err != nil {
+	identity, err := r.stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return err
+	}
+	if *identity.Account != *r.registryId {
+		return fmt.Errorf("account mismatch, logged in at '%s' got '%s' from repository url %s", *identity.Account, *r.registryId, r.Url)
+	}
+	if _, err := r.ecrSvc.DescribeRepositories(&awsecr.DescribeRepositoriesInput{
+		RegistryId:      r.registryId,
+		RepositoryNames: []*string{&repository},
+	}); err != nil {
+		switch err.(type) {
+		case *awsecr.RepositoryNotFoundException:
+			break
+		default:
+			return err
+		}
 		input := &awsecr.CreateRepositoryInput{
 			RepositoryName: aws.String(repository),
 		}
 
-		if _, err := r.svc.CreateRepository(input); err != nil {
+		if _, err := r.ecrSvc.CreateRepository(input); err != nil {
 			return err
 		} else {
 			policyText := `{"rules":[{"rulePriority":10,"description":"Only keep 20 images","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}`
-			if _, err := r.svc.PutLifecyclePolicy(&awsecr.PutLifecyclePolicyInput{LifecyclePolicyText: &policyText, RepositoryName: &repository}); err != nil {
+			if _, err := r.ecrSvc.PutLifecyclePolicy(&awsecr.PutLifecyclePolicyInput{LifecyclePolicyText: &policyText, RepositoryName: &repository}); err != nil {
 				return err
 			}
 			return nil

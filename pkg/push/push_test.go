@@ -84,22 +84,6 @@ func TestPush_NoRegistry(t *testing.T) {
 	assert.Equal(t, "\x1b[0mCommit and/or branch information is \x1b[31mmissing\x1b[39m. Perhaps your not in a Git repository or forgot to set environment variables?\x1b[0m", eout.String())
 }
 
-func TestPush_LoginFailure(t *testing.T) {
-	os.Clearenv()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	client := &docker.MockDocker{}
-	cfg := config.InitEmptyConfig()
-	cfg.Registry.ECR.Url = "abc"
-
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
-
-	assert.NotNil(t, exitCode)
-	assert.Equal(t, -3, exitCode)
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "\x1b[0m\x1b[31mMissingRegion: could not find region configuration\x1b[39m\x1b[0m\n", eout.String())
-}
-
 func TestPush_PushError(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")

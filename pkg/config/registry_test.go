@@ -37,7 +37,7 @@ func TestDockerhub_Name(t *testing.T) {
 }
 
 func TestEcr_Identify(t *testing.T) {
-	defer pkg.SetEnv("ECR_URL", "url")()
+	defer pkg.SetEnv("ECR_URL", "1234.dkr.ecr.eu-west-1.amazonaws.com")()
 	defer pkg.SetEnv("ECR_REGION", "region")()
 
 	out := &bytes.Buffer{}
@@ -45,12 +45,12 @@ func TestEcr_Identify(t *testing.T) {
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
-	assert.Equal(t, "url", registry.RegistryUrl())
+	assert.Equal(t, "1234.dkr.ecr.eu-west-1.amazonaws.com", registry.RegistryUrl())
 	assert.Equal(t, "", out.String())
 }
 
 func TestEcr_Name(t *testing.T) {
-	defer pkg.SetEnv("ECR_URL", "url")()
+	defer pkg.SetEnv("ECR_URL", "1234.dkr.ecr.eu-west-1.amazonaws.com")()
 	defer pkg.SetEnv("ECR_REGION", "region")()
 
 	out := &bytes.Buffer{}

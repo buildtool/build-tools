@@ -102,7 +102,7 @@ func TestLoad_YAML(t *testing.T) {
 	yaml := `
 registry:
   ecr:
-    url: 1234.ecr
+    url: 1234.dkr.ecr.eu-west-1.amazonaws.com
     region: eu-west-1
 targets:
   local:
@@ -122,7 +122,7 @@ targets:
 
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
-	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
+	assert.Equal(t, "1234.dkr.ecr.eu-west-1.amazonaws.com", cfg.CurrentRegistry().(*registry.ECR).Url)
 	assert.Equal(t, 2, len(cfg.Targets))
 	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
 	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
@@ -160,7 +160,7 @@ func TestLoad_Old_YAML(t *testing.T) {
 	yaml := `
 registry:
   ecr:
-    url: 1234.ecr
+    url: 1234.dkr.ecr.eu-west-1.amazonaws.com
     region: eu-west-1
 environments:
   local:
@@ -180,7 +180,7 @@ environments:
 
 	assert.NotNil(t, cfg.Registry)
 	assert.Equal(t, "eu-west-1", cfg.CurrentRegistry().(*registry.ECR).Region)
-	assert.Equal(t, "1234.ecr", cfg.CurrentRegistry().(*registry.ECR).Url)
+	assert.Equal(t, "1234.dkr.ecr.eu-west-1.amazonaws.com", cfg.CurrentRegistry().(*registry.ECR).Url)
 	assert.Equal(t, 2, len(cfg.Targets))
 	assert.Equal(t, Target{Context: "docker-desktop"}, cfg.Targets["local"])
 	devEnv := Target{Context: "docker-desktop", Namespace: "dev"}
@@ -332,7 +332,7 @@ func TestLoad_YAML_Multiple_Registry(t *testing.T) {
 	yaml := `
 registry:
   ecr:
-    url: 1234.ecr
+    url: 1234.dkr.ecr.eu-west-1.amazonaws.com
     region: eu-west-1
   dockerhub:
     namespace: dockerhub
