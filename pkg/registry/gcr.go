@@ -23,10 +23,10 @@ func (r *GCR) Name() string {
 }
 
 func (r *GCR) Configured() bool {
-	if len(r.Url) > 0 {
-		return true
+	if len(r.Url) <= 0 || len(r.KeyFileContent) <= 0 {
+		return false
 	}
-	return false
+	return r.GetAuthConfig() != types.AuthConfig{}
 }
 
 func (r *GCR) Login(client docker.Client, out io.Writer) error {
