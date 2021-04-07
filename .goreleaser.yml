@@ -69,6 +69,11 @@ brews:
       owner: buildtool
       name: homebrew-taps
     folder: Formula
+    install: |
+      bin.install "build"
+      bin.install "push"
+      bin.install "deploy"
+      bin.install "kubecmd"
     commit_author:
       name: peter-stc
       email: peter@sparetimecoders.com
