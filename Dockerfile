@@ -1,4 +1,4 @@
-FROM golang:1.13 as go-build
+FROM golang:1.16 as go-build
 
 RUN go get sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator
 
