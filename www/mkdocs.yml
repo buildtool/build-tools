@@ -50,6 +50,7 @@ nav:
   - ci/github.md
   - ci/azure.md
   - ci/teamcity.md
+- faq.md
 - contributing.md
 
 markdown_extensions:
