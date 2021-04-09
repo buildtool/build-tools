@@ -2,7 +2,7 @@ FROM golang:1.16 as go-build
 
 RUN go get sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator
 
-FROM debian:stretch-slim
+FROM debian:buster-20210311-slim
 
 RUN apt-get update && \
     apt-get install -y ca-certificates curl && \
