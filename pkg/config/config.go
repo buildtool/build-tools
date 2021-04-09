@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -10,7 +11,7 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/liamg/tml"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io"
 	"io/ioutil"
 	"os"
@@ -197,7 +198,7 @@ func parseOldConfig(content []byte, config *Config) error {
 		Registry *RegistryConfig   `yaml:"registry"`
 		Targets  map[string]Target `yaml:"environments"`
 	}{}
-	if err := yaml.UnmarshalStrict(content, oldConfig); err != nil {
+	if err := UnmarshalStrict(content, oldConfig); err != nil {
 		return err
 	} else {
 		if err := mergo.Merge(config, &Config{
@@ -211,7 +212,7 @@ func parseOldConfig(content []byte, config *Config) error {
 }
 func parseConfig(content []byte, config *Config) error {
 	temp := &Config{}
-	if err := yaml.UnmarshalStrict(content, temp); err != nil {
+	if err := UnmarshalStrict(content, temp); err != nil {
 		return err
 	} else {
 		if err := mergo.Merge(config, temp); err != nil {
@@ -219,6 +220,16 @@ func parseConfig(content []byte, config *Config) error {
 		}
 		return validate(config)
 	}
+}
+
+func UnmarshalStrict(content []byte, out interface{}) error {
+	reader := bytes.NewReader(content)
+	decoder := yaml.NewDecoder(reader)
+	decoder.KnownFields(true)
+	if err := decoder.Decode(out); err != nil && err != io.EOF {
+		return err
+	}
+	return nil
 }
 
 func validate(config *Config) error {
