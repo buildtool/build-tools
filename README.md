@@ -17,7 +17,6 @@
   <a href="https://github.com/buildtool/build-tools/blob/main/LICENSE"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-blue.svg?maxAge=43200"></a>
   <a href="https://codecov.io/github/buildtool/build-tools"><img alt="Coverage Status" src="https://codecov.io/gh/buildtool/build-tools/branch/main/graph/badge.svg"></a>
   <a href="https://codebeat.co/projects/github-com-buildtool-build-tools-main"><img alt="codebeat badge" src="https://codebeat.co/badges/60370357-016b-4b76-a62f-4878f6731d8a" /></a>  <a href="https://goreportcard.com/report/github.com/buildtool/build-tools"><img alt="goreportcard badge" src="https://goreportcard.com/badge/github.com/buildtool/build-tools" /></a>
-  <a href="https://libraries.io/github/buildtool/build-tools"><img alt="" src="https://img.shields.io/librariesio/github/buildtool/build-tools"></a>
 </p>
 
 A set of highly opinionated tools for creating and building components/services into [docker](https://www.docker.com/) images and deploying them to [Kubernetes](https://kubernetes.io/) clusters.
