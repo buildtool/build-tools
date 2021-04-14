@@ -1,50 +1,46 @@
 package kubecmd
 
 import (
-	"flag"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/config"
 	"io"
+
+	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/version"
 )
 
-func Kubecmd(dir string, out io.Writer, args ...string) *string {
-	var context, namespace string
-	const (
-		contextUsage   = "override the context for default deployment target"
-		namespaceUsage = "override the namespace for default deployment target"
-	)
-	set := flag.NewFlagSet("deploy", flag.ExitOnError)
-	set.Usage = func() {
-		_, _ = fmt.Fprintf(out, "Usage: deploy [options] <target>\n\nFor example `deploy --context test-cluster --namespace test prod` would deploy to namespace `test` in the `test-cluster` but assuming to use the `prod` configuration files (if present)\n\nOptions:\n")
-		set.PrintDefaults()
+type Args struct {
+	args.Globals
+	Target    string `arg:"" name:"target" help:"the target in the .buildtools.yaml"`
+	Context   string `name:"context" short:"c" help:"override the context for default deployment target" default:""`
+	Namespace string `name:"namespace" short:"n" help:"override the namespace for default deployment target" default:""`
+}
+
+func Kubecmd(dir string, out, eout io.Writer, info version.Info, osArgs ...string) *string {
+	var kubeCmdArgs Args
+	err := args.ParseArgs(out, eout, osArgs, info, &kubeCmdArgs)
+	if err != nil {
+		return nil
 	}
-	set.StringVar(&context, "context", "", contextUsage)
-	set.StringVar(&context, "c", "", contextUsage+" (shorthand)")
-	set.StringVar(&namespace, "namespace", "", namespaceUsage)
-	set.StringVar(&namespace, "n", "", namespaceUsage+" (shorthand)")
-
-	_ = set.Parse(args)
-
-	if set.NArg() < 1 {
-		set.Usage()
+	if cfg, err := config.Load(dir, out); err != nil {
+		_, _ = fmt.Fprintln(out, err.Error())
 	} else {
-		target := set.Args()[0]
-		if cfg, err := config.Load(dir, out); err != nil {
+		if env, err := cfg.CurrentTarget(kubeCmdArgs.Target); err != nil {
 			_, _ = fmt.Fprintln(out, err.Error())
 		} else {
-			if env, err := cfg.CurrentTarget(target); err != nil {
-				_, _ = fmt.Fprintln(out, err.Error())
-			} else {
-				if context != "" {
-					env.Context = context
-				}
-				if namespace != "" {
-					env.Namespace = namespace
-				}
-
-				cmd := fmt.Sprintf("kubectl --context %s --namespace %s", env.Context, env.Namespace)
-				return &cmd
+			if kubeCmdArgs.Context != "" {
+				env.Context = kubeCmdArgs.Context
 			}
+			if kubeCmdArgs.Namespace != "" {
+				env.Namespace = kubeCmdArgs.Namespace
+			}
+
+			if len(env.Namespace) == 0 {
+				env.Namespace = "default"
+			}
+
+			cmd := fmt.Sprintf("kubectl --context %s --namespace %s", env.Context, env.Namespace)
+			return &cmd
 		}
 	}
 

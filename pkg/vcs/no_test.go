@@ -2,8 +2,9 @@ package vcs
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNo_Identify(t *testing.T) {

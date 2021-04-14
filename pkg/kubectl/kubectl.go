@@ -5,19 +5,21 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/liamg/tml"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"k8s.io/kubectl/pkg/cmd"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/liamg/tml"
+	"github.com/pkg/errors"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/kubectl/pkg/cmd"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+
+	"github.com/buildtool/build-tools/pkg/config"
 )
 
 type Kubectl interface {

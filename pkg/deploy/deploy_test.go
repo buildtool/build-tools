@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/kubectl"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/kubectl"
 )
 
 func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
@@ -20,7 +23,14 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(".", "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(".", "abc123", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, "open k8s: no such file or directory")
 	assert.Equal(t, "", out.String())
@@ -38,7 +48,14 @@ func TestDeploy_NoFiles(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
@@ -65,7 +82,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -85,7 +109,14 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, fmt.Sprintf("read %s/k8s/deploy.yaml: is a directory", name))
 	assert.Equal(t, "", out.String())
@@ -107,7 +138,14 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, fmt.Sprintf("open %s/k8s/deploy.yaml: no such file or directory", name))
 	assert.Equal(t, "", out.String())
@@ -133,7 +171,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "dummy", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "dummy",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
@@ -157,8 +202,14 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout, "2m")
-
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "prod",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, "prod content", client.Inputs[0])
@@ -180,8 +231,14 @@ echo "Prod-script with suffix"`
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout, "2m")
-
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "prod",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
 	assert.Equal(t, "Prod-script with suffix\n", out.String())
@@ -202,8 +259,14 @@ echo "Script without suffix should not execute"`
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout, "2m")
-
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "prod",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
 	assert.Equal(t, "", out.String())
@@ -225,8 +288,14 @@ echo "Prod-script with suffix"`
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "prod", client, out, eout, "2m")
-
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "prod",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 	assert.EqualError(t, err, fmt.Sprintf("fork/exec %s: permission denied", scriptName))
 }
 
@@ -249,7 +318,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, "apply failed")
 	assert.Equal(t, "", out.String())
@@ -277,8 +353,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "2019-05-13T17:22:36Z01:00", "test", client, out, eout, "2m")
-
+	err := Deploy(name, "image", "2019-05-13T17:22:36Z01:00", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "test",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	expectedInput := `
@@ -314,7 +396,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
@@ -344,7 +433,14 @@ metadata:
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	err := Deploy(name, "abc123", "image", "20190513-17:22:36", "test", client, out, eout, "2m")
+	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
 
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))

@@ -3,14 +3,16 @@ package registry
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/aws/aws-sdk-go/aws"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
-	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 func TestEcr_LoginAuthRequestFailed(t *testing.T) {

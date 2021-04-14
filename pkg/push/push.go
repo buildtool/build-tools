@@ -1,32 +1,43 @@
 package push
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/version"
+
+	docker2 "github.com/docker/docker/client"
+	"github.com/liamg/tml"
+
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
-	docker2 "github.com/docker/docker/client"
-	"github.com/liamg/tml"
 )
 
-func Push(dir string, out, eout io.Writer, args ...string) int {
-	var dockerfile string
-	const (
-		defaultDockerfile = "Dockerfile"
-		usage             = "name of the Dockerfile to use"
-	)
-	set := flag.NewFlagSet("push", flag.ContinueOnError)
-	set.StringVar(&dockerfile, "file", defaultDockerfile, usage)
+type Args struct {
+	args.Globals
+	Dockerfile string `name:"file" short:"f" help:"name of the Dockerfile to use." default:"Dockerfile"`
+}
 
-	if err := set.Parse(args); err != nil {
-		return -1
+func Push(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
+	var pushArgs Args
+	err := args.ParseArgs(out,
+		eout,
+		osArgs,
+		info,
+		&pushArgs)
+	if err != nil {
+		if err != args.Done {
+			return -1
+		} else {
+			return 0
+		}
 	}
+
 	client, err := docker2.NewClientWithOpts(docker2.FromEnv)
 	if err != nil {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
@@ -37,7 +48,7 @@ func Push(dir string, out, eout io.Writer, args ...string) int {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("<red>%s</red>", err.Error()))
 		return -2
 	}
-	return doPush(client, cfg, dir, dockerfile, out, eout)
+	return doPush(client, cfg, dir, pushArgs.Dockerfile, out, eout)
 }
 
 func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, out, eout io.Writer) int {

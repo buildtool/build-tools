@@ -2,12 +2,14 @@ package config
 
 import (
 	"bytes"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/buildtool/build-tools/pkg/registry"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/registry"
 )
 
 func TestDockerhub_Identify(t *testing.T) {

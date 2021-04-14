@@ -2,11 +2,12 @@ package docker
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseDockerignore_FileMissing(t *testing.T) {

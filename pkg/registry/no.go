@@ -2,10 +2,12 @@ package registry
 
 import (
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/docker"
+	"io"
+
 	"github.com/docker/docker/api/types"
 	"github.com/liamg/tml"
-	"io"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 type NoDockerRegistry struct{}

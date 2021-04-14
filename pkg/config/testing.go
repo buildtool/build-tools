@@ -3,10 +3,11 @@
 package config
 
 import (
+	"io/ioutil"
+
 	git2 "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"io/ioutil"
 )
 
 func InitRepo(dir string) *git2.Repository {

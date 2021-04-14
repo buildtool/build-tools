@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPush(t *testing.T) {
@@ -34,7 +35,7 @@ func TestVersion(t *testing.T) {
 	exitFunc = func(code int) {
 		assert.Equal(t, 0, code)
 	}
-	os.Args = []string{"push", "-version"}
+	os.Args = []string{"push", "--version"}
 	main()
 
 	assert.Equal(t, "Version: 1.0.0, commit 67d2fcf276fcd9cf743ad4be9a9ef5828adc082f, built at 2006-01-02T15:04:05Z07:00\n", out.(*bytes.Buffer).String())

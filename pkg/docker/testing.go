@@ -5,11 +5,12 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/registry"
 	"io"
 	"io/ioutil"
 	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 )
 
 type MockDocker struct {

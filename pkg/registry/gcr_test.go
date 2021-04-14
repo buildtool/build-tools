@@ -3,10 +3,12 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/docker"
+	"testing"
+
 	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 func TestGcr_Name(t *testing.T) {

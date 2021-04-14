@@ -43,6 +43,7 @@ nav:
   - commands/build.md
   - commands/push.md
   - commands/deploy.md
+  - commands/kubecmd.md
 - Continuous Integration:
   - About: ci/ci.md
   - ci/buildkite.md

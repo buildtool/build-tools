@@ -5,16 +5,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client"
-	"github.com/liamg/tml"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/docker/client"
+	"github.com/liamg/tml"
 )
 
 type Client interface {
