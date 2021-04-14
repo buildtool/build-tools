@@ -4,11 +4,12 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
-	"github.com/docker/docker/pkg/archive"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"testing"
+
+	"github.com/docker/docker/pkg/archive"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractFileContent_Missing_File_Return_Error(t *testing.T) {

@@ -2,13 +2,15 @@ package config
 
 import (
 	"bytes"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg"
 )
 
 func TestIdentify_Azure(t *testing.T) {

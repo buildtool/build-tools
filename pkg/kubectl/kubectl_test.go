@@ -5,17 +5,19 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/spf13/cobra"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
-	"k8s.io/kubectl/pkg/cmd/util"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/kubectl/pkg/cmd/util"
+
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/config"
 )
 
 func TestNew(t *testing.T) {

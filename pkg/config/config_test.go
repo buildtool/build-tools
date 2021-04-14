@@ -5,14 +5,16 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/buildtool/build-tools/pkg/ci"
-	"github.com/buildtool/build-tools/pkg/registry"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/ci"
+	"github.com/buildtool/build-tools/pkg/registry"
 )
 
 var name string

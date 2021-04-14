@@ -1,10 +1,11 @@
 package ci
 
 import (
-	"github.com/buildtool/build-tools/pkg/vcs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/buildtool/build-tools/pkg/vcs"
 )
 
 type CI interface {

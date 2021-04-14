@@ -2,12 +2,14 @@ package config
 
 import (
 	"bytes"
-	"github.com/buildtool/build-tools/pkg/vcs"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg/vcs"
 )
 
 func TestIdentify(t *testing.T) {

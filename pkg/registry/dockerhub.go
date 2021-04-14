@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/docker/docker/api/types"
 	"io"
+
+	"github.com/docker/docker/api/types"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 type Dockerhub struct {

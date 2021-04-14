@@ -3,9 +3,11 @@ package registry
 import (
 	"bytes"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 func TestDockerhub_LoginSuccess(t *testing.T) {

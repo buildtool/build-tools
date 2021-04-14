@@ -5,10 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/docker/docker/api/types"
 	"io"
 	"strings"
+
+	"github.com/docker/docker/api/types"
+
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 type Gitlab struct {
