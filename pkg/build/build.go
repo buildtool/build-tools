@@ -110,9 +110,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -5
 	}
-	dockerTagOverride := os.Getenv("DOCKER_TAG")
-
-	if !ci.IsValid(currentCI) && len(dockerTagOverride) == 0 {
+	if !ci.IsValid(currentCI) {
 		_, _ = fmt.Fprintln(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
 		return -6
 	}
@@ -150,24 +148,17 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	}
 
 	var tags []string
-	if len(dockerTagOverride) > 0 {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTagOverride, eout)
-		caches = append([]string{tag}, caches...)
-		tags = append(tags, tag)
-		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", docker.SlugifyTag(dockerTagOverride))
-	} else {
-		branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch, eout)
-		latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout)
-		tags = append(tags, []string{
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit, eout),
-			branchTag,
-		}...)
-		if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
-			tags = append(tags, latestTag)
-		}
-
-		caches = append([]string{branchTag, latestTag}, caches...)
+	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch, eout)
+	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout)
+	tags = append(tags, []string{
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit, eout),
+		branchTag,
+	}...)
+	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
+		tags = append(tags, latestTag)
 	}
+
+	caches = append([]string{branchTag, latestTag}, caches...)
 	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, tags, caches, "", authConfigs, out, !buildVars.NoPull); err != nil {
 		_, _ = fmt.Fprintln(eout, err.Error())
 		return -7
