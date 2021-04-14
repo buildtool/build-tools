@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.81.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.16 // indirect
+	github.com/alecthomas/kong v0.2.16
 	github.com/aws/aws-sdk-go v1.38.17
 	github.com/caarlos0/env/v6 v6.5.0
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
@@ -28,5 +29,3 @@ require (
 	k8s.io/client-go v0.21.0
 	k8s.io/kubectl v0.21.0
 )
-
-//replace github.com/docker/spdystream => github.com/moby/spdystream  v0.2.0

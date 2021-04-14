@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
-	"github.com/buildtool/build-tools/pkg"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/buildtool/build-tools/pkg"
 )
 
 func TestVersion(t *testing.T) {
@@ -16,7 +18,7 @@ func TestVersion(t *testing.T) {
 	exitFunc = func(code int) {
 		assert.Equal(t, 0, code)
 	}
-	os.Args = []string{"build", "-version"}
+	os.Args = []string{"deploy", "--version"}
 	main()
 
 	assert.Equal(t, "Version: 1.0.0, commit none, built at unknown\n", out.(*bytes.Buffer).String())

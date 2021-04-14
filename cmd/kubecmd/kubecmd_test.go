@@ -2,24 +2,22 @@ package main
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVersion(t *testing.T) {
-	out = &bytes.Buffer{}
+	eout = &bytes.Buffer{}
 	version = "1.0.0"
 	commit = "67d2fcf276fcd9cf743ad4be9a9ef5828adc082f"
-	exitFunc = func(code int) {
-		assert.Equal(t, 0, code)
-	}
-	os.Args = []string{"build", "-version"}
+	os.Args = []string{"kubecmd", "--version"}
 	main()
 
-	assert.Equal(t, "Version: 1.0.0, commit 67d2fcf276fcd9cf743ad4be9a9ef5828adc082f, built at unknown\n", out.(*bytes.Buffer).String())
+	assert.Equal(t, "Version: 1.0.0, commit 67d2fcf276fcd9cf743ad4be9a9ef5828adc082f, built at unknown\n", eout.(*bytes.Buffer).String())
 }
 
 func TestKubecmd_MissingArguments(t *testing.T) {
@@ -28,6 +26,7 @@ func TestKubecmd_MissingArguments(t *testing.T) {
 }
 
 func TestKubecmd_NoOptions(t *testing.T) {
+	out = &bytes.Buffer{}
 	oldPwd, _ := os.Getwd()
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
@@ -43,8 +42,10 @@ targets:
 	assert.NoError(t, err)
 	defer func() { _ = os.Chdir(oldPwd) }()
 
-	os.Args = []string{"deploy", "dummy"}
+	os.Args = []string{"kubecmd", "dummy"}
 	main()
+	assert.Equal(t, "kubectl --context missing --namespace none", out.(*bytes.Buffer).String())
+
 }
 
 func TestKubecmd_Output(t *testing.T) {
@@ -64,7 +65,7 @@ targets:
 	assert.NoError(t, err)
 	defer func() { _ = os.Chdir(oldPwd) }()
 
-	os.Args = []string{"deploy", "dummy"}
+	os.Args = []string{"kubecmd", "dummy"}
 	main()
 	assert.Equal(t, "kubectl --context local --namespace default", out.(*bytes.Buffer).String())
 }

@@ -16,6 +16,8 @@ import (
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/buildtool/build-tools/pkg/registry"
 	"github.com/buildtool/build-tools/pkg/vcs"
+	"github.com/buildtool/build-tools/pkg/version"
+
 	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -43,13 +45,13 @@ func TestPush_BadDockerHost(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 
 	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
-	code := Push(name, os.Stdout, os.Stderr)
+	code := Push(name, os.Stdout, os.Stderr, version.Info{})
 	assert.Equal(t, -1, code)
 }
 
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	code := Push(name, os.Stdout, os.Stderr)
+	code := Push(name, os.Stdout, os.Stderr, version.Info{})
 	assert.Equal(t, -5, code)
 }
 
@@ -60,7 +62,7 @@ func TestPush_BrokenConfig(t *testing.T) {
 
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
-	exitCode := Push(name, out, eout)
+	exitCode := Push(name, out, eout, version.Info{})
 
 	assert.Equal(t, -2, exitCode)
 	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", filepath.Join(name, ".buildtools.yaml")), out.String())
