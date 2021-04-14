@@ -12,3 +12,22 @@ Performs a `docker build`, using a `Dockerfile` to build the application and tag
 ```sh
 $ build --file docker/Dockerfile.build --skip-login --build-arg AUTH_TOKEN=abc
 ```
+
+## Build-args
+The following [build-arg] are automatically made available:
+
+|      Arg    |                   Value                                |
+| :---------- | :----------------------------------------------------- |
+| `CI_COMMIT` | The commit being built as exposed by [CI](../ci/ci.md) |
+| `CI_BRANCH` | The branch being built as exposed by [CI](../ci/ci.md) |
+
+they can be used in a `Dockerfile` like:
+
+```dockerfile
+FROM ubuntu
+ARG CI_BRANCH
+
+RUN echo "Building $CI_BRANCH"
+```
+
+[build-args]: (https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)
