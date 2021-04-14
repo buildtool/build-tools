@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/buildtool/build-tools/pkg/args"
@@ -79,22 +78,16 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string, ou
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage, eout))
 	}
 
-	if dockerTag := os.Getenv("DOCKER_TAG"); len(dockerTag) > 0 {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), dockerTag, eout)
-		tags = append(tags, tag)
-		_, _ = fmt.Fprintf(out, "overriding docker tags with value from env DOCKER_TAG %s\n", dockerTag)
-	} else {
-		if !ci.IsValid(currentCI) {
-			_, _ = fmt.Fprint(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
-			return -6
-		}
-		tags = append(tags,
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit(), eout),
-			docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash(), eout),
-		)
-		if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
-			tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout))
-		}
+	if !ci.IsValid(currentCI) {
+		_, _ = fmt.Fprint(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+		return -6
+	}
+	tags = append(tags,
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit(), eout),
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash(), eout),
+	)
+	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
+		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout))
 	}
 	for _, tag := range tags {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Pushing tag '<green>%s</green>'", tag))

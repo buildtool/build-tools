@@ -295,49 +295,6 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, "", eout.String())
 }
 
-func TestBuild_DockerTagOverride(t *testing.T) {
-	defer pkg.SetEnv("DOCKER_TAG", "override")()
-	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
-		Globals:    args.Globals{},
-		Dockerfile: "Dockerfile",
-		BuildArgs:  nil,
-		NoLogin:    false,
-		NoPull:     false,
-	})
-
-	assert.Equal(t, 0, code)
-	assert.Equal(t, []string{"repo/build:override"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, []string{"repo/build:override"}, client.BuildOptions[0].CacheFrom)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mnone\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\x1b[0m\noverriding docker tags with value from env DOCKER_TAG override\nBuild successful", out.String())
-}
-
-func TestBuild_DockerTagOverride_Slugified_Tag(t *testing.T) {
-	defer pkg.SetEnv("DOCKER_TAG", "override=abc")()
-	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
-		Globals:    args.Globals{},
-		Dockerfile: "Dockerfile",
-		BuildArgs:  nil,
-		NoLogin:    false,
-		NoPull:     false,
-	})
-
-	assert.Equal(t, 0, code)
-	assert.Equal(t, []string{"repo/build:overrideabc"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, []string{"repo/build:overrideabc"}, client.BuildOptions[0].CacheFrom)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mnone\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32m\x1b[39m on branch \x1b[32m\x1b[39m\x1b[0m\noverriding docker tags with value from env DOCKER_TAG overrideabc\nBuild successful", out.String())
-	assert.Equal(t, "\x1b[0m\x1b[33mWarning: tag was changed from 'override=abc' to 'overrideabc' due to Dockers rules.\x1b[39m\x1b[0m", eout.String())
-}
-
 func TestBuild_MasterBranch(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()

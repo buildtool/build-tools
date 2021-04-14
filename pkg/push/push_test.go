@@ -169,28 +169,6 @@ func TestPush_PushMainBranch(t *testing.T) {
 	assert.Equal(t, "", eout.String())
 }
 
-func TestPush_DockerTagOverride(t *testing.T) {
-	defer pkg.SetEnv("DOCKER_TAG", "override")()
-	defer func() { _ = os.RemoveAll(name) }()
-	_ = write(name, "Dockerfile", "FROM scratch")
-
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	pushOut := `{"status":"Push successful"}`
-	client := &docker.MockDocker{PushOutput: &pushOut}
-	cfg := config.InitEmptyConfig()
-	cfg.CI.Gitlab.CIBuildName = "reponame"
-	cfg.CI.Gitlab.CICommit = "abc123"
-	cfg.CI.Gitlab.CIBranchName = "master"
-	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
-
-	assert.Equal(t, 0, exitCode)
-	assert.Equal(t, []string{"repo/reponame:override"}, client.Images)
-	assert.Equal(t, "Logged in\noverriding docker tags with value from env DOCKER_TAG override\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:override\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
-}
-
 func TestPush_Multistage(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	dockerfile := `
