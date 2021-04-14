@@ -67,12 +67,7 @@ func Load(dir string, out io.Writer) (*Config, error) {
 			return nil, errors.Wrap(err, "Failed to decode content")
 		} else {
 			if err := parseConfig(decoded, cfg); err != nil {
-				if strings.Contains(string(decoded), "environments:") {
-					_, _ = fmt.Fprintln(out, "BUILDTOOLS_CONTENT contains deprecated 'environments' tag, please change to 'targets'")
-				}
-				if err = parseOldConfig(decoded, cfg); err != nil {
-					return cfg, err
-				}
+				return cfg, err
 			}
 		}
 	} else {
@@ -185,33 +180,9 @@ func parseConfigFile(out io.Writer, filename string, cfg *Config) error {
 	if err != nil {
 		return err
 	}
-	if strings.Contains(string(data), "environments:") {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("file: <green>'%s'</green> <red>contains deprecated 'environments' tag, please change to 'targets'</red>", filename))
-		return parseOldConfig(data, cfg)
-	}
-
 	return parseConfig(data, cfg)
 }
 
-func parseOldConfig(content []byte, config *Config) error {
-	oldConfig := &struct {
-		VCS      *VCSConfig        `yaml:"vcs"`
-		CI       *CIConfig         `yaml:"ci"`
-		Registry *RegistryConfig   `yaml:"registry"`
-		Targets  map[string]Target `yaml:"environments"`
-	}{}
-	if err := UnmarshalStrict(content, oldConfig); err != nil {
-		return err
-	} else {
-		if err := mergo.Merge(config, &Config{
-			Registry: oldConfig.Registry,
-			Targets:  oldConfig.Targets,
-		}); err != nil {
-			return err
-		}
-		return validate(config)
-	}
-}
 func parseConfig(content []byte, config *Config) error {
 	temp := &Config{}
 	if err := UnmarshalStrict(content, temp); err != nil {
