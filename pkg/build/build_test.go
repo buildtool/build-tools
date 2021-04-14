@@ -55,7 +55,7 @@ func TestBuild_BrokenConfig(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -104,7 +104,7 @@ func TestBuild_LoginError(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -129,7 +129,7 @@ func TestBuild_BuildError(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -154,7 +154,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -179,7 +179,7 @@ func TestBuild_BrokenOutput(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -201,7 +201,7 @@ func TestBuild_WithBuildArgs(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1", "buildargs2=2"},
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 	assert.Equal(t, 0, code)
@@ -225,7 +225,7 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1=1", "buildargs2", "buildargs3=", "buildargs4"},
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 	assert.Equal(t, 0, code)
@@ -250,7 +250,7 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  true,
+		NoLogin:    true,
 		NoPull:     false,
 	})
 	assert.Equal(t, 0, code)
@@ -273,7 +273,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -306,7 +306,7 @@ func TestBuild_DockerTagOverride(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -327,7 +327,7 @@ func TestBuild_DockerTagOverride_Slugified_Tag(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -354,7 +354,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -384,7 +384,7 @@ func TestBuild_MainBranch(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -443,7 +443,7 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -477,7 +477,7 @@ COPY --from=test file2 .
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 
@@ -523,7 +523,7 @@ COPY --from=test file2 .
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
-		SkipLogin:  false,
+		NoLogin:    false,
 		NoPull:     false,
 	})
 

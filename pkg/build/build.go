@@ -36,7 +36,7 @@ type Args struct {
 	args.Globals
 	Dockerfile string   `name:"file" short:"f" help:"name of the Dockerfile to use." default:"Dockerfile"`
 	BuildArgs  []string `name:"build-arg" type:"list" help:"additional docker build-args to use, see https://docs.docker.com/engine/reference/commandline/build/ for more information."`
-	SkipLogin  bool     `help:"disable login to docker registry" default:"false" `
+	NoLogin    bool     `help:"disable login to docker registry" default:"false" `
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
 }
 
@@ -92,7 +92,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	currentRegistry := cfg.CurrentRegistry()
 	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>", currentRegistry.Name()))
 	authConfigs := make(map[string]types.AuthConfig)
-	if buildVars.SkipLogin {
+	if buildVars.NoLogin {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <yellow>disabled</yellow>"))
 	} else {
 		_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>", currentRegistry.Name()))

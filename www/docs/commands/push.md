@@ -6,7 +6,7 @@ By following the conventions no additional flags are needed, but the following f
 
 |      Flag                       |                   Description                                       |
 | :------------------------------ | :------------------------------------------------------------------ |
-| `--file <path to Dockerfile>`| Used to override the default `Dockerfile` location (which is `$PWD`)|
+| `--file`,`-f` `<path to Dockerfile>`| Used to override the default `Dockerfile` location (which is `$PWD`)|
 
 ```sh
 $ push --file docker/Dockerfile.build

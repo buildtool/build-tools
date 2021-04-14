@@ -35,6 +35,10 @@ func Kubecmd(dir string, out, eout io.Writer, info version.Info, osArgs ...strin
 				env.Namespace = kubeCmdArgs.Namespace
 			}
 
+			if len(env.Namespace) == 0 {
+				env.Namespace = "default"
+			}
+
 			cmd := fmt.Sprintf("kubectl --context %s --namespace %s", env.Context, env.Namespace)
 			return &cmd
 		}

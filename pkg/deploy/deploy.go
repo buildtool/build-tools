@@ -25,7 +25,7 @@ type Args struct {
 	Target    string `arg:"" name:"target" help:"the target in the .buildtools.yaml" default:"local"`
 	Context   string `name:"context" short:"c" help:"override the context for default deployment target" default:""`
 	Namespace string `name:"namespace" short:"n" help:"override the namespace for default deployment target" default:""`
-	Tag       string `name:"tag" short:"n" help:"override the tag to deploy, not using the CI or VCS evaluated value" default:""`
+	Tag       string `name:"tag" help:"override the tag to deploy, not using the CI or VCS evaluated value" default:""`
 	Timeout   string `name:"timeout" short:"t" help:"override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)" default:"2m"`
 }
 

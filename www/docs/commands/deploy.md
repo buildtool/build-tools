@@ -4,10 +4,10 @@ Deploys the built application to a Kubernetes cluster. Normal usage `deploy <tar
 
 |      Flag             |                   Description                                                   |
 | :-------------------- | :-------------------------------------------------------------------------------|
-| `--context`           | Use a different context than the one found in configuration                     |
-| `--namespace`         | Use a different namespace than the one found in configuration                   |
-| `--timeout`           | Override the default deployment waiting time for completion (default 2 minutes). <br>0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)|
-| `--tag`               | Override the default tag to use (instead of the current commit tag or the value from CI) |
+| `--context`, `-c`           | Use a different context than the one found in configuration                     |
+| `--namespace`, `-n`         | Use a different namespace than the one found in configuration                   |
+| `--timeout`, `-t`           | Override the default deployment waiting time for completion (default 2 minutes). <br>0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)|
+| `--tag`                    | Override the default tag to use (instead of the current commit tag or the value from CI) |
 
 ## Default usage, with `.buildtools.yaml` file
 Only the `target` name has to be specified
