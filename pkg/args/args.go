@@ -32,7 +32,7 @@ func (v VersionFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
 
 func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variables interface{}) error {
 	exitCode := unset
-	cmd, err := kong.New(
+	cmd, _ := kong.New(
 		variables,
 		kong.Name(info.Name),
 		kong.Exit(func(i int) {
@@ -41,7 +41,7 @@ func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variable
 			}
 		}),
 		kong.Help(func(options kong.HelpOptions, ctx *kong.Context) error {
-			kong.DefaultHelpPrinter(options, ctx)
+			_ = kong.DefaultHelpPrinter(options, ctx)
 			ctx.Exit(done)
 			return nil
 		}),
@@ -53,10 +53,7 @@ func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variable
 		}),
 		kong.Vars{"version": info.String()},
 	)
-	if err != nil {
-		return err
-	}
-	_, err = cmd.Parse(osArgs)
+	_, err := cmd.Parse(osArgs)
 	if exitCode == done {
 		return Done
 	}
