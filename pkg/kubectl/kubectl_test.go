@@ -278,7 +278,6 @@ func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	calls = [][]string{}
-	cmdError = nil
 	newKubectlCmd = mockCmd
 	e := "deployment not found"
 	cmdError = &e
@@ -349,7 +348,6 @@ func TestKubectl_PodEvents_Error(t *testing.T) {
 	out := &bytes.Buffer{}
 	eout := &bytes.Buffer{}
 	calls = [][]string{}
-	cmdError = nil
 	newKubectlCmd = mockCmd
 	e := "pod not found"
 	cmdError = &e

@@ -30,4 +30,10 @@ jobs:
           unset "${!GITHUB_@}" RUNNER_WORKSPACE
           CGO_ENABLED=1 go test -p 1 -mod=readonly -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
           go tool cover -func=coverage.txt
-          bash <(curl -s https://codecov.io/bash)
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./coverage.txt
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true

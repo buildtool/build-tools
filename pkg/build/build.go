@@ -212,15 +212,3 @@ func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
 
 	return stages, nil
 }
-
-type arrayFlags []string
-
-func (i *arrayFlags) String() string {
-	// change this, this is just can example to satisfy the interface
-	return "my string representation"
-}
-
-func (i *arrayFlags) Set(value string) error {
-	*i = append(*i, strings.TrimSpace(value))
-	return nil
-}
