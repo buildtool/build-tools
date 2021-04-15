@@ -53,6 +53,9 @@ func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variable
 		}),
 		kong.Vars{"version": info.String()},
 	)
+	if err != nil {
+		return err
+	}
 	_, err = cmd.Parse(osArgs)
 	if exitCode == done {
 		return Done

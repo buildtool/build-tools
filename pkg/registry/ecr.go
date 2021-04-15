@@ -57,7 +57,7 @@ func (r *ECR) Configured() bool {
 
 func (r *ECR) region() *string {
 	if r.Region == "" {
-		regex := regexp.MustCompile(`.*.dkr.ecr.(.*).amazonaws.com`)
+		regex := regexp.MustCompile(".*\\.dkr\\.ecr.(.*)\\.amazonaws\\.com")
 		if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
 			return &submatch[1]
 		}
@@ -66,7 +66,7 @@ func (r *ECR) region() *string {
 }
 
 func (r *ECR) registry() (*string, error) {
-	regex := regexp.MustCompile(`(.*).dkr.ecr..*.amazonaws.com`)
+	regex := regexp.MustCompile("(.*)\\.dkr\\.ecr..*\\.amazonaws\\.com")
 	if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
 		return &submatch[1], nil
 	}
