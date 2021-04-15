@@ -9,9 +9,6 @@ type no struct {
 }
 
 func (v no) Identify(dir string, out io.Writer) bool {
-	v.CurrentCommit = ""
-	v.CurrentBranch = ""
-
 	return true
 }
 
