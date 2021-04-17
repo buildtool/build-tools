@@ -7,12 +7,14 @@ import (
 
 	"github.com/alecthomas/kong"
 
+	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/version"
 )
 
 type Globals struct {
 	Version VersionFlag `name:"version" help:"Print args information and quit"`
 	Verbose bool        `short:"v" help:"Enable verbose mode"`
+	Config  ConfigFlag  ``
 }
 
 type VersionFlag string
@@ -30,7 +32,22 @@ func (v VersionFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
 	return nil
 }
 
-func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variables interface{}) error {
+type ConfigFlag string
+
+func (v ConfigFlag) Decode(ctx *kong.DecodeContext) error { return nil }
+func (v ConfigFlag) IsBool() bool                         { return true }
+func (v ConfigFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
+	cfg, err := config.Load(vars["dir"], app.Stdout)
+	if err != nil {
+		return err
+	}
+	_, _ = fmt.Fprintf(app.Stdout, "Current config\n")
+	_ = cfg.Print(app.Stdout)
+	app.Exit(done)
+	return nil
+}
+
+func ParseArgs(dir string, out, eout io.Writer, osArgs []string, info version.Info, variables interface{}) error {
 	exitCode := unset
 	cmd, _ := kong.New(
 		variables,
@@ -51,7 +68,7 @@ func ParseArgs(out, eout io.Writer, osArgs []string, info version.Info, variable
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact: true,
 		}),
-		kong.Vars{"version": info.String()},
+		kong.Vars{"version": info.String(), "dir": dir},
 	)
 	_, err := cmd.Parse(osArgs)
 	if exitCode == done {

@@ -14,10 +14,10 @@ import (
 )
 
 type Gitlab struct {
-	dockerRegistry
-	Registry   string `yaml:"registry" env:"CI_REGISTRY"`
-	Repository string `yaml:"repository" env:"CI_REGISTRY_IMAGE"`
-	Token      string `yaml:"token" env:"CI_BUILD_TOKEN"`
+	dockerRegistry `yaml:"-"`
+	Registry       string `yaml:"registry" env:"CI_REGISTRY"`
+	Repository     string `yaml:"repository" env:"CI_REGISTRY_IMAGE"`
+	Token          string `yaml:"token,omitempty" env:"CI_BUILD_TOKEN"`
 }
 
 var _ Registry = &Gitlab{}

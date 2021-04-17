@@ -13,10 +13,10 @@ import (
 )
 
 type Quay struct {
-	dockerRegistry
-	Repository string `yaml:"repository" env:"QUAY_REPOSITORY"`
-	Username   string `yaml:"username" env:"QUAY_USERNAME"`
-	Password   string `yaml:"password" env:"QUAY_PASSWORD"`
+	dockerRegistry `yaml:"-"`
+	Repository     string `yaml:"repository" env:"QUAY_REPOSITORY"`
+	Username       string `yaml:"username" env:"QUAY_USERNAME"`
+	Password       string `yaml:"password" env:"QUAY_PASSWORD"`
 }
 
 var _ Registry = &Quay{}

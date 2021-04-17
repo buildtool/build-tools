@@ -31,7 +31,7 @@ type Args struct {
 
 func DoDeploy(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
 	var deployArgs Args
-	err := args.ParseArgs(out, eout, osArgs, info, &deployArgs)
+	err := args.ParseArgs(dir, out, eout, osArgs, info, &deployArgs)
 	if err != nil {
 		if err != args.Done {
 			return -1

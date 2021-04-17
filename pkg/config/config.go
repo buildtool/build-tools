@@ -54,8 +54,8 @@ type RegistryConfig struct {
 
 type Target struct {
 	Context    string `yaml:"context"`
-	Namespace  string `yaml:"namespace"`
-	Kubeconfig string `yaml:"kubeconfig"`
+	Namespace  string `yaml:"namespace,omitempty"`
+	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 }
 
 func Load(dir string, out io.Writer) (*Config, error) {
@@ -136,6 +136,26 @@ func (c *Config) CurrentRegistry() registry.Registry {
 		}
 	}
 	return registry.NoDockerRegistry{}
+}
+
+func (c *Config) Print(target io.Writer) error {
+	p := struct {
+		CI       string            `yaml:"ci"`
+		VCS      string            `yaml:"vcs"`
+		Registry registry.Registry `yaml:"registry"`
+		Targets  map[string]Target
+	}{
+		CI:       c.CurrentCI().Name(),
+		VCS:      c.CurrentVCS().Name(),
+		Registry: c.CurrentRegistry(),
+		Targets:  c.Targets,
+	}
+	if out, err := yaml.Marshal(p); err != nil {
+		return err
+	} else {
+		_, _ = target.Write(out)
+	}
+	return nil
 }
 
 func (c *Config) CurrentTarget(target string) (*Target, error) {

@@ -42,7 +42,8 @@ type Args struct {
 
 func DoBuild(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
 	var buildArgs Args
-	err := args.ParseArgs(out,
+	err := args.ParseArgs(dir,
+		out,
 		eout,
 		osArgs,
 		info,

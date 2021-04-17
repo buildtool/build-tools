@@ -13,9 +13,9 @@ import (
 )
 
 type GCR struct {
-	dockerRegistry
+	dockerRegistry `yaml:"-"`
 	Url            string `yaml:"url" env:"GCR_URL"`
-	KeyFileContent string `yaml:"keyfileContent" env:"GCR_KEYFILE_CONTENT"`
+	KeyFileContent string `yaml:"keyfileContent,omitempty" env:"GCR_KEYFILE_CONTENT"`
 }
 
 var _ Registry = &GCR{}

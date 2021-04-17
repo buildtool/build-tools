@@ -21,14 +21,14 @@ import (
 )
 
 type ECR struct {
-	dockerRegistry
-	Url        string `yaml:"url" env:"ECR_URL"`
-	Region     string `yaml:"region" env:"ECR_REGION"`
-	username   string
-	password   string
-	ecrSvc     ecriface.ECRAPI
-	stsSvc     stsiface.STSAPI
-	registryId *string
+	dockerRegistry `yaml:"-"`
+	Url            string `yaml:"url" env:"ECR_URL"`
+	Region         string `yaml:"region,omitempty" env:"ECR_REGION"`
+	username       string
+	password       string
+	ecrSvc         ecriface.ECRAPI
+	stsSvc         stsiface.STSAPI
+	registryId     *string
 }
 
 var _ Registry = &ECR{}
@@ -59,7 +59,7 @@ func (r *ECR) region() *string {
 	if r.Region == "" {
 		regex := regexp.MustCompile(`.*\.dkr\.ecr.(.*)\.amazonaws\.com`)
 		if submatch := regex.FindStringSubmatch(r.Url); len(submatch) == 2 {
-			return &submatch[1]
+			r.Region = submatch[1]
 		}
 	}
 	return &r.Region
