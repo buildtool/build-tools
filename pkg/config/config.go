@@ -14,7 +14,6 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/imdario/mergo"
 	"github.com/liamg/tml"
-	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -58,13 +57,18 @@ type Target struct {
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 }
 
+const envBuildtoolsContent = "BUILDTOOLS_CONTENT"
+
 func Load(dir string, out io.Writer) (*Config, error) {
 	cfg := InitEmptyConfig()
 
-	if content, ok := os.LookupEnv("BUILDTOOLS_CONTENT"); ok {
-		_, _ = fmt.Fprintln(out, "Parsing config from env: BUILDTOOLS_CONTENT")
+	if content, ok := os.LookupEnv(envBuildtoolsContent); ok {
+		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envBuildtoolsContent)
 		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
-			return nil, errors.Wrap(err, "Failed to decode content")
+			// TODO Log verbose
+			if err := parseConfig([]byte(content), cfg); err != nil {
+				return cfg, err
+			}
 		} else {
 			if err := parseConfig(decoded, cfg); err != nil {
 				return cfg, err

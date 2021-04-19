@@ -239,7 +239,7 @@ func TestKubectl_KubeconfigBase64Set(t *testing.T) {
     cluster: k8s.prod
     user: user@example.org
 `
-	defer pkg.SetEnv(envKubeconfigContentBase64, base64.StdEncoding.EncodeToString([]byte(yaml)))()
+	defer pkg.SetEnv(envKubeconfigContent, base64.StdEncoding.EncodeToString([]byte(yaml)))()
 	k := New(&config.Target{}, out, eout)
 
 	kubeconfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
@@ -247,16 +247,6 @@ func TestKubectl_KubeconfigBase64Set(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
 	assert.Equal(t, kubeconfigFile, k.(*kubectl).args["kubeconfig"])
-	k.Cleanup()
-}
-
-func TestKubectl_KubeconfigInvalidBase64Set(t *testing.T) {
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	defer pkg.SetEnv(envKubeconfigContentBase64, "äö")()
-	k := New(&config.Target{}, out, eout)
-	assert.Equal(t, "Failed to decode content: illegal base64 data at input byte 0\n", eout.String())
-
 	k.Cleanup()
 }
 
