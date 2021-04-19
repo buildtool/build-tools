@@ -18,7 +18,7 @@ type Args struct {
 
 func Kubecmd(dir string, out, eout io.Writer, info version.Info, osArgs ...string) *string {
 	var kubeCmdArgs Args
-	err := args.ParseArgs(out, eout, osArgs, info, &kubeCmdArgs)
+	err := args.ParseArgs(dir, out, eout, osArgs, info, &kubeCmdArgs)
 	if err != nil {
 		return nil
 	}

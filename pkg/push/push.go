@@ -24,7 +24,8 @@ type Args struct {
 
 func Push(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
 	var pushArgs Args
-	err := args.ParseArgs(out,
+	err := args.ParseArgs(dir,
+		out,
 		eout,
 		osArgs,
 		info,
