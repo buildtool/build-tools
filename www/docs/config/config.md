@@ -40,6 +40,8 @@ targets:
 EOF
 ```
 
+`BUILDTOOLS_CONTENT` can be either a base64 encoded string or plain text.
+
 **Note:** If `BUILDTOOLS_CONTENT` is set, no other configuration files will be used.
 
 See the following sections for information on how to configure the different parts of the configuration files.
