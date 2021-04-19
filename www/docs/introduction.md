@@ -19,4 +19,4 @@ built image on a (non-local) Kubernetes cluster.
 Finally, the code is deployed to the Kubernetes cluster using the provided descriptor files.
 
 
-<script id="asciicast-387073" src="https://asciinema.org/a/387073.js" async></script>
+<script id="asciicast-387073" src="https://asciinema.org/a/387073.js" id="asciicast-387073" async data-autoplay="true" data-preload="true" data-theme="solarized-dark"></script>
