@@ -15,12 +15,17 @@ targets:
     kubeconfig:
 ```
 
-| Parameter     | Default                                | Description                                           |
-| :------------ | :------------------------------------- | :---------------------------------------------------  |
-| `context`     |                                        | Which context in the Kubernetes configuration to use  |
-| `namespace`   | `default`                              | Specific namespace to deploy to                       |
-| `kubeconfig`  | value of `KUBECONFIG` `ENV` variable   | Full path to a specific kubeconfig file to use        |
+| Parameter     | Default                                       | Description                                           |
+| :------------ | :-------------------------------------------- | :---------------------------------------------------  |
+| `context`     |                                               | Which context in the Kubernetes configuration to use  |
+| `namespace`   | `default`                                     | Specific namespace to deploy to                       |
+| `kubeconfig`  | value of `KUBECONFIG` environment variable    | Full path to a specific kubeconfig file to use        |
 
+The `KUBECONFIG_CONTENT` environment variable (probably most useful in CI/CD pipelines) can be used to provide the
+content of a "kubeconfig" file. If set, buildtools will create a temporary file with that content to use as the `kubeconfig` value.
+
+**Note:** the `kubeconfig` parameter in config file overrides both the `KUBECONFIG` and `KUBECONFIG_CONTENT` environment
+variables if set.
 
 ## Examples
 
