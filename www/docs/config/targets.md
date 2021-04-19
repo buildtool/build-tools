@@ -23,6 +23,7 @@ targets:
 
 The `KUBECONFIG_CONTENT` environment variable (probably most useful in CI/CD pipelines) can be used to provide the
 content of a "kubeconfig" file. If set, buildtools will create a temporary file with that content to use as the `kubeconfig` value.
+`KUBECONFIG_CONTENT` can be either a base64 encoded string or plain text.
 
 **Note:** the `kubeconfig` parameter in config file overrides both the `KUBECONFIG` and `KUBECONFIG_CONTENT` environment
 variables if set.
