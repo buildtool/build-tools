@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/liamg/tml"
-	"github.com/pkg/errors"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/kubectl/pkg/cmd"
@@ -181,21 +180,17 @@ func (k kubectl) extractEvents(output string) string {
 var _ Kubectl = &kubectl{}
 
 const envKubeconfigContent = "KUBECONFIG_CONTENT"
-const envKubeconfigContentBase64 = "KUBECONFIG_CONTENT_BASE64"
 
 func getKubeconfigFileFromEnvs(tempDir string, out io.Writer) (string, bool, error) {
-	if content, exists := getEnv(envKubeconfigContentBase64, out); exists {
+	if content, exists := getEnv(envKubeconfigContent, out); exists {
 		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
-			return "", true, errors.Wrap(err, "Failed to decode content")
+			// TODO Log verbose
+			file, err := writeKubeconfigFile(tempDir, []byte(content))
+			return file, true, err
 		} else {
 			file, err := writeKubeconfigFile(tempDir, decoded)
 			return file, true, err
 		}
-	}
-
-	if content, exists := getEnv(envKubeconfigContent, out); exists {
-		file, err := writeKubeconfigFile(tempDir, []byte(content))
-		return file, true, err
 	}
 	return "", false, nil
 }

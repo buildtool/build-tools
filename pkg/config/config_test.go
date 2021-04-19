@@ -143,7 +143,7 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+	defer pkg.SetEnv(envBuildtoolsContent, base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
@@ -155,7 +155,7 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
 }
 
-func TestLoad_YAML_From_Env_Invalid_Base64(t *testing.T) {
+func TestLoad_YAML_From_Env_Plain(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
@@ -163,12 +163,30 @@ targets:
   local:
     context: docker-desktop
 `
-	defer pkg.SetEnv("BUILDTOOLS_CONTENT", yaml)()
+	defer pkg.SetEnv(envBuildtoolsContent, yaml)()
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name, out)
+	assert.NoError(t, err)
+	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+	assert.Equal(t, len(cfg.Targets), 1)
+	assert.Equal(t, cfg.Targets["local"].Context, "docker-desktop")
+}
+
+func TestLoad_Broken_YAML_From_Env_Plain(t *testing.T) {
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+target:
+  local:
+    context: docker-desktop
+`
+	defer pkg.SetEnv(envBuildtoolsContent, yaml)()
 
 	out := &bytes.Buffer{}
 	_, err := Load(name, out)
 	assert.Error(t, err)
-	assert.EqualError(t, err, "Failed to decode content: illegal base64 data at input byte 8")
+	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 2: field target not found in type config.Config")
 }
 
 func TestLoad_YAML_From_Env(t *testing.T) {
@@ -182,7 +200,7 @@ targets:
     context: docker-desktop
     namespace: dev
 `
-	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+	defer pkg.SetEnv(envBuildtoolsContent, base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name, out)
