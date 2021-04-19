@@ -26,7 +26,7 @@ targets:
 
 ## Configuration file from environment variables
 A `.buildtools.yaml` file can be created by defining an environment variable in the build pipeline named `BUILDTOOLS_CONTENT`.
-The value should be a base64-encoded string. This can be useful when setting up CI/CD pipelines where the file system is not
+This can be useful when setting up CI/CD pipelines where the file system is not
 easily accessible.
 
 On MacOS the value can be created and copied to the clipboard using the following snippet:
