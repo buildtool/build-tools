@@ -1,9 +1,5 @@
 package vcs
 
-import (
-	"io"
-)
-
 type mockVcs struct {
 	branch string
 	commit string
@@ -24,7 +20,7 @@ func NewMockVcsWithBranch(branch string) VCS {
 		commit: "fallback-sha",
 	}
 }
-func (m mockVcs) Identify(dir string, out io.Writer) bool {
+func (m mockVcs) Identify(dir string) bool {
 	panic("implement me")
 }
 

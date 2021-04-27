@@ -2,7 +2,8 @@ package kubecmd
 
 import (
 	"fmt"
-	"io"
+
+	"github.com/apex/log"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/config"
@@ -16,17 +17,17 @@ type Args struct {
 	Namespace string `name:"namespace" short:"n" help:"override the namespace for default deployment target" default:""`
 }
 
-func Kubecmd(dir string, out, eout io.Writer, info version.Info, osArgs ...string) *string {
+func Kubecmd(dir string, info version.Info, osArgs ...string) *string {
 	var kubeCmdArgs Args
-	err := args.ParseArgs(dir, out, eout, osArgs, info, &kubeCmdArgs)
+	err := args.ParseArgs(dir, osArgs, info, &kubeCmdArgs)
 	if err != nil {
 		return nil
 	}
-	if cfg, err := config.Load(dir, out); err != nil {
-		_, _ = fmt.Fprintln(out, err.Error())
+	if cfg, err := config.Load(dir); err != nil {
+		log.Error(err.Error())
 	} else {
 		if env, err := cfg.CurrentTarget(kubeCmdArgs.Target); err != nil {
-			_, _ = fmt.Fprintln(out, err.Error())
+			log.Error(err.Error())
 		} else {
 			if kubeCmdArgs.Context != "" {
 				env.Context = kubeCmdArgs.Context

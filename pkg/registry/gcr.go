@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -31,11 +30,11 @@ func (r *GCR) Configured() bool {
 	return r.GetAuthConfig() != types.AuthConfig{}
 }
 
-func (r *GCR) Login(client docker.Client, out io.Writer) error {
+func (r *GCR) Login(client docker.Client) error {
 	auth := r.GetAuthConfig()
 	auth.ServerAddress = r.Url
 	if ok, err := client.RegistryLogin(context.Background(), auth); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
 		return err

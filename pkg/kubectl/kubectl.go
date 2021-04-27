@@ -12,12 +12,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/liamg/tml"
+	"github.com/apex/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/kubectl/pkg/cmd"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/config"
 )
 
@@ -34,19 +35,20 @@ type kubectl struct {
 	args    map[string]string
 	tempDir string
 	out     io.Writer
-	eout    io.Writer
 }
 
 var newKubectlCmd = cmd.NewKubectlCommand
 
-func New(target *config.Target, out, eout io.Writer) Kubectl {
+func New(target *config.Target) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	arg := argsFromTarget(target, name, out, eout)
-	return &kubectl{args: arg, tempDir: name, out: out, eout: eout}
+	arg := argsFromTarget(target, name)
+
+	out := cli.NewWriter(log.Log)
+	return &kubectl{args: arg, tempDir: name, out: out}
 }
 
-func argsFromTarget(e *config.Target, tempDir string, out, eout io.Writer) map[string]string {
+func argsFromTarget(e *config.Target, tempDir string) map[string]string {
 	kubeconfigArg := "kubeconfig"
 	args := make(map[string]string)
 	if len(e.Context) > 0 {
@@ -56,8 +58,8 @@ func argsFromTarget(e *config.Target, tempDir string, out, eout io.Writer) map[s
 		args["namespace"] = e.Namespace
 	}
 
-	if file, exists, err := getKubeconfigFileFromEnvs(tempDir, out); err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
+	if file, exists, err := getKubeconfigFileFromEnvs(tempDir); err != nil {
+		log.Errorf("%s", err.Error())
 	} else if exists {
 		args[kubeconfigArg] = file
 	}
@@ -65,7 +67,7 @@ func argsFromTarget(e *config.Target, tempDir string, out, eout io.Writer) map[s
 		args[kubeconfigArg] = e.Kubeconfig
 	}
 	if _, exists := args[kubeconfigArg]; exists {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Using kubeconfig: <green>'%s'</green>", args[kubeconfigArg]))
+		log.Debugf("Using kubeconfig: <green>'%s'</green>", args[kubeconfigArg])
 	}
 
 	return args
@@ -98,7 +100,7 @@ func (k kubectl) Apply(input string) error {
 	}
 
 	args := append(k.defaultArgs(), "apply", "-f", file)
-	c := newKubectlCmd(os.Stdin, k.out, k.eout)
+	c := newKubectlCmd(os.Stdin, k.out, k.out)
 	c.SetArgs(args)
 	return c.Execute()
 }
@@ -122,7 +124,7 @@ func (k kubectl) RolloutStatus(name, timeout string) bool {
 	args := k.defaultArgs()
 	args = append(args, "rollout", "status", "deployment", fmt.Sprintf("--timeout=%s", timeout), name)
 	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
-	c := newKubectlCmd(os.Stdin, k.out, k.eout)
+	c := newKubectlCmd(os.Stdin, k.out, k.out)
 	c.SetArgs(args)
 	success := true
 	cmdutil.BehaviorOnFatal(func(str string, code int) {
@@ -181,10 +183,11 @@ var _ Kubectl = &kubectl{}
 
 const envKubeconfigContent = "KUBECONFIG_CONTENT"
 
-func getKubeconfigFileFromEnvs(tempDir string, out io.Writer) (string, bool, error) {
-	if content, exists := getEnv(envKubeconfigContent, out); exists {
+func getKubeconfigFileFromEnvs(tempDir string) (string, bool, error) {
+	if content, exists := getEnv(envKubeconfigContent); exists {
+		log.Debugf("Parsing kubeconfig from env: %s\n", envKubeconfigContent)
 		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
-			// TODO Log verbose
+			log.Debugf("Failed to decode BASE64, falling back to plaintext\n")
 			file, err := writeKubeconfigFile(tempDir, []byte(content))
 			return file, true, err
 		} else {
@@ -195,13 +198,13 @@ func getKubeconfigFileFromEnvs(tempDir string, out io.Writer) (string, bool, err
 	return "", false, nil
 }
 
-func getEnv(env string, out io.Writer) (string, bool) {
+func getEnv(env string) (string, bool) {
 	if value, exists := os.LookupEnv(env); exists {
 		if len(value) > 0 {
-			_, _ = fmt.Fprintf(out, "Found content in env: %s\n", env)
+			log.Debugf("Found content in env: %s\n", env)
 			return value, true
 		} else {
-			_, _ = fmt.Fprintf(out, "environment variable %s is set but has no value\n", env)
+			log.Debugf("environment variable %s is set but has no value\n", env)
 		}
 	}
 	return "", false

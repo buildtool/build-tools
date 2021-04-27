@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"regexp"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
@@ -73,7 +73,7 @@ func (r *ECR) registry() (*string, error) {
 	return nil, fmt.Errorf("failed to extract registryid from string %s", r.Url)
 }
 
-func (r *ECR) Login(client docker.Client, out io.Writer) error {
+func (r *ECR) Login(client docker.Client) error {
 	input := &awsecr.GetAuthorizationTokenInput{}
 
 	result, err := r.ecrSvc.GetAuthorizationToken(input)
@@ -90,7 +90,7 @@ func (r *ECR) Login(client docker.Client, out io.Writer) error {
 	r.password = parts[1]
 
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
 		return err

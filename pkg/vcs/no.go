@@ -1,14 +1,10 @@
 package vcs
 
-import (
-	"io"
-)
-
 type no struct {
 	CommonVCS
 }
 
-func (v no) Identify(dir string, out io.Writer) bool {
+func (v no) Identify(dir string) bool {
 	return true
 }
 

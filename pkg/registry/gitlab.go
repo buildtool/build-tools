@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -30,9 +29,9 @@ func (r Gitlab) Configured() bool {
 	return len(r.Repository) > 0 || len(r.Registry) > 0
 }
 
-func (r Gitlab) Login(client docker.Client, out io.Writer) error {
+func (r Gitlab) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
 		return err

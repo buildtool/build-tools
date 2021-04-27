@@ -12,10 +12,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
-	"github.com/liamg/tml"
 )
 
 type Client interface {
@@ -26,10 +26,10 @@ type Client interface {
 
 var _ Client = &client.Client{}
 
-func Tag(registry, image, tag string, eout io.Writer) string {
+func Tag(registry, image, tag string) string {
 	slug := SlugifyTag(tag)
 	if slug != tag {
-		_, _ = fmt.Fprint(eout, tml.Sprintf("<yellow>Warning: tag was changed from '%s' to '%s' due to Dockers rules.</yellow>", tag, slug))
+		log.Debugf("<yellow>Warning: tag was changed from '%s' to '%s' due to Dockers rules.</yellow>\n", tag, slug)
 	}
 	return fmt.Sprintf("%s/%s:%s", registry, image, slug)
 }

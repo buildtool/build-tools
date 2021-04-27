@@ -1,16 +1,17 @@
 package registry
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go/aws"
 	awsecr "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -18,40 +19,51 @@ import (
 func TestEcr_LoginAuthRequestFailed(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECR{Url: "ecr-url", Region: "eu-west-1", ecrSvc: &MockECR{loginError: fmt.Errorf("auth failure")}}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.EqualError(t, err, "auth failure")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
+
 }
 
 func TestEcr_LoginInvalidAuthData(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECR{Url: "ecr-url", Region: "eu-west-1", ecrSvc: &MockECR{authData: "aaabbb"}}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.EqualError(t, err, "illegal base64 data at input byte 4")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
+
 }
 
 func TestEcr_LoginFailed(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	registry := &ECR{Url: "ecr-url", Region: "eu-west-1", ecrSvc: &MockECR{authData: "QVdTOmFiYzEyMw=="}}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
+
 }
 
 func TestEcr_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &ECR{Url: "ecr-url", Region: "eu-west-1", ecrSvc: &MockECR{authData: "QVdTOmFiYzEyMw=="}}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "AWS", client.Username)
 	assert.Equal(t, "abc123", client.Password)
 	assert.Equal(t, "ecr-url", client.ServerAddress)
-	assert.Equal(t, "Logged in\n", out.String())
+	logMock.Check(t, []string{"debug: Logged in\n"})
 }
 
 func TestEcr_GetAuthInfo(t *testing.T) {

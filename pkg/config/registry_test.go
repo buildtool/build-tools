@@ -18,7 +18,7 @@ func TestDockerhub_Identify(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
@@ -31,8 +31,7 @@ func TestDockerhub_Name(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Dockerhub", registry.Name())
@@ -43,7 +42,7 @@ func TestEcr_Identify(t *testing.T) {
 	defer pkg.SetEnv("ECR_REGION", "region")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
@@ -55,8 +54,7 @@ func TestEcr_Name(t *testing.T) {
 	defer pkg.SetEnv("ECR_URL", "1234.dkr.ecr.eu-west-1.amazonaws.com")()
 	defer pkg.SetEnv("ECR_REGION", "region")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "ECR", registry.Name())
@@ -68,7 +66,7 @@ func TestEcr_Identify_MissingDockerRegistry(t *testing.T) {
 	defer pkg.SetEnv("AWS_CA_BUNDLE", "/missing/bundle")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	reg := cfg.CurrentRegistry()
 	assert.Equal(t, registry.NoDockerRegistry{}, reg)
@@ -81,7 +79,7 @@ func TestGitlab_Identify(t *testing.T) {
 	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "registry.gitlab.com/group", registry.RegistryUrl())
@@ -94,8 +92,7 @@ func TestGitlab_Name(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
 	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Gitlab", registry.Name())
@@ -107,7 +104,7 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
@@ -127,7 +124,7 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
@@ -141,7 +138,7 @@ func TestQuay_Identify(t *testing.T) {
 	defer pkg.SetEnv("QUAY_PASSWORD", "pass")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.NotNil(t, registry)
@@ -154,8 +151,7 @@ func TestQuay_Name(t *testing.T) {
 	defer pkg.SetEnv("QUAY_USERNAME", "user")()
 	defer pkg.SetEnv("QUAY_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	registry := cfg.CurrentRegistry()
 	assert.Equal(t, "Quay.io", registry.Name())

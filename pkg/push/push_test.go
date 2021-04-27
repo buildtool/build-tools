@@ -1,15 +1,16 @@
 package push
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/apex/log"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/config"
@@ -45,13 +46,13 @@ func TestPush_BadDockerHost(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 
 	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
-	code := Push(name, os.Stdout, os.Stderr, version.Info{})
+	code := Push(name, version.Info{})
 	assert.Equal(t, -1, code)
 }
 
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
-	code := Push(name, os.Stdout, os.Stderr, version.Info{})
+	code := Push(name, version.Info{})
 	assert.Equal(t, -5, code)
 }
 
@@ -60,58 +61,66 @@ func TestPush_BrokenConfig(t *testing.T) {
 	yaml := `ci: [] `
 	_ = write(name, ".buildtools.yaml", yaml)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	exitCode := Push(name, out, eout, version.Info{})
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	exitCode := Push(name, version.Info{})
 
 	assert.Equal(t, -2, exitCode)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", filepath.Join(name, ".buildtools.yaml")), out.String())
-	assert.Equal(t, "\x1b[0m\x1b[31myaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig\x1b[39m\x1b[0m\n", eout.String())
+	logMock.Check(t, []string{
+		fmt.Sprintf("debug: Parsing config from file: <green>'%s'</green>\n", filepath.Join(name, ".buildtools.yaml")),
+		"error: <red>yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig</red>",
+	})
 }
 
 func TestPush_NoRegistry(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	cfg := config.InitEmptyConfig()
 	cfg.VCS.VCS = &no{}
 
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, -6, exitCode)
-	assert.Equal(t, "\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n", out.String())
-	assert.Equal(t, "\x1b[0mCommit and/or branch information is \x1b[31mmissing\x1b[39m. Perhaps your not in a Git repository or forgot to set environment variables?\x1b[0m", eout.String())
+	logMock.Check(t, []string{
+		"debug: Authentication <yellow>not supported</yellow> for registry <green>No docker registry</green>\n",
+		"error: Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"})
 }
-
 func TestPush_PushError(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{PushError: fmt.Errorf("unable to push layer")}
 	cfg := config.InitEmptyConfig()
 	cfg.CI.Gitlab.CIBuildName = "project"
 	cfg.VCS.VCS = &no{}
 	cfg.Registry.Dockerhub.Namespace = "repo"
 
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.NotNil(t, exitCode)
 	assert.Equal(t, -6, exitCode)
-	assert.Equal(t, "Logged in\n", out.String())
-	assert.Equal(t, "\x1b[0mCommit and/or branch information is \x1b[31mmissing\x1b[39m. Perhaps your not in a Git repository or forgot to set environment variables?\x1b[0m", eout.String())
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		"error: Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?",
+	})
 }
 
 func TestPush_PushFeatureBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -120,20 +129,23 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 	cfg.CI.Gitlab.CIBranchName = "feature1"
 	cfg.Registry.Dockerhub.Namespace = "repo"
 
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:feature1\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:feature1</green>'\n"})
 }
 
 func TestPush_PushMasterBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -141,19 +153,23 @@ func TestPush_PushMasterBranch(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, 0, exitCode)
-	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	assert.Equal(t, []string{
+		"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
+	logMock.Check(t, []string{"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
 }
 func TestPush_PushMainBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -161,12 +177,14 @@ func TestPush_PushMainBranch(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "main"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:main\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:main</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
 }
 
 func TestPush_Multistage(t *testing.T) {
@@ -182,8 +200,9 @@ COPY --from=test file2 .
 `
 	_ = write(name, "Dockerfile", dockerfile)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"Push successful"}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -192,20 +211,25 @@ COPY --from=test file2 .
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
 
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:test", "repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:build\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:test\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:build</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:test</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
 }
 
 func TestPush_Output(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"The push refers to repository [registry.gitlab.com/project/image]"}
 {"status":"Preparing","progressDetail":{},"id":"c49bda176134"}
 {"status":"Preparing","progressDetail":{},"id":"cb13bd9b95b6"}
@@ -252,20 +276,23 @@ func TestPush_Output(t *testing.T) {
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
 
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:master\x1b[39m'\x1b[0m\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:latest\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
 }
 
 func TestPush_BrokenOutput(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `Broken output`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -273,18 +300,23 @@ func TestPush_BrokenOutput(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, -7, exitCode)
-	assert.Equal(t, "Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n\x1b[0m\x1b[31minvalid character 'B' looking for beginning of value\x1b[39m\x1b[0m\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"error: Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n",
+		"error: <red>invalid character 'B' looking for beginning of value</red>"})
 }
 
 func TestPush_ErrorDetail(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `{"status":"", "errorDetail":{"message":"error details"}}`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -292,19 +324,22 @@ func TestPush_ErrorDetail(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, -7, exitCode)
-	assert.Equal(t, "Logged in\n\x1b[0mPushing tag '\x1b[32mrepo/reponame:abc123\x1b[39m'\x1b[0m\n", out.String())
-	assert.Equal(t, "\x1b[0m\x1b[31merror details\x1b[39m\x1b[0m\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"error: <red>error details</red>"})
 }
 
 func TestPush_Create_Error(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `Broken output`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -313,10 +348,11 @@ func TestPush_Create_Error(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, -4, exitCode)
-	assert.Equal(t, "\x1b[0m\x1b[31mcreate error\x1b[39m\x1b[0m\n", eout.String())
+	logMock.Check(t, []string{
+		"error: <red>create error</red>"})
 }
 
 func TestPush_UnreadableDockerfile(t *testing.T) {
@@ -324,8 +360,9 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	dockerfile := filepath.Join(name, "Dockerfile")
 	_ = os.MkdirAll(dockerfile, 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	pushOut := `Broken output`
 	client := &docker.MockDocker{PushOutput: &pushOut}
 	cfg := config.InitEmptyConfig()
@@ -333,10 +370,12 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	cfg.CI.Gitlab.CICommit = "abc123"
 	cfg.CI.Gitlab.CIBranchName = "master"
 	cfg.Registry.Dockerhub.Namespace = "repo"
-	exitCode := doPush(client, cfg, name, "Dockerfile", out, eout)
+	exitCode := doPush(client, cfg, name, "Dockerfile")
 
 	assert.Equal(t, -5, exitCode)
-	assert.Equal(t, fmt.Sprintf("\x1b[0m\x1b[31mread %s: is a directory\x1b[39m\x1b[0m\n", dockerfile), eout.String())
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		fmt.Sprintf("error: <red>read %s: is a directory</red>", dockerfile)})
 }
 
 type mockRegistry struct {
@@ -350,7 +389,7 @@ func (m mockRegistry) Name() string {
 	panic("implement me")
 }
 
-func (m mockRegistry) Login(client docker.Client, out io.Writer) error {
+func (m mockRegistry) Login(client docker.Client) error {
 	return nil
 }
 
@@ -370,7 +409,7 @@ func (m mockRegistry) Create(repository string) error {
 	return errors.New("create error")
 }
 
-func (m mockRegistry) PushImage(client docker.Client, auth, image string, out, eout io.Writer) error {
+func (m mockRegistry) PushImage(client docker.Client, auth, image string) error {
 	panic("implement me")
 }
 
@@ -380,7 +419,7 @@ type no struct {
 	vcs.CommonVCS
 }
 
-func (v no) Identify(dir string, out io.Writer) bool {
+func (v no) Identify(dir string) bool {
 	v.CurrentCommit = ""
 	v.CurrentBranch = ""
 

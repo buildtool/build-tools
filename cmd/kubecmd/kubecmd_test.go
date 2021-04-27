@@ -7,17 +7,21 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 )
 
 func TestVersion(t *testing.T) {
-	eout = &bytes.Buffer{}
+	logMock := mocks.New()
+	handler = logMock
+	log.SetLevel(log.DebugLevel)
 	version = "1.0.0"
 	commit = "67d2fcf276fcd9cf743ad4be9a9ef5828adc082f"
 	os.Args = []string{"kubecmd", "--version"}
 	main()
 
-	assert.Equal(t, "Version: 1.0.0, commit 67d2fcf276fcd9cf743ad4be9a9ef5828adc082f, built at unknown\n", eout.(*bytes.Buffer).String())
+	logMock.Check(t, []string{"info: Version: 1.0.0, commit 67d2fcf276fcd9cf743ad4be9a9ef5828adc082f, built at unknown\n"})
 }
 
 func TestKubecmd_MissingArguments(t *testing.T) {

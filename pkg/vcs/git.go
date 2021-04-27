@@ -1,9 +1,7 @@
 package vcs
 
 import (
-	"fmt"
-	"io"
-
+	"github.com/apex/log"
 	git2 "github.com/go-git/go-git/v5"
 )
 
@@ -12,7 +10,7 @@ type git struct {
 	repo *git2.Repository
 }
 
-func (v *git) Identify(dir string, out io.Writer) bool {
+func (v *git) Identify(dir string) bool {
 	options := &git2.PlainOpenOptions{DetectDotGit: true}
 	repo, err := git2.PlainOpenWithOptions(dir, options)
 	if err != nil {
@@ -21,7 +19,7 @@ func (v *git) Identify(dir string, out io.Writer) bool {
 	v.repo = repo
 	ref, err := repo.Head()
 	if err != nil {
-		_, _ = fmt.Fprintf(out, "Unable to fetch head: %s\n", err)
+		log.Debugf("Unable to fetch head: %s\n", err)
 		return false
 	}
 	v.CurrentCommit = ref.Hash().String()

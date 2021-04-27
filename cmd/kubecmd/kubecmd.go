@@ -2,25 +2,28 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
-	"github.com/mattn/go-colorable"
+	"github.com/apex/log"
 
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/kubecmd"
 	ver "github.com/buildtool/build-tools/pkg/version"
 )
 
 var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-	out     = colorable.NewColorableStdout()
-	eout    = colorable.NewColorableStderr()
+	version             = "dev"
+	commit              = "none"
+	date                = "unknown"
+	out     io.Writer   = os.Stdout
+	handler log.Handler = cli.New(os.Stderr)
 )
 
 func main() {
+	log.SetHandler(handler)
 	dir, _ := os.Getwd()
-	if cmd := kubecmd.Kubecmd(dir, eout, eout, ver.Info{
+	if cmd := kubecmd.Kubecmd(dir, ver.Info{
 		Name:        "kubecmd",
 		Description: "Generates a kubectl command, using the configuration from .buildtools.yaml if found",
 		Version:     version,

@@ -11,9 +11,9 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/caarlos0/env/v6"
 	"github.com/imdario/mergo"
-	"github.com/liamg/tml"
 	"gopkg.in/yaml.v3"
 
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -59,13 +59,13 @@ type Target struct {
 
 const envBuildtoolsContent = "BUILDTOOLS_CONTENT"
 
-func Load(dir string, out io.Writer) (*Config, error) {
+func Load(dir string) (*Config, error) {
 	cfg := InitEmptyConfig()
 
 	if content, ok := os.LookupEnv(envBuildtoolsContent); ok {
-		_, _ = fmt.Fprintf(out, "Parsing config from env: %s\n", envBuildtoolsContent)
+		log.Debugf("Parsing config from env: %s\n", envBuildtoolsContent)
 		if decoded, err := base64.StdEncoding.DecodeString(content); err != nil {
-			// TODO Log verbose
+			log.Debugf("Failed to decode BASE64, falling back to plaintext\n")
 			if err := parseConfig([]byte(content), cfg); err != nil {
 				return cfg, err
 			}
@@ -75,8 +75,8 @@ func Load(dir string, out io.Writer) (*Config, error) {
 			}
 		}
 	} else {
-		err := parseConfigFiles(dir, out, func(dir string) error {
-			return parseConfigFile(out, dir, cfg)
+		err := parseConfigFiles(dir, func(dir string) error {
+			return parseConfigFile(dir, cfg)
 		})
 		if err != nil {
 			return cfg, err
@@ -85,7 +85,7 @@ func Load(dir string, out io.Writer) (*Config, error) {
 
 	err := env.Parse(cfg)
 
-	identifiedVcs := vcs.Identify(dir, out)
+	identifiedVcs := vcs.Identify(dir)
 	cfg.VCS.VCS = identifiedVcs
 
 	// TODO: Validate and clean config
@@ -171,7 +171,7 @@ func (c *Config) CurrentTarget(target string) (*Target, error) {
 
 var abs = filepath.Abs
 
-func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
+func parseConfigFiles(dir string, fn func(string) error) error {
 	parent, err := abs(dir)
 	if err != nil {
 		return err
@@ -187,9 +187,9 @@ func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 	}
 	for i, file := range files {
 		if i == 0 {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("Parsing config from file: <green>'%s'</green>", file))
+			log.Debugf("Parsing config from file: <green>'%s'</green>\n", file)
 		} else {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("Merging with config from file: <green>'%s'</green>", file))
+			log.Debugf("Merging with config from file: <green>'%s'</green>\n", file)
 		}
 		if err := fn(file); err != nil {
 			return err
@@ -199,7 +199,7 @@ func parseConfigFiles(dir string, out io.Writer, fn func(string) error) error {
 	return nil
 }
 
-func parseConfigFile(out io.Writer, filename string, cfg *Config) error {
+func parseConfigFile(filename string, cfg *Config) error {
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err

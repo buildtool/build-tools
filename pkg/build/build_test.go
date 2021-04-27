@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/apex/log"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/args"
@@ -47,11 +49,12 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
 	defer func() { _ = os.Remove(file) }()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -61,8 +64,8 @@ func TestBuild_BrokenConfig(t *testing.T) {
 
 	absPath, _ := filepath.Abs(filepath.Join(name, ".buildtools.yaml"))
 	assert.Equal(t, -3, code)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s'\x1b[39m\x1b[0m\n", absPath), out.String())
-	assert.Equal(t, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig\n", eout.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s'</green>\n", absPath),
+		"error: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig"})
 }
 
 func TestBuild_NoRegistry(t *testing.T) {
@@ -74,18 +77,23 @@ func TestBuild_NoRegistry(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	tmpDockerClient := dockerClient
 	dockerClient = func() (client docker.Client, e error) {
 		return &docker.MockDocker{}, nil
 	}
 	defer func() { dockerClient = tmpDockerClient }()
 
-	code := DoBuild(name, out, eout, version.Info{})
+	code := DoBuild(name, version.Info{})
 	assert.Equal(t, 0, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mAuthentication \x1b[33mnot supported\x1b[39m for registry \x1b[32mNo docker registry\x1b[39m\x1b[0m\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\nBuild successful", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>No docker registry</green>\n",
+		"debug: Authenticating against registry <green>No docker registry</green>\n",
+		"debug: Authentication <yellow>not supported</yellow> for registry <green>No docker registry</green>\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"info: Build successful"})
 }
 
 func TestBuild_LoginError(t *testing.T) {
@@ -96,11 +104,12 @@ func TestBuild_LoginError(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -109,8 +118,12 @@ func TestBuild_LoginError(t *testing.T) {
 	})
 
 	assert.Equal(t, -4, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nUnable to login\n", out.String())
-	assert.Equal(t, "invalid username/password\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"error: Unable to login\n",
+		"error: invalid username/password"})
 }
 
 func TestBuild_BuildError(t *testing.T) {
@@ -121,11 +134,12 @@ func TestBuild_BuildError(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -134,8 +148,14 @@ func TestBuild_BuildError(t *testing.T) {
 	})
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
-	assert.Equal(t, "build error\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"error: build error",
+	})
 }
 
 func TestBuild_BuildResponseError(t *testing.T) {
@@ -146,11 +166,12 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -159,8 +180,14 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	})
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
-	assert.Equal(t, "error Code: 123 Message: build error\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"error: error Code: 123 Message: build error",
+	})
 }
 
 func TestBuild_BrokenOutput(t *testing.T) {
@@ -171,11 +198,12 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BrokenOutput: true}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -184,8 +212,14 @@ func TestBuild_BrokenOutput(t *testing.T) {
 	})
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\n", out.String())
-	assert.Equal(t, "unable to parse response: {\"code\":123,, Error: unexpected end of JSON input\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"error: unable to parse response: {\"code\":123,, Error: unexpected end of JSON input",
+	})
 }
 
 func TestBuild_WithBuildArgs(t *testing.T) {
@@ -193,11 +227,9 @@ func TestBuild_WithBuildArgs(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
 	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1", "buildargs2=2"},
@@ -217,11 +249,12 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
 	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	defer pkg.SetEnv("buildargs4", "env-value")()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1=1", "buildargs2", "buildargs3=", "buildargs4"},
@@ -233,8 +266,15 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	assert.Equal(t, 4, len(client.BuildOptions[0].BuildArgs))
 	assert.Equal(t, "1=1", *client.BuildOptions[0].BuildArgs["buildargs1"])
 	assert.Equal(t, "env-value", *client.BuildOptions[0].BuildArgs["buildargs4"])
-	assert.Equal(t, "", eout.String())
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32msha\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nignoring build-arg buildargs2\nignoring build-arg buildargs3\nBuild successful", out.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
+		"debug: ignoring build-arg buildargs2\n",
+		"debug: ignoring build-arg buildargs3\n",
+		"info: Build successful"})
 }
 
 func TestBuild_WithSkipLogin(t *testing.T) {
@@ -242,11 +282,12 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
 	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -254,7 +295,12 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 		NoPull:     false,
 	})
 	assert.Equal(t, 0, code)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mLogin \x1b[33mdisabled\x1b[39m\x1b[0m\n\x1b[0mUsing build variables commit \x1b[32msha\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successful", out.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Login <yellow>disabled</yellow>\n",
+		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
+		"info: Build successful"})
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -265,11 +311,12 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -291,8 +338,12 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mfeature1\x1b[39m\x1b[0m\nBuild successful", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"info: Build successful"})
 }
 
 func TestBuild_MasterBranch(t *testing.T) {
@@ -303,11 +354,12 @@ func TestBuild_MasterBranch(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -321,8 +373,12 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successful", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>master</green>\n",
+		"info: Build successful"})
 }
 
 func TestBuild_MainBranch(t *testing.T) {
@@ -333,11 +389,12 @@ func TestBuild_MainBranch(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -351,8 +408,12 @@ func TestBuild_MainBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmain\x1b[39m\x1b[0m\nBuild successful", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>main</green>\n",
+		"info: Build successful"})
 }
 
 func TestBuild_ParseError(t *testing.T) {
@@ -366,22 +427,25 @@ func TestBuild_ParseError(t *testing.T) {
 
 func TestBuild_BadDockerHost(t *testing.T) {
 	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
-	out := bytes.Buffer{}
-	eout := bytes.Buffer{}
-	exitCode := DoBuild(name, &out, &eout, version.Info{})
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	exitCode := DoBuild(name, version.Info{})
 	assert.Equal(t, -1, exitCode)
-	assert.Equal(t, "unable to parse docker host `abc-123`\n", out.String())
+	logMock.Check(t, []string{"error: unable to parse docker host `abc-123`"})
 }
 
 func TestBuild_UnreadableDockerignore(t *testing.T) {
 	filename := filepath.Join(name, ".dockerignore")
 	_ = os.Mkdir(filename, 0777)
 	defer func() { _ = os.RemoveAll(filename) }()
-	out := bytes.Buffer{}
-	eout := bytes.Buffer{}
-	exitCode := DoBuild(name, &out, &eout, version.Info{})
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	exitCode := DoBuild(name, version.Info{})
 	assert.Equal(t, -2, exitCode)
-	assert.Equal(t, fmt.Sprintf("read %s: is a directory\n", filename), out.String())
+	logMock.Check(t, []string{
+		fmt.Sprintf("error: read %s: is a directory", filename)})
 }
 
 func TestBuild_Unreadable_Dockerfile(t *testing.T) {
@@ -392,11 +456,12 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 
-	code := build(client, name, ioutil.NopCloser(&brokenReader{}), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(&brokenReader{}), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -405,7 +470,12 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	})
 
 	assert.Equal(t, -5, code)
-	assert.Equal(t, "read error\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"error: read error"})
 }
 
 func TestBuild_HandleCaching(t *testing.T) {
@@ -416,8 +486,9 @@ func TestBuild_HandleCaching(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 	dockerfile := `
 FROM scratch as build
@@ -430,7 +501,7 @@ COPY --from=test file2 .
 `
 
 	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -450,8 +521,14 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:master", "repo/reponame:latest", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[2].CacheFrom)
-	assert.Equal(t, "\x1b[0mUsing CI \x1b[32mGitlab\x1b[39m\x1b[0m\n\x1b[0mUsing registry \x1b[32mDockerhub\x1b[39m\x1b[0m\n\x1b[0mAuthenticating against registry \x1b[32mDockerhub\x1b[39m\x1b[0m\nLogged in\n\x1b[0mUsing build variables commit \x1b[32mabc123\x1b[39m on branch \x1b[32mmaster\x1b[39m\x1b[0m\nBuild successfulBuild successfulBuild successful", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>master</green>\n",
+		"info: Build successful",
+		"info: Build successful",
+		"info: Build successful"})
 }
 
 func TestBuild_BrokenStage(t *testing.T) {
@@ -462,8 +539,9 @@ func TestBuild_BrokenStage(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BuildError: []error{nil, errors.New("build error")}}
 	dockerfile := `
 FROM scratch as build
@@ -476,7 +554,7 @@ COPY --from=test file2 .
 `
 
 	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	code := build(client, name, ioutil.NopCloser(buildContext), out, eout, Args{
+	code := build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -485,7 +563,14 @@ COPY --from=test file2 .
 	})
 
 	assert.Equal(t, -7, code)
-	assert.Equal(t, "build error\n", eout.String())
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>master</green>\n",
+		"info: Build successful",
+		"error: build error"})
 }
 
 type brokenReader struct{}

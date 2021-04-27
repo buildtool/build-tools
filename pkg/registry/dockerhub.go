@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"io"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -29,12 +28,12 @@ func (r Dockerhub) Configured() bool {
 	return len(r.Namespace) > 0
 }
 
-func (r Dockerhub) Login(client docker.Client, out io.Writer) error {
+func (r Dockerhub) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
-		_, _ = fmt.Fprintln(out, "Unable to login")
+		log.Errorf("%s", "Unable to login\n")
 		return err
 	}
 }

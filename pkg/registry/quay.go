@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -29,9 +29,9 @@ func (r *Quay) Configured() bool {
 	return len(r.Repository) > 0
 }
 
-func (r *Quay) Login(client docker.Client, out io.Writer) error {
+func (r *Quay) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
 		return err
