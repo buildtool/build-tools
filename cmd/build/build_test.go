@@ -47,22 +47,6 @@ func TestArguments(t *testing.T) {
 	main()
 
 	logMock.Check(t, []string{
-		"info: Usage: build\n",
-		"info: \n",
-		"info: performs a docker build and tags the resulting image\n",
-		"info: \n",
-		"info: Flags:\n",
-		"info:   -h, --help                       Show context-sensitive help.\n",
-		"info:       --version                    Print args information and exit\n",
-		"info:   -v, --verbose                    Enable verbose mode\n",
-		"info:       --config                     Print parsed config and exit\n",
-		"info:   -f, --file=\"Dockerfile\"          name of the Dockerfile to use.\n",
-		"info:       --build-arg=BUILD-ARG,...    additional docker build-args to use, see\n",
-		"info:                                    https://docs.docker.com/engine/reference/commandline/build/\n",
-		"info:                                    for more information.\n",
-		"info:       --no-login                   disable login to docker registry\n",
-		"info:       --no-pull                    disable pulling latest from docker registry\n",
-		"info: \n",
 		"info: build: error: unknown flag --unknown\n",
 	})
 }

@@ -17,10 +17,14 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/kubectl/pkg/cmd"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	// To enable flags for kubectl like --v
+	_ "k8s.io/kubectl/pkg/util/logs"
 
 	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/config"
 )
+
+var kubectlVerbosityLevel = 6
 
 type Kubectl interface {
 	Apply(input string) error
@@ -42,10 +46,10 @@ var newKubectlCmd = cmd.NewKubectlCommand
 func New(target *config.Target) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 
-	arg := argsFromTarget(target, name)
+	args := argsFromTarget(target, name)
 
 	out := cli.NewWriter(log.Log)
-	return &kubectl{args: arg, tempDir: name, out: out}
+	return &kubectl{args: args, tempDir: name, out: out}
 }
 
 func argsFromTarget(e *config.Target, tempDir string) map[string]string {
@@ -89,6 +93,9 @@ func (k kubectl) defaultArgs() (args []string) {
 		args = append(args, fmt.Sprintf("--%s", key), k.args[key])
 	}
 
+	if cli.Verbose(log.Log) {
+		args = append(args, fmt.Sprintf("--v=%d", kubectlVerbosityLevel))
+	}
 	return
 }
 
@@ -112,7 +119,7 @@ func (k kubectl) Cleanup() {
 func (k kubectl) DeploymentExists(name string) bool {
 	args := k.defaultArgs()
 	args = append(args, "get", "deployment", name, "--ignore-not-found")
-	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
+	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
 	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
 	c.SetArgs(args)
@@ -123,7 +130,7 @@ func (k kubectl) DeploymentExists(name string) bool {
 func (k kubectl) RolloutStatus(name, timeout string) bool {
 	args := k.defaultArgs()
 	args = append(args, "rollout", "status", "deployment", fmt.Sprintf("--timeout=%s", timeout), name)
-	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
+	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	c := newKubectlCmd(os.Stdin, k.out, k.out)
 	c.SetArgs(args)
 	success := true
@@ -140,7 +147,7 @@ func (k kubectl) RolloutStatus(name, timeout string) bool {
 func (k kubectl) DeploymentEvents(name string) string {
 	args := k.defaultArgs()
 	args = append(args, "describe", "deployment", name, "--show-events=true")
-	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
+	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
 	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
 	c.SetArgs(args)
@@ -153,7 +160,7 @@ func (k kubectl) DeploymentEvents(name string) string {
 func (k kubectl) PodEvents(name string) string {
 	args := k.defaultArgs()
 	args = append(args, "describe", "pods", "-l", fmt.Sprintf("app=%s", name), "--show-events=true")
-	_, _ = fmt.Fprintf(k.out, "kubectl %s\n", strings.Join(args, " "))
+	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
 	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
 	c.SetArgs(args)

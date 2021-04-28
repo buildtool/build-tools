@@ -14,7 +14,7 @@ import (
 
 // Handler implementation.
 type Handler struct {
-	mu     sync.Mutex
+	mu     sync.Locker
 	Writer io.Writer
 }
 
@@ -23,22 +23,21 @@ func New(w io.Writer) *Handler {
 	if f, ok := w.(*os.File); ok {
 		return &Handler{
 			Writer: f,
+			mu:     &sync.Mutex{},
 		}
 	}
 
 	return &Handler{
 		Writer: w,
+		mu:     &sync.Mutex{},
 	}
 }
 
 // HandleLog implements cli.Handler.
 func (h *Handler) HandleLog(e *log.Entry) error {
-
 	h.mu.Lock()
 	defer h.mu.Unlock()
-
 	_, _ = fmt.Fprint(h.Writer, tml.Sprintf(e.Message))
-
 	return nil
 }
 
@@ -54,6 +53,7 @@ func NewWriter(ctx log.Interface) *Writer {
 			level: logger.Level,
 		}
 	}
+	// TODO Panic?
 	return nil
 }
 
@@ -62,9 +62,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 	s := bufio.NewScanner(bytes.NewReader(b))
 
 	for s.Scan() {
-		if err := w.write(s.Text()); err != nil {
-			return 0, err
-		}
+		w.log.Infof("%s\n", s.Text())
 	}
 
 	if err := s.Err(); err != nil {
@@ -74,7 +72,9 @@ func (w *Writer) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func (w *Writer) write(s string) error {
-	w.log.Infof("%s\n", s)
-	return nil
+func Verbose(ctx log.Interface) bool {
+	if logger, ok := ctx.(*log.Logger); ok {
+		return logger.Level <= log.DebugLevel
+	}
+	return false
 }

@@ -25,7 +25,7 @@ import (
 func TestNew(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	k := New(&config.Target{Context: "missing", Namespace: "dev"})
 
 	assert.Equal(t, "missing", k.(*kubectl).args["context"])
@@ -37,6 +37,7 @@ func TestNew_NoNamespace(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
+
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
@@ -46,13 +47,13 @@ func TestNew_NoNamespace(t *testing.T) {
 	err := k.Apply("")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"apply", "--context", "missing", "--file", fmt.Sprintf("%s/content.yaml", tempDir)}, calls[0])
+	assert.Equal(t, []string{"apply", "--context", "missing", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--v=6"}, calls[0])
 	logMock.Check(t, []string{})
 }
 func TestNew_NoContext(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
@@ -69,7 +70,7 @@ func TestNew_NoContext(t *testing.T) {
 func TestKubectl_Apply(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
@@ -86,7 +87,7 @@ func TestKubectl_Apply(t *testing.T) {
 func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	newKubectlCmd = mockCmd
 
 	k := &kubectl{args: nil, tempDir: "/missing", out: cli.NewWriter(logMock.Logger)}
@@ -99,7 +100,7 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 func TestKubectl_Target(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	env := &config.Target{Context: "missing", Namespace: ""}
 	k := New(env)
 
@@ -110,7 +111,7 @@ func TestKubectl_Target(t *testing.T) {
 func TestKubectl_DeploymentExistsTrue(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdError = nil
 	o := `NAME          READY   UP-TO-DATE   AVAILABLE   AGE
@@ -125,7 +126,7 @@ api           1/1     1            1           2d11h
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--ignore-not-found"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default get deployment image --ignore-not-found\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_DeploymentExistsFalse(t *testing.T) {
@@ -142,14 +143,14 @@ func TestKubectl_DeploymentExistsFalse(t *testing.T) {
 	result := k.DeploymentExists("image")
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--ignore-not-found"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default get deployment image --ignore-not-found\n"})
+	assert.Equal(t, []string{"get", "deployment", "image", "--context", "missing", "--namespace", "default", "--ignore-not-found", "--v=6"}, calls[0])
+	logMock.Check(t, []string{"debug: kubectl --context missing --namespace default --v=6 get deployment image --ignore-not-found\n"})
 }
 
 func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdOut = nil
 	cmdError = nil
@@ -161,13 +162,13 @@ func TestKubectl_RolloutStatusSuccess(t *testing.T) {
 	assert.True(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "other", "--timeout", "2m0s"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace other rollout status deployment --timeout=2m image\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	e := "rollout failed"
 	cmdError = &e
@@ -179,13 +180,13 @@ func TestKubectl_RolloutStatusFailure(t *testing.T) {
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "2m0s"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default rollout status deployment --timeout=2m image\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	e := "rollout failed"
 	cmdError = &e
@@ -200,7 +201,7 @@ func TestKubectl_RolloutStatusFatal(t *testing.T) {
 	assert.False(t, result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"rollout", "status", "deployment", "image", "--context", "missing", "--namespace", "default", "--timeout", "3m0s"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default rollout status deployment --timeout=3m image\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_KubeconfigSet(t *testing.T) {
@@ -261,7 +262,7 @@ func TestKubectl_KubeconfigExistingFile(t *testing.T) {
 func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	e := "deployment not found"
@@ -273,13 +274,13 @@ func TestKubectl_DeploymentEvents_Error(t *testing.T) {
 	assert.Equal(t, "deployment not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe deployment image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_DeploymentEvents_NoEvents(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -296,13 +297,13 @@ Events:          <none>
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe deployment image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_DeploymentEvents_SomeEvents(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -325,13 +326,13 @@ Events:
 	assert.Equal(t, "Events:\n  Type    Reason             Age   From                   Message\n  ----    ------             ----  ----                   -------\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled up replica set gpe-core-5cb459ff7d to 1\n  Normal  ScalingReplicaSet  9m    deployment-controller  Scaled down replica set gpe-core-7fc44679dc to 0\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled up replica set gpe-core-c8798ff88 to 1\n  Normal  ScalingReplicaSet  61s   deployment-controller  Scaled down replica set gpe-core-5cb459ff7d to 0\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "deployment", "image", "--context", "missing", "--namespace", "default", "--show-events", "true"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe deployment image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_PodEvents_Error(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
 	e := "pod not found"
@@ -343,13 +344,13 @@ func TestKubectl_PodEvents_Error(t *testing.T) {
 	assert.Equal(t, "pod not found", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_PodEvents_NoEvents(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -366,13 +367,13 @@ Events:          <none>
 	assert.Equal(t, "", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 func TestKubectl_PodEvents_SomeEvents(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	cmdError = nil
 	newKubectlCmd = mockCmd
@@ -394,7 +395,7 @@ Events:
 	assert.Equal(t, "Events:\n  Type     Reason     Age                From                                                 Message\n  ----     ------     ----               ----                                                 -------\n  Normal   Scheduled  61s                default-scheduler                                    Successfully assigned dev/gpe-core-c8798ff88-674tr to some-ip-somewhere\n  Normal   Pulling    10s (x4 over 60s)  kubelet, some-ip-somewhere                           pulling image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Pulled     9s (x4 over 57s)   kubelet, some-ip-somewhere                           Successfully pulled image \"quay.io/somewhere/gpe-core:9cdb0243e82b9bfdf037627d9d59cbfcbf55406c\"\n  Normal   Created    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Created container\n  Normal   Started    8s (x4 over 57s)   kubelet, some-ip-somewhere                           Started container\n  Warning  BackOff    8s (x5 over 54s)   kubelet, some-ip-somewhere                           Back-off restarting failed container\n", result)
 	assert.Equal(t, 1, len(calls))
 	assert.Equal(t, []string{"describe", "pods", "--context", "missing", "--namespace", "default", "--show-events", "true", "--selector", "app=image"}, calls[0])
-	logMock.Check(t, []string{"info: kubectl --context missing --namespace default describe pods -l app=image --show-events=true\n"})
+	logMock.Check(t, []string{})
 }
 
 var calls [][]string
@@ -409,6 +410,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 	var ignoreNotFound *bool
 	var selector *string
 	var kubeconfig *string
+	var verbose *string
 
 	cmd := cobra.Command{
 		Use: "kubectl",
@@ -434,6 +436,9 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 			}
 			if *ignoreNotFound {
 				call = append(call, "--ignore-not-found")
+			}
+			if *verbose != "0" {
+				call = append(call, fmt.Sprintf("--v=%s", *verbose))
 			}
 			if *selector != "" {
 				call = append(call, "--selector", fmt.Sprintf("%v", *selector))
@@ -463,6 +468,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 	ignoreNotFound = cmd.Flags().BoolP("ignore-not-found", "", false, "")
 	selector = cmd.Flags().StringP("selector", "l", "", "")
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
+	verbose = cmd.Flags().StringP("v", "v", "0", "")
 
 	return &cmd
 }

@@ -9,6 +9,7 @@ import (
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/version"
 )
 
@@ -100,4 +101,71 @@ targets:
 	require.Equal(t, err, Done)
 	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
 		"info: Current config\nci: none\nvcs: Git\nregistry: {}" + yaml})
+}
+
+func Test_Config_Error(t *testing.T) {
+	yaml := `_`
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	err := ParseArgs("", []string{"--config", "--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	require.Error(t, err)
+	logMock.Check(t, []string{
+		"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"info: name: error: yaml: unmarshal errors:\n",
+		"info:                line 1: cannot unmarshal !!str `_` into config.Config\n",
+	})
+}
+
+func Test_Verbose_Enabled(t *testing.T) {
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.InfoLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	_ = ParseArgs("", []string{"--verbose", "--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	logMock.Check(t, []string{})
+	require.True(t, cli.Verbose(log.Log))
+}
+
+func Test_Verbose(t *testing.T) {
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.InfoLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	_ = ParseArgs("", []string{"--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	logMock.Check(t, []string{})
+	require.False(t, cli.Verbose(log.Log))
 }

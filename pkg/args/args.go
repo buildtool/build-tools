@@ -73,7 +73,6 @@ func ParseArgs(dir string, osArgs []string, info version.Info, variables interfa
 			ctx.Exit(done)
 			return nil
 		}),
-		kong.UsageOnError(),
 		kong.Description(info.Description),
 		kong.Writers(cli.NewWriter(log.Log), cli.NewWriter(log.Log)),
 		kong.ConfigureHelp(kong.HelpOptions{
