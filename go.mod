@@ -20,7 +20,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.12
 	github.com/liamg/tml v0.4.0
-	github.com/mattn/go-colorable v0.1.8
 	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/spf13/cobra v1.1.3
