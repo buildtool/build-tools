@@ -96,7 +96,11 @@ metadata:
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_UnreadableFile(t *testing.T) {
@@ -121,7 +125,9 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	})
 
 	assert.EqualError(t, err, fmt.Sprintf("read %s/k8s/deploy.yaml: is a directory", name))
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n"})
 }
 
 func TestDeploy_FileBrokenSymlink(t *testing.T) {
@@ -150,7 +156,10 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	})
 
 	assert.EqualError(t, err, fmt.Sprintf("open %s/k8s/deploy.yaml: no such file or directory", name))
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+	})
 
 }
 
@@ -186,7 +195,11 @@ metadata:
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>ns-dummy.yaml</yellow>' for target: <green>dummy</green>\n",
+		"debug: using file '<green>ns-dummy.yaml</green>' for target: <green>dummy</green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_EnvSpecificFiles(t *testing.T) {
@@ -216,7 +229,17 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, "prod content", client.Inputs[0])
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>ns-dummy.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>ns-dummy.yaml</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>ns-prod.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: using file '<green>ns-prod.yaml</green>' for target: <green>prod</green>\n",
+		"debug: trying to apply: \n---\nprod content\n---\n",
+		"debug: considering file '<yellow>other-dummy.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>other-dummy.sh</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NameSuffix(t *testing.T) {
@@ -244,7 +267,13 @@ echo "Prod-script with suffix"`
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
-	logMock.Check(t, []string{"info: Prod-script with suffix\n"})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>setup-prod.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: using script '<green>setup-prod.sh</green>' for target: <green>prod</green>\n",
+		"info: Prod-script with suffix\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
@@ -272,7 +301,12 @@ echo "Script without suffix should not execute"`
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>setup.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>setup.sh</red>' for target: <green>prod</green>\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NotExecutable(t *testing.T) {
@@ -329,7 +363,11 @@ metadata:
 	})
 
 	assert.EqualError(t, err, "apply failed")
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_ReplacingCommitAndTimestamp(t *testing.T) {
@@ -373,7 +411,11 @@ metadata:
   timestamp: 2019-05-13T17:22:36Z01:00
 `
 	assert.Equal(t, expectedInput, client.Inputs[0])
-	logMock.Check(t, []string{})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green>test</green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green>test</green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n  commit: abc123\n  timestamp: 2019-05-13T17:22:36Z01:00\n\n---\n",
+	})
 }
 
 func TestDeploy_DeploymentExists(t *testing.T) {
@@ -409,7 +451,14 @@ metadata:
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	logMock.Check(t, []string{"error: Rollout failed. Fetching events.\n", "error: Deployment events", "error: Pod events"})
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+		"error: Rollout failed. Fetching events.\n",
+		"error: Deployment events",
+		"error: Pod events",
+	})
 }
 
 func TestDeploy_RolloutStatusFail(t *testing.T) {
@@ -446,5 +495,11 @@ metadata:
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	logMock.Check(t, []string{"error: Rollout failed. Fetching events.\n", "error: Deployment events", "error: Pod events"})
+	logMock.Check(t, []string{"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+		"error: Rollout failed. Fetching events.\n",
+		"error: Deployment events",
+		"error: Pod events",
+	})
 }

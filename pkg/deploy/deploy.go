@@ -103,6 +103,7 @@ func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) e
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
 			if fileIsForTarget(info, target) {
+				log.Debugf("using file '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
 				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				} else {
@@ -111,9 +112,12 @@ func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) e
 					}
 				}
 			} else if fileIsScriptForTarget(info, target, dir) {
+				log.Debugf("using script '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
 				if err := execFile(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				}
+			} else {
+				log.Debugf("not using file '<red>%s</red>' for target: <green>%s</green>\n", info.Name(), target)
 			}
 		}
 		return nil
@@ -135,7 +139,9 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 	} else {
 		content := string(bytes)
 		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
-		if err := client.Apply(r.Replace(content)); err != nil {
+		kubeContent := r.Replace(content)
+		log.Debugf("trying to apply: \n---\n%s\n---\n", kubeContent)
+		if err := client.Apply(kubeContent); err != nil {
 			return err
 		}
 		return nil
@@ -143,6 +149,7 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 }
 
 func fileIsForTarget(info os.FileInfo, env string) bool {
+	log.Debugf("considering file '<yellow>%s</yellow>' for target: <green>%s</green>\n", info.Name(), env)
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
 }
 
