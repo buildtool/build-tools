@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types"
 	dkr "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
+	"gopkg.in/yaml.v3"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -165,7 +166,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 }
 
 func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool) error {
-	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
+	options := types.ImageBuildOptions{
 		AuthConfigs: authConfigs,
 		BuildArgs:   args,
 		CacheFrom:   caches,
@@ -176,7 +177,9 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 		ShmSize:     256 * 1024 * 1024,
 		Tags:        tags,
 		Target:      target,
-	})
+	}
+	logVerbose(options)
+	response, err := client.ImageBuild(context.Background(), buildContext, options)
 	if err != nil {
 		return err
 	} else {
@@ -196,6 +199,13 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 		}
 	}
 	return nil
+}
+
+func logVerbose(options types.ImageBuildOptions) {
+	loggableOptions := options
+	loggableOptions.AuthConfigs = nil
+	marshal, _ := yaml.Marshal(loggableOptions)
+	log.Debugf("performing docker build with options (auths removed):\n%s\n", marshal)
 }
 
 func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
