@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -35,7 +36,7 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	m.BuildOptions = append(m.BuildOptions, options)
 
 	if m.BrokenOutput {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, nil
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
 	}
 	if m.ResponseError != nil {
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
@@ -64,6 +65,19 @@ func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (
 		return registry.AuthenticateOKBody{Status: "Invalid username/password"}, m.LoginError
 	}
 	return registry.AuthenticateOKBody{Status: "Logged in"}, nil
+}
+
+func (m *MockDocker) DialHijack(ctx context.Context, url, proto string, meta map[string][]string) (net.Conn, error) {
+	server, client := net.Pipe()
+	go func() {
+		_ = server.Close()
+	}()
+
+	return client, nil
+}
+
+func (m *MockDocker) BuildCancel(ctx context.Context, id string) error {
+	panic("implement me")
 }
 
 var _ Client = &MockDocker{}
