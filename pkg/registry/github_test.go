@@ -1,11 +1,12 @@
 package registry
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -25,22 +26,26 @@ func TestGithub_Configured(t *testing.T) {
 func TestGithub_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &Github{Repository: "repo", Username: "user", Token: "token"}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
 	assert.Equal(t, "token", client.Password)
 	assert.Equal(t, "docker.pkg.github.com", client.ServerAddress)
-	assert.Equal(t, "Logged in\n", out.String())
+	logMock.Check(t, []string{"debug: Logged in\n"})
 }
 
 func TestGithub_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	registry := &Github{}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGithub_GetAuthInfo(t *testing.T) {

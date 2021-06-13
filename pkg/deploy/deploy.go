@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/liamg/tml"
+	"github.com/apex/log"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/kubectl"
 	"github.com/buildtool/build-tools/pkg/version"
 
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -29,9 +29,9 @@ type Args struct {
 	Timeout   string `name:"timeout" short:"t" help:"override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)" default:"2m"`
 }
 
-func DoDeploy(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
+func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 	var deployArgs Args
-	err := args.ParseArgs(dir, out, eout, osArgs, info, &deployArgs)
+	err := args.ParseArgs(dir, osArgs, info, &deployArgs)
 	if err != nil {
 		if err != args.Done {
 			return -1
@@ -40,20 +40,20 @@ func DoDeploy(dir string, out, eout io.Writer, info version.Info, osArgs ...stri
 		}
 	}
 
-	if cfg, err := config.Load(dir, out); err != nil {
-		_, _ = fmt.Fprintln(out, err.Error())
+	if cfg, err := config.Load(dir); err != nil {
+		log.Error(err.Error())
 		return -1
 	} else {
 		var env *config.Target
 		if env, err = cfg.CurrentTarget(deployArgs.Target); err != nil {
-			_, _ = fmt.Fprintln(out, err.Error())
+			log.Error(err.Error())
 			env = &config.Target{}
 		}
 		if deployArgs.Context != "" {
 			env.Context = deployArgs.Context
 		}
 		if env.Context == "" {
-			_, _ = fmt.Fprintf(out, "context is mandatory, not found in configuration for %s and not passed as parameter\n", deployArgs.Target)
+			log.Errorf("context is mandatory, not found in configuration for %s and not passed as parameter\n", deployArgs.Target)
 			return -5
 		}
 		if deployArgs.Namespace != "" {
@@ -62,19 +62,19 @@ func DoDeploy(dir string, out, eout io.Writer, info version.Info, osArgs ...stri
 		currentCI := cfg.CurrentCI()
 		if deployArgs.Tag == "" {
 			if !ci.IsValid(currentCI) {
-				_, _ = fmt.Fprintln(out, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+				log.Errorf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?")
 				return -3
 			}
 			deployArgs.Tag = currentCI.Commit()
 		} else {
-			_, _ = fmt.Fprintln(out, tml.Sprintf("Using passed tag <green>%s</green> to deploy", deployArgs.Tag))
+			log.Infof("Using passed tag <green>%s</green> to deploy", deployArgs.Tag)
 		}
 
 		tstamp := time.Now().Format(time.RFC3339)
-		client := kubectl.New(env, out, eout)
+		client := kubectl.New(env)
 		defer client.Cleanup()
-		if err := Deploy(dir, currentCI.BuildName(), tstamp, client, out, eout, deployArgs); err != nil {
-			_, _ = fmt.Fprintln(out, err.Error())
+		if err := Deploy(dir, currentCI.BuildName(), tstamp, client, deployArgs); err != nil {
+			log.Error(err.Error())
 			return -4
 
 		}
@@ -82,27 +82,28 @@ func DoDeploy(dir string, out, eout io.Writer, info version.Info, osArgs ...stri
 	return 0
 }
 
-func Deploy(dir, buildName, timestamp string, client kubectl.Kubectl, out, eout io.Writer, deployArgs Args) error {
+func Deploy(dir, buildName, timestamp string, client kubectl.Kubectl, deployArgs Args) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
-	if err := processDir(deploymentFiles, deployArgs.Tag, timestamp, deployArgs.Target, client, out, eout); err != nil {
+	if err := processDir(deploymentFiles, deployArgs.Tag, timestamp, deployArgs.Target, client); err != nil {
 		return err
 	}
 
 	if client.DeploymentExists(buildName) {
 		if !client.RolloutStatus(buildName, deployArgs.Timeout) {
-			_, _ = fmt.Fprint(out, "Rollout failed. Fetching events.")
-			_, _ = fmt.Fprint(out, client.DeploymentEvents(buildName))
-			_, _ = fmt.Fprint(out, client.PodEvents(buildName))
+			log.Error("Rollout failed. Fetching events.\n")
+			log.Error(client.DeploymentEvents(buildName))
+			log.Error(client.PodEvents(buildName))
 			return fmt.Errorf("failed to rollout")
 		}
 	}
 	return nil
 }
 
-func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl, out, eout io.Writer) error {
+func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) error {
 	if infos, err := ioutil.ReadDir(dir); err == nil {
 		for _, info := range infos {
 			if fileIsForTarget(info, target) {
+				log.Debugf("using file '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
 				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				} else {
@@ -111,9 +112,12 @@ func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl, o
 					}
 				}
 			} else if fileIsScriptForTarget(info, target, dir) {
-				if err := execFile(filepath.Join(dir, info.Name()), out, eout); err != nil {
+				log.Debugf("using script '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
+				if err := execFile(filepath.Join(dir, info.Name())); err != nil {
 					return err
 				}
+			} else {
+				log.Debugf("not using file '<red>%s</red>' for target: <green>%s</green>\n", info.Name(), target)
 			}
 		}
 		return nil
@@ -122,10 +126,10 @@ func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl, o
 	}
 }
 
-func execFile(file string, out, eout io.Writer) error {
+func execFile(file string) error {
 	cmd := exec.Command(file)
-	cmd.Stdout = out
-	cmd.Stderr = eout
+	cmd.Stdout = cli.NewWriter(log.Log)
+	cmd.Stderr = cli.NewWriter(log.Log)
 	return cmd.Run()
 }
 
@@ -135,7 +139,9 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 	} else {
 		content := string(bytes)
 		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
-		if err := client.Apply(r.Replace(content)); err != nil {
+		kubeContent := r.Replace(content)
+		log.Debugf("trying to apply: \n---\n%s\n---\n", kubeContent)
+		if err := client.Apply(kubeContent); err != nil {
 			return err
 		}
 		return nil
@@ -143,6 +149,7 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 }
 
 func fileIsForTarget(info os.FileInfo, env string) bool {
+	log.Debugf("considering file '<yellow>%s</yellow>' for target: <green>%s</green>\n", info.Name(), env)
 	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
 }
 

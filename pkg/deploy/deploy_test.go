@@ -1,7 +1,6 @@
 package deploy
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/kubectl"
@@ -21,9 +22,10 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 	}
 	defer client.Cleanup()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(".", "abc123", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(".", "abc123", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -33,8 +35,7 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 	})
 
 	assert.EqualError(t, err, "open k8s: no such file or directory")
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{})
 }
 
 func TestDeploy_NoFiles(t *testing.T) {
@@ -46,9 +47,10 @@ func TestDeploy_NoFiles(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -59,8 +61,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{})
 }
 
 func TestDeploy_NoEnvSpecificFiles(t *testing.T) {
@@ -80,9 +81,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -94,8 +96,11 @@ metadata:
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_UnreadableFile(t *testing.T) {
@@ -107,9 +112,10 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = os.MkdirAll(filepath.Join(name, "k8s", "deploy.yaml"), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -119,8 +125,9 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	})
 
 	assert.EqualError(t, err, fmt.Sprintf("read %s/k8s/deploy.yaml: is a directory", name))
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n"})
 }
 
 func TestDeploy_FileBrokenSymlink(t *testing.T) {
@@ -136,9 +143,10 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	_ = os.Symlink(deployFile, filepath.Join(name, "k8s", "deploy.yaml"))
 	_ = os.Remove(deployFile)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -148,8 +156,11 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	})
 
 	assert.EqualError(t, err, fmt.Sprintf("open %s/k8s/deploy.yaml: no such file or directory", name))
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+	})
+
 }
 
 func TestDeploy_EnvSpecificFilesWithSuffix(t *testing.T) {
@@ -169,9 +180,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "dummy",
 		Context:   "",
@@ -183,8 +195,11 @@ metadata:
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>ns-dummy.yaml</yellow>' for target: <green>dummy</green>\n",
+		"debug: using file '<green>ns-dummy.yaml</green>' for target: <green>dummy</green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_EnvSpecificFiles(t *testing.T) {
@@ -200,9 +215,10 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte("prod content"), 0777)
 	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -213,8 +229,17 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, "prod content", client.Inputs[0])
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>ns-dummy.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>ns-dummy.yaml</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>ns-prod.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: using file '<green>ns-prod.yaml</green>' for target: <green>prod</green>\n",
+		"debug: trying to apply: \n---\nprod content\n---\n",
+		"debug: considering file '<yellow>other-dummy.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>other-dummy.sh</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NameSuffix(t *testing.T) {
@@ -229,9 +254,10 @@ func TestDeploy_ScriptExecution_NameSuffix(t *testing.T) {
 echo "Prod-script with suffix"`
 	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -241,8 +267,13 @@ echo "Prod-script with suffix"`
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
-	assert.Equal(t, "Prod-script with suffix\n", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>setup-prod.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: using script '<green>setup-prod.sh</green>' for target: <green>prod</green>\n",
+		"info: Prod-script with suffix\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
@@ -257,9 +288,10 @@ func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
 echo "Script without suffix should not execute"`
 	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "setup.sh"), []byte(script), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -269,8 +301,12 @@ echo "Script without suffix should not execute"`
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>setup.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>setup.sh</red>' for target: <green>prod</green>\n",
+	})
 }
 
 func TestDeploy_ScriptExecution_NotExecutable(t *testing.T) {
@@ -286,9 +322,7 @@ echo "Prod-script with suffix"`
 	scriptName := filepath.Join(name, "k8s", "setup-prod.sh")
 	_ = ioutil.WriteFile(scriptName, []byte(script), 0666)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -316,9 +350,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -328,8 +363,11 @@ metadata:
 	})
 
 	assert.EqualError(t, err, "apply failed")
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+	})
 }
 
 func TestDeploy_ReplacingCommitAndTimestamp(t *testing.T) {
@@ -351,9 +389,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "2019-05-13T17:22:36Z01:00", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "2019-05-13T17:22:36Z01:00", client, Args{
 		Globals:   args.Globals{},
 		Target:    "test",
 		Context:   "",
@@ -372,8 +411,11 @@ metadata:
   timestamp: 2019-05-13T17:22:36Z01:00
 `
 	assert.Equal(t, expectedInput, client.Inputs[0])
-	assert.Equal(t, "", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green>test</green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green>test</green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n  commit: abc123\n  timestamp: 2019-05-13T17:22:36Z01:00\n\n---\n",
+	})
 }
 
 func TestDeploy_DeploymentExists(t *testing.T) {
@@ -394,9 +436,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -408,8 +451,14 @@ metadata:
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	assert.Equal(t, "Rollout failed. Fetching events.Deployment eventsPod events", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+		"error: Rollout failed. Fetching events.\n",
+		"error: Deployment events",
+		"error: Pod events",
+	})
 }
 
 func TestDeploy_RolloutStatusFail(t *testing.T) {
@@ -431,9 +480,10 @@ metadata:
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
 	_ = ioutil.WriteFile(deployFile, []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
-	err := Deploy(name, "image", "20190513-17:22:36", client, out, eout, Args{
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -445,6 +495,11 @@ metadata:
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	assert.Equal(t, "Rollout failed. Fetching events.Deployment eventsPod events", out.String())
-	assert.Equal(t, "", eout.String())
+	logMock.Check(t, []string{"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+		"error: Rollout failed. Fetching events.\n",
+		"error: Deployment events",
+		"error: Pod events",
+	})
 }

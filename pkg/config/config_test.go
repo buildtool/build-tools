@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -10,7 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -43,10 +44,12 @@ func TestLoad_AbsFail(t *testing.T) {
 		return "", errors.New("abs-error")
 	}
 
-	out := &bytes.Buffer{}
-	_, err := Load("test", out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	_, err := Load("test")
 	assert.EqualError(t, err, "abs-error")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 	abs = filepath.Abs
 }
 
@@ -55,14 +58,16 @@ func TestLoad_Empty(t *testing.T) {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
 	assert.NotNil(t, cfg.Registry)
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestLoad_BrokenYAML(t *testing.T) {
@@ -72,14 +77,16 @@ func TestLoad_BrokenYAML(t *testing.T) {
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
 	assert.NotNil(t, cfg.Registry)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }
 
 func TestLoad_UnreadableFile(t *testing.T) {
@@ -88,14 +95,16 @@ func TestLoad_UnreadableFile(t *testing.T) {
 	filename := filepath.Join(name, ".buildtools.yaml")
 	_ = os.Mkdir(filename, 0777)
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
 	assert.NotNil(t, cfg.Registry)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }
 
 func TestLoad_YAML(t *testing.T) {
@@ -115,8 +124,10 @@ targets:
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
@@ -135,7 +146,7 @@ targets:
 	assert.Equal(t, &devEnv, currentEnv)
 	_, err = cfg.CurrentTarget("missing")
 	assert.EqualError(t, err, "no target matching missing found")
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }
 
 func TestLoad_BrokenYAML_From_Env(t *testing.T) {
@@ -145,14 +156,16 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 `
 	defer pkg.SetEnv(envBuildtoolsContent, base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig")
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
 	assert.Equal(t, ci.No{}.Name(), cfg.CurrentCI().Name())
 	assert.NotNil(t, cfg.Registry)
-	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n"})
 }
 
 func TestLoad_YAML_From_Env_Plain(t *testing.T) {
@@ -165,10 +178,13 @@ targets:
 `
 	defer pkg.SetEnv(envBuildtoolsContent, yaml)()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
-	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"debug: Failed to decode BASE64, falling back to plaintext\n"})
 	assert.Equal(t, len(cfg.Targets), 1)
 	assert.Equal(t, cfg.Targets["local"].Context, "docker-desktop")
 }
@@ -183,8 +199,7 @@ target:
 `
 	defer pkg.SetEnv(envBuildtoolsContent, yaml)()
 
-	out := &bytes.Buffer{}
-	_, err := Load(name, out)
+	_, err := Load(name)
 	assert.Error(t, err)
 	assert.EqualError(t, err, "yaml: unmarshal errors:\n  line 2: field target not found in type config.Config")
 }
@@ -202,8 +217,10 @@ targets:
 `
 	defer pkg.SetEnv(envBuildtoolsContent, base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.Equal(t, 2, len(cfg.Targets))
@@ -216,7 +233,7 @@ targets:
 	assert.Equal(t, &devEnv, currentEnv)
 	_, err = cfg.CurrentTarget("missing")
 	assert.EqualError(t, err, "no target matching missing found")
-	assert.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\n", out.String())
+	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n"})
 }
 
 func TestLoad_YAML_DirStructure(t *testing.T) {
@@ -243,8 +260,10 @@ targets:
 `
 	_ = ioutil.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(filepath.Join(name, subdir), out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(filepath.Join(name, subdir))
 	assert.NoError(t, err)
 	assert.NotNil(t, cfg)
 	assert.NotNil(t, cfg.CI)
@@ -255,7 +274,8 @@ targets:
 	assert.Equal(t, 2, len(cfg.Targets))
 	assert.Equal(t, "ghi", cfg.Targets["test"].Context)
 	assert.Equal(t, "def", cfg.Targets["local"].Context)
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/sub/.buildtools.yaml'\x1b[39m\x1b[0m\n\x1b[0mMerging with config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name, name), out.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/sub/.buildtools.yaml'</green>\n", name),
+		fmt.Sprintf("debug: Merging with config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }
 
 func TestLoad_YAML_Multiple_Registry(t *testing.T) {
@@ -277,8 +297,10 @@ targets:
 `
 	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
-	out := &bytes.Buffer{}
-	_, err := Load(name, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	_, err := Load(name)
 	assert.EqualError(t, err, "registry already defined, please check configuration")
-	assert.Equal(t, fmt.Sprintf("\x1b[0mParsing config from file: \x1b[32m'%s/.buildtools.yaml'\x1b[39m\x1b[0m\n", name), out.String())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }

@@ -1,12 +1,13 @@
 package registry
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -69,10 +70,12 @@ func TestGcr_LoginFailed(t *testing.T) {
 		Url:            "url",
 		KeyFileContent: "a2V5ZmlsZSBjb250ZW50Cg==",
 	}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGcr_LoginSuccess(t *testing.T) {
@@ -81,11 +84,13 @@ func TestGcr_LoginSuccess(t *testing.T) {
 		Url:            "url",
 		KeyFileContent: "a2V5ZmlsZSBjb250ZW50Cg==",
 	}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "_json_key", client.Username)
 	assert.Equal(t, "keyfile content\n", client.Password)
 	assert.Equal(t, "url", client.ServerAddress)
-	assert.Equal(t, "Logged in\n", out.String())
+	logMock.Check(t, []string{"debug: Logged in\n"})
 }

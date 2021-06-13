@@ -1,54 +1,70 @@
 package args
 
 import (
-	"bytes"
 	"encoding/base64"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/require"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/version"
 )
 
 func Test_Parse(t *testing.T) {
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 
 	var arguments = &struct {
 		Globals
 		Name string
 	}{}
-	err := ParseArgs("", out, eout, []string{"--name", "thename"}, version.Info{}, arguments)
+	err := ParseArgs("", []string{"--name", "thename"}, version.Info{}, arguments)
 	require.NoError(t, err)
 	require.Equal(t, "thename", arguments.Name)
 }
 
 func Test_Help(t *testing.T) {
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 
 	var arguments = &struct {
 		Globals
 		Name string
 	}{}
-	err := ParseArgs("", out, eout, []string{"--help"}, version.Info{
+	err := ParseArgs("", []string{"--help"}, version.Info{
 		Name:        "command",
 		Description: "desc",
 	}, arguments)
 	require.Equal(t, err, Done)
-	require.Equal(t, "Usage: command\n\ndesc\n\nFlags:\n  -h, --help           Show context-sensitive help.\n      --version        Print args information and quit\n  -v, --verbose        Enable verbose mode\n      --config\n      --name=STRING\n", out.String())
+	logMock.Check(t, []string{
+		"info: Usage: command\n",
+		"info: \n",
+		"info: desc\n",
+		"info: \n",
+		"info: Flags:\n",
+		"info:   -h, --help           Show context-sensitive help.\n",
+		"info:       --version        Print args information and exit\n",
+		"info:   -v, --verbose        Enable verbose mode\n",
+		"info:       --config         Print parsed config and exit\n",
+		"info:       --name=STRING\n",
+	})
 }
 
 func Test_Version(t *testing.T) {
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 
 	var arguments = &struct {
 		Globals
 		Name string
 	}{}
-	err := ParseArgs("", out, eout, []string{"--version", "--name", "thename"}, version.Info{
+	err := ParseArgs("", []string{"--version", "--name", "thename"}, version.Info{
 		Name:        "name",
 		Description: "desc",
 		Version:     "version",
@@ -56,7 +72,7 @@ func Test_Version(t *testing.T) {
 		Date:        "date",
 	}, arguments)
 	require.Equal(t, err, Done)
-	require.Equal(t, "Version: version, commit commit, built at date\n", out.String())
+	logMock.Check(t, []string{"info: Version: version, commit commit, built at date\n"})
 }
 
 func Test_Config(t *testing.T) {
@@ -67,14 +83,15 @@ targets:
 `
 	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
 
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
 
 	var arguments = &struct {
 		Globals
 		Name string
 	}{}
-	err := ParseArgs("", out, eout, []string{"--config", "--name", "thename"}, version.Info{
+	err := ParseArgs("", []string{"--config", "--name", "thename"}, version.Info{
 		Name:        "name",
 		Description: "desc",
 		Version:     "version",
@@ -82,5 +99,73 @@ targets:
 		Date:        "date",
 	}, arguments)
 	require.Equal(t, err, Done)
-	require.Equal(t, "Parsing config from env: BUILDTOOLS_CONTENT\nCurrent config\nci: none\nvcs: Git\nregistry: {}"+yaml, out.String())
+	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"info: Current config\nci: none\nvcs: Git\nregistry: {}" + yaml})
+}
+
+func Test_Config_Error(t *testing.T) {
+	yaml := `_`
+	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	err := ParseArgs("", []string{"--config", "--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	require.Error(t, err)
+	logMock.Check(t, []string{
+		"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"info: name: error: yaml: unmarshal errors:\n",
+		"info:                line 1: cannot unmarshal !!str `_` into config.Config\n",
+	})
+}
+
+func Test_Verbose_Enabled(t *testing.T) {
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.InfoLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	_ = ParseArgs("", []string{"--verbose", "--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	logMock.Check(t, []string{})
+	require.True(t, cli.Verbose(log.Log))
+}
+
+func Test_Verbose(t *testing.T) {
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.InfoLevel)
+
+	var arguments = &struct {
+		Globals
+		Name string
+	}{}
+	_ = ParseArgs("", []string{"--name", "thename"}, version.Info{
+		Name:        "name",
+		Description: "desc",
+		Version:     "version",
+		Commit:      "commit",
+		Date:        "date",
+	}, arguments)
+	logMock.Check(t, []string{})
+	require.False(t, cli.Verbose(log.Log))
 }

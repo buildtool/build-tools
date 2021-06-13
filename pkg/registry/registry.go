@@ -5,9 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -16,12 +15,12 @@ import (
 type Registry interface {
 	Configured() bool
 	Name() string
-	Login(client docker.Client, out io.Writer) error
+	Login(client docker.Client) error
 	GetAuthConfig() types.AuthConfig
 	GetAuthInfo() string
 	RegistryUrl() string
 	Create(repository string) error
-	PushImage(client docker.Client, auth, image string, out, eout io.Writer) error
+	PushImage(client docker.Client, auth, image string) error
 }
 
 type responsetype struct {
@@ -45,7 +44,7 @@ type responsetype struct {
 
 type dockerRegistry struct{}
 
-func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eout io.Writer) error {
+func (dockerRegistry) PushImage(client docker.Client, auth, image string) error {
 	if out, err := client.ImagePush(context.Background(), image, types.ImagePushOptions{All: true, RegistryAuth: auth}); err != nil {
 		return err
 	} else {
@@ -54,7 +53,7 @@ func (dockerRegistry) PushImage(client docker.Client, auth, image string, ow, eo
 			r := &responsetype{}
 			response := scanner.Bytes()
 			if err := json.Unmarshal(response, &r); err != nil {
-				_, _ = fmt.Fprintf(eout, "Unable to parse response: %s, Error: %v\n", string(response), err)
+				log.Errorf("Unable to parse response: %s, Error: %v\n", string(response), err)
 				return err
 			} else {
 				if r.ErrorDetail != nil {

@@ -1,20 +1,21 @@
 package args
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
-	"io"
 
 	"github.com/alecthomas/kong"
+	"github.com/apex/log"
 
+	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/version"
 )
 
 type Globals struct {
-	Version VersionFlag `name:"version" help:"Print args information and quit"`
-	Verbose bool        `short:"v" help:"Enable verbose mode"`
-	Config  ConfigFlag  ``
+	Version VersionFlag `name:"version" help:"Print args information and exit"`
+	Verbose VerboseFlag `short:"v" help:"Enable verbose mode"`
+	Config  ConfigFlag  `help:"Print parsed config and exit"`
 }
 
 type VersionFlag string
@@ -27,7 +28,7 @@ var Done = errors.New("version")
 func (v VersionFlag) Decode(ctx *kong.DecodeContext) error { return nil }
 func (v VersionFlag) IsBool() bool                         { return true }
 func (v VersionFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
-	_, _ = fmt.Fprintf(app.Stdout, vars["version"])
+	log.Info(vars["version"])
 	app.Exit(done)
 	return nil
 }
@@ -37,17 +38,27 @@ type ConfigFlag string
 func (v ConfigFlag) Decode(ctx *kong.DecodeContext) error { return nil }
 func (v ConfigFlag) IsBool() bool                         { return true }
 func (v ConfigFlag) BeforeApply(app *kong.Kong, vars kong.Vars) error {
-	cfg, err := config.Load(vars["dir"], app.Stdout)
+	cfg, err := config.Load(vars["dir"])
 	if err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintf(app.Stdout, "Current config\n")
-	_ = cfg.Print(app.Stdout)
+	out := &bytes.Buffer{}
+	_ = cfg.Print(out)
+	log.Infof("Current config\n%s", out.String())
 	app.Exit(done)
 	return nil
 }
 
-func ParseArgs(dir string, out, eout io.Writer, osArgs []string, info version.Info, variables interface{}) error {
+type VerboseFlag string
+
+func (v VerboseFlag) Decode(ctx *kong.DecodeContext) error { return nil }
+func (v VerboseFlag) IsBool() bool                         { return true }
+func (v VerboseFlag) BeforeApply(*kong.Kong, kong.Vars) error {
+	log.SetLevel(log.DebugLevel)
+	return nil
+}
+
+func ParseArgs(dir string, osArgs []string, info version.Info, variables interface{}) error {
 	exitCode := unset
 	cmd, _ := kong.New(
 		variables,
@@ -62,9 +73,8 @@ func ParseArgs(dir string, out, eout io.Writer, osArgs []string, info version.In
 			ctx.Exit(done)
 			return nil
 		}),
-		kong.UsageOnError(),
 		kong.Description(info.Description),
-		kong.Writers(out, eout),
+		kong.Writers(cli.NewWriter(log.Log), cli.NewWriter(log.Log)),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Compact: true,
 		}),

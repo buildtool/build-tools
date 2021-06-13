@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"bytes"
 	"errors"
 	"testing"
 
@@ -12,10 +11,8 @@ import (
 
 func TestDockerRegistry_PushImage(t *testing.T) {
 	registry := &Gitlab{}
-	out := &bytes.Buffer{}
-	eout := &bytes.Buffer{}
 	client := &docker.MockDocker{PushError: errors.New("error")}
 
-	err := registry.PushImage(client, "dummy", "unknown", out, eout)
+	err := registry.PushImage(client, "dummy", "unknown")
 	assert.EqualError(t, err, "error")
 }

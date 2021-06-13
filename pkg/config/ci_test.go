@@ -20,7 +20,7 @@ func TestIdentify_Azure(t *testing.T) {
 	defer pkg.SetEnv("BUILD_SOURCEBRANCHNAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -37,8 +37,7 @@ func TestName_Azure(t *testing.T) {
 	defer pkg.SetEnv("BUILD_REPOSITORY_NAME", "reponame")()
 	defer pkg.SetEnv("BUILD_SOURCEBRANCHNAME", "feature/first test")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "Azure", result.Name())
@@ -54,7 +53,7 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -71,7 +70,7 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 	InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -88,7 +87,7 @@ func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -102,7 +101,7 @@ func TestIdentify_Buildkite(t *testing.T) {
 	defer pkg.SetEnv("BUILDKITE_BRANCH", "feature/first test")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -124,7 +123,7 @@ func TestBuildName_Fallback_Buildkite(t *testing.T) {
 	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -142,7 +141,7 @@ func TestBranch_VCS_Fallback_Buildkite(t *testing.T) {
 	InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -160,7 +159,7 @@ func TestCommit_VCS_Fallback_Buildkite(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -175,7 +174,7 @@ func TestIdentify_Gitlab(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature/first test")()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -192,8 +191,7 @@ func TestName_Gitlab(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature/first test")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "Gitlab", result.Name())
@@ -209,7 +207,7 @@ func TestBuildName_Fallback_Gitlab(t *testing.T) {
 	defer func() { _ = os.Chdir(oldPwd) }()
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -226,7 +224,7 @@ func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 	InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -243,7 +241,7 @@ func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -262,7 +260,7 @@ func TestNoOp(t *testing.T) {
 	InitRepoWithCommit(name)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -275,8 +273,7 @@ func TestNoOp(t *testing.T) {
 func TestName_NoOp(t *testing.T) {
 	defer pkg.SetEnv("CI", "")()
 
-	out := &bytes.Buffer{}
-	cfg, err := Load(name, out)
+	cfg, err := Load(name)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.Equal(t, "none", result.Name())
@@ -291,7 +288,7 @@ func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 	InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)
@@ -308,7 +305,7 @@ func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	out := &bytes.Buffer{}
-	cfg, err := Load(dir, out)
+	cfg, err := Load(dir)
 	assert.NoError(t, err)
 	result := cfg.CurrentCI()
 	assert.NotNil(t, result)

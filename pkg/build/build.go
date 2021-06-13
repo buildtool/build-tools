@@ -10,10 +10,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 	dkr "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/liamg/tml"
+	"gopkg.in/yaml.v3"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -40,14 +41,10 @@ type Args struct {
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
 }
 
-func DoBuild(dir string, out, eout io.Writer, info version.Info, osArgs ...string) int {
+func DoBuild(dir string, info version.Info, osArgs ...string) int {
 	var buildArgs Args
-	err := args.ParseArgs(dir,
-		out,
-		eout,
-		osArgs,
-		info,
-		&buildArgs)
+	// TODO See if we can move this "up" one level to remove out,eout completely
+	err := args.ParseArgs(dir, osArgs, info, &buildArgs)
 	if err != nil {
 		if err != args.Done {
 			return -1
@@ -57,14 +54,14 @@ func DoBuild(dir string, out, eout io.Writer, info version.Info, osArgs ...strin
 	}
 
 	if client, err := dockerClient(); err != nil {
-		_, _ = fmt.Fprintln(out, err.Error())
+		log.Error(err.Error())
 		return -1
 	} else {
 		if buildContext, err := createBuildContext(dir, buildArgs.Dockerfile); err != nil {
-			_, _ = fmt.Fprintln(out, err.Error())
+			log.Error(err.Error())
 			return -2
 		} else {
-			return build(client, dir, buildContext, out, eout, buildArgs)
+			return build(client, dir, buildContext, buildArgs)
 		}
 	}
 }
@@ -81,24 +78,24 @@ func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
 	}
 }
 
-func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eout io.Writer, buildVars Args) int {
-	cfg, err := config.Load(dir, out)
+func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) int {
+	cfg, err := config.Load(dir)
 	if err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
+		log.Error(err.Error())
 		return -3
 	}
 	currentCI := cfg.CurrentCI()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using CI <green>%s</green>", currentCI.Name()))
+	log.Debugf("Using CI <green>%s</green>\n", currentCI.Name())
 
 	currentRegistry := cfg.CurrentRegistry()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using registry <green>%s</green>", currentRegistry.Name()))
+	log.Debugf("Using registry <green>%s</green>\n", currentRegistry.Name())
 	authConfigs := make(map[string]types.AuthConfig)
 	if buildVars.NoLogin {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Login <yellow>disabled</yellow>"))
+		log.Debugf("Login <yellow>disabled</yellow>\n")
 	} else {
-		_, _ = fmt.Fprintln(out, tml.Sprintf("Authenticating against registry <green>%s</green>", currentRegistry.Name()))
-		if err := currentRegistry.Login(client, out); err != nil {
-			_, _ = fmt.Fprintln(eout, err.Error())
+		log.Debugf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name())
+		if err := currentRegistry.Login(client); err != nil {
+			log.Error(err.Error())
 			return -4
 		}
 		authConfigs[currentRegistry.RegistryUrl()] = currentRegistry.GetAuthConfig()
@@ -108,17 +105,17 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	tee := io.TeeReader(buildContext, &buf)
 	stages, err := findStages(tee, buildVars.Dockerfile)
 	if err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
+		log.Error(err.Error())
 		return -5
 	}
 	if !ci.IsValid(currentCI) {
-		_, _ = fmt.Fprintln(eout, tml.Sprintf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"))
+		log.Debugf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?\n")
 		return -6
 	}
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
-	_, _ = fmt.Fprintln(out, tml.Sprintf("Using build variables commit <green>%s</green> on branch <green>%s</green>", commit, branch))
+	log.Debugf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch)
 	var caches []string
 
 	buildArgs := map[string]*string{
@@ -135,24 +132,24 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 			if env, exists := os.LookupEnv(key); exists {
 				buildArgs[key] = &env
 			} else {
-				_, _ = fmt.Fprintf(out, "ignoring build-arg %s\n", key)
+				log.Debugf("ignoring build-arg %s\n", key)
 			}
 		}
 	}
 	for _, stage := range stages {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage, eout)
+		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, out, !buildVars.NoPull); err != nil {
-			_, _ = fmt.Fprintln(eout, err.Error())
+		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, !buildVars.NoPull); err != nil {
+			log.Error(err.Error())
 			return -7
 		}
 	}
 
 	var tags []string
-	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch, eout)
-	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest", eout)
+	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
+	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
 	tags = append(tags, []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit, eout),
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
 		branchTag,
 	}...)
 	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
@@ -160,16 +157,16 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, out, eo
 	}
 
 	caches = append([]string{branchTag, latestTag}, caches...)
-	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, tags, caches, "", authConfigs, out, !buildVars.NoPull); err != nil {
-		_, _ = fmt.Fprintln(eout, err.Error())
+	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, tags, caches, "", authConfigs, !buildVars.NoPull); err != nil {
+		log.Error(err.Error())
 		return -7
 	}
 
 	return 0
 }
 
-func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, out io.Writer, pullParent bool) error {
-	response, err := client.ImageBuild(context.Background(), buildContext, types.ImageBuildOptions{
+func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool) error {
+	options := types.ImageBuildOptions{
 		AuthConfigs: authConfigs,
 		BuildArgs:   args,
 		CacheFrom:   caches,
@@ -180,8 +177,9 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 		ShmSize:     256 * 1024 * 1024,
 		Tags:        tags,
 		Target:      target,
-	})
-
+	}
+	logVerbose(options)
+	response, err := client.ImageBuild(context.Background(), buildContext, options)
 	if err != nil {
 		return err
 	} else {
@@ -195,13 +193,19 @@ func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, ar
 				if r.ErrorDetail != nil {
 					return fmt.Errorf("error Code: %v Message: %v", r.ErrorDetail.Code, r.ErrorDetail.Message)
 				} else {
-					_, _ = fmt.Fprint(out, r.Stream)
+					log.Info(r.Stream)
 				}
 			}
 		}
 	}
-
 	return nil
+}
+
+func logVerbose(options types.ImageBuildOptions) {
+	loggableOptions := options
+	loggableOptions.AuthConfigs = nil
+	marshal, _ := yaml.Marshal(loggableOptions)
+	log.Debugf("performing docker build with options (auths removed):\n%s\n", marshal)
 }
 
 func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {

@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 
+	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -30,9 +30,9 @@ func (r Github) Configured() bool {
 	return len(r.Repository) > 0
 }
 
-func (r Github) Login(client docker.Client, out io.Writer) error {
+func (r Github) Login(client docker.Client) error {
 	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}); err == nil {
-		_, _ = fmt.Fprintln(out, ok.Status)
+		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
 		return err

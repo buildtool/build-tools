@@ -12,7 +12,7 @@ func TestNo_Identify(t *testing.T) {
 
 	out := &bytes.Buffer{}
 
-	assert.True(t, vcs.Identify("test", out))
+	assert.True(t, vcs.Identify("test"))
 	assert.Equal(t, "", out.String())
 }
 

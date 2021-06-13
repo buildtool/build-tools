@@ -1,19 +1,22 @@
 package main
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
 )
 
 func TestVersion(t *testing.T) {
-	out = &bytes.Buffer{}
+	logMock := mocks.New()
+	handler = logMock
+	log.SetLevel(log.DebugLevel)
 	version = "1.0.0"
 	exitFunc = func(code int) {
 		assert.Equal(t, 0, code)
@@ -21,7 +24,7 @@ func TestVersion(t *testing.T) {
 	os.Args = []string{"deploy", "--version"}
 	main()
 
-	assert.Equal(t, "Version: 1.0.0, commit none, built at unknown\n", out.(*bytes.Buffer).String())
+	logMock.Check(t, []string{"info: Version: 1.0.0, commit none, built at unknown\n"})
 }
 
 func TestDeploy_BrokenConfig(t *testing.T) {

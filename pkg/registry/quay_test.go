@@ -1,11 +1,12 @@
 package registry
 
 import (
-	"bytes"
 	"fmt"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -13,22 +14,28 @@ import (
 func TestQuay_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
 	registry := &Quay{Repository: "group", Username: "user", Password: "pass"}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
 	assert.Equal(t, "pass", client.Password)
 	assert.Equal(t, "quay.io", client.ServerAddress)
-	assert.Equal(t, "Logged in\n", out.String())
+	logMock.Check(t, []string{"debug: Logged in\n"})
 }
 
 func TestQuay_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	registry := &Quay{}
-	out := &bytes.Buffer{}
-	err := registry.Login(client, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestQuay_GetAuthInfo(t *testing.T) {

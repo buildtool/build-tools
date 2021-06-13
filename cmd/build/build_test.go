@@ -1,44 +1,52 @@
 package main
 
 import (
-	"bytes"
 	"os"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg"
 )
 
 func TestBuild(t *testing.T) {
+	logMock := mocks.New()
+	handler = logMock
 	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
 	exitFunc = func(code int) {
 		assert.Equal(t, -1, code)
 	}
 	os.Args = []string{"build"}
 	main()
+	logMock.Check(t, []string{"error: unable to parse docker host `abc-123`"})
 }
 
 func TestVersion(t *testing.T) {
-	out = &bytes.Buffer{}
+	logMock := mocks.New()
+	handler = logMock
+	log.SetLevel(log.DebugLevel)
 	exitFunc = func(code int) {
 		assert.Equal(t, 0, code)
 	}
 	os.Args = []string{"build", "--version"}
 	main()
 
-	assert.Equal(t, "Version: dev, commit none, built at unknown\n", out.(*bytes.Buffer).String())
+	logMock.Check(t, []string{"info: Version: dev, commit none, built at unknown\n"})
 }
 
 func TestArguments(t *testing.T) {
-	out = &bytes.Buffer{}
-	eout = &bytes.Buffer{}
+	logMock := mocks.New()
+	handler = logMock
+	log.SetLevel(log.DebugLevel)
 	exitFunc = func(code int) {
 		assert.Equal(t, -1, code)
 	}
 	os.Args = []string{"build", "--unknown"}
 	main()
 
-	assert.Equal(t, "build: error: unknown flag --unknown\n", eout.(*bytes.Buffer).String())
-	assert.Contains(t, out.(*bytes.Buffer).String(), "Usage: build")
+	logMock.Check(t, []string{
+		"info: build: error: unknown flag --unknown\n",
+	})
 }

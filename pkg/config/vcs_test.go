@@ -1,13 +1,14 @@
 package config
 
 import (
-	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/apex/log"
 	"github.com/stretchr/testify/assert"
+	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/buildtool/build-tools/pkg/vcs"
 )
@@ -18,13 +19,15 @@ func TestIdentify(t *testing.T) {
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	out := &bytes.Buffer{}
-	result := vcs.Identify(dir, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	result := vcs.Identify(dir)
 	assert.NotNil(t, result)
 	assert.Equal(t, "none", result.Name())
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGit_Identify(t *testing.T) {
@@ -33,13 +36,15 @@ func TestGit_Identify(t *testing.T) {
 
 	hash, _ := InitRepoWithCommit(dir)
 
-	out := &bytes.Buffer{}
-	result := vcs.Identify(dir, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	result := vcs.Identify(dir)
 	assert.NotNil(t, result)
 	assert.Equal(t, "Git", result.Name())
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "master", result.Branch())
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGit_Identify_Subdirectory(t *testing.T) {
@@ -51,13 +56,15 @@ func TestGit_Identify_Subdirectory(t *testing.T) {
 	subdir := filepath.Join(dir, "subdir")
 	_ = os.Mkdir(subdir, 0777)
 
-	out := &bytes.Buffer{}
-	result := vcs.Identify(subdir, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	result := vcs.Identify(subdir)
 	assert.NotNil(t, result)
 	assert.Equal(t, "Git", result.Name())
 	assert.Equal(t, hash.String(), result.Commit())
 	assert.Equal(t, "master", result.Branch())
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGit_MissingRepo(t *testing.T) {
@@ -66,12 +73,14 @@ func TestGit_MissingRepo(t *testing.T) {
 
 	_ = os.Mkdir(filepath.Join(dir, ".git"), 0777)
 
-	out := &bytes.Buffer{}
-	result := vcs.Identify(dir, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	result := vcs.Identify(dir)
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
-	assert.Equal(t, "", out.String())
+	logMock.Check(t, []string{})
 }
 
 func TestGit_NoCommit(t *testing.T) {
@@ -80,10 +89,12 @@ func TestGit_NoCommit(t *testing.T) {
 
 	InitRepo(dir)
 
-	out := &bytes.Buffer{}
-	result := vcs.Identify(dir, out)
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	result := vcs.Identify(dir)
 	assert.NotNil(t, result)
 	assert.Equal(t, "", result.Commit())
 	assert.Equal(t, "", result.Branch())
-	assert.Equal(t, "Unable to fetch head: reference not found\n", out.String())
+	logMock.Check(t, []string{"debug: Unable to fetch head: reference not found\n"})
 }
