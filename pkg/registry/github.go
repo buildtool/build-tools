@@ -17,7 +17,7 @@ type Github struct {
 	Username       string `yaml:"username" env:"GITHUB_USERNAME"`
 	Password       string `yaml:"password" env:"GITHUB_PASSWORD"`
 	Token          string `yaml:"token" env:"GITHUB_TOKEN"`
-	Repository     string `yaml:"repository" env:"GITHUB_REPOSITORY"`
+	Repository     string `yaml:"repository" env:"GITHUB_REPOSITORY_OWNER"`
 }
 
 var _ Registry = &Github{}
