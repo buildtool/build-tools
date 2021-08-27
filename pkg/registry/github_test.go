@@ -33,7 +33,7 @@ func TestGithub_LoginSuccess(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
 	assert.Equal(t, "token", client.Password)
-	assert.Equal(t, "docker.pkg.github.com", client.ServerAddress)
+	assert.Equal(t, "ghcr.io", client.ServerAddress)
 	logMock.Check(t, []string{"debug: Logged in\n"})
 }
 
@@ -51,7 +51,7 @@ func TestGithub_LoginError(t *testing.T) {
 func TestGithub_GetAuthInfo(t *testing.T) {
 	registry := &Github{Repository: "repo", Username: "user", Password: "token"}
 	auth := registry.GetAuthInfo()
-	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InRva2VuIiwic2VydmVyYWRkcmVzcyI6ImRvY2tlci5wa2cuZ2l0aHViLmNvbSJ9", auth)
+	assert.Equal(t, "eyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InRva2VuIiwic2VydmVyYWRkcmVzcyI6ImdoY3IuaW8ifQ==", auth)
 }
 
 func TestGithub_Create(t *testing.T) {
@@ -63,5 +63,5 @@ func TestGithub_Create(t *testing.T) {
 func TestGithub_RegistryUrl(t *testing.T) {
 	registry := &Github{Repository: "org/repo", Username: "user", Password: "token"}
 
-	assert.Equal(t, "docker.pkg.github.com/org/repo", registry.RegistryUrl())
+	assert.Equal(t, "ghcr.io/org/repo", registry.RegistryUrl())
 }
