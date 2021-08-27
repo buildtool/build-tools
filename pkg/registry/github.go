@@ -31,7 +31,7 @@ func (r Github) Configured() bool {
 }
 
 func (r Github) Login(client docker.Client) error {
-	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}); err == nil {
 		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
@@ -46,7 +46,7 @@ func (r Github) password() string {
 	return r.Password
 }
 func (r Github) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "docker.pkg.github.com"}
+	return types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}
 }
 
 func (r Github) GetAuthInfo() string {
@@ -55,7 +55,7 @@ func (r Github) GetAuthInfo() string {
 }
 
 func (r Github) RegistryUrl() string {
-	return fmt.Sprintf("docker.pkg.github.com/%s", r.Repository)
+	return fmt.Sprintf("ghcr.io/%s", r.Repository)
 }
 
 func (r *Github) Create(repository string) error {
