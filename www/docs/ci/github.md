@@ -25,9 +25,9 @@ jobs:
 ```
 
 Read more about our actions here:
-* [build-action]
-* [push-action]
-* [deploy-action]
+  - [build-action]
+  - [push-action]
+  - [deploy-action]
 
 > For detailed intructions please follow GitHub Actions [workflow syntax][syntax].
 
