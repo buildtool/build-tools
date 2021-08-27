@@ -25,6 +25,7 @@ jobs:
 ```
 
 Read more about our actions here:
+
   - [build-action]
   - [push-action]
   - [deploy-action]
