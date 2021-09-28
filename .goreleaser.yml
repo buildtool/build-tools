@@ -52,12 +52,23 @@ builds:
       - windows
     goarch:
       - amd64
+  - id: prepare
+    main: ./cmd/prepare/prepare.go
+    binary: prepare
+    flags:
+      - -tags=prod
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
 dockers:
   -
     goos: linux
     goarch: amd64
     dockerfile: Dockerfile
-    ids: ["build", "push", "deploy", "kubecmd"]
+    ids: ["build", "push", "deploy", "kubecmd" ,"prepare"]
     image_templates:
     - "buildtool/{{ .ProjectName }}:latest"
     - "buildtool/{{ .ProjectName }}:{{ .Tag }}"
@@ -74,6 +85,7 @@ brews:
       bin.install "push"
       bin.install "deploy"
       bin.install "kubecmd"
+      bin.install "prepare"
     commit_author:
       name: peter-stc
       email: peter@sparetimecoders.com
