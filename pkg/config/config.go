@@ -55,6 +55,8 @@ type Target struct {
 	Context    string `yaml:"context"`
 	Namespace  string `yaml:"namespace,omitempty"`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+	GitURL     string `yaml:"git_url,omitempty"`
+	GitPath    string `yaml:"git_path,omitempty"`
 }
 
 const envBuildtoolsContent = "BUILDTOOLS_CONTENT"
