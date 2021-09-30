@@ -2,6 +2,11 @@ package deploy
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/apex/log"
@@ -12,12 +17,6 @@ import (
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/kubectl"
 	"github.com/buildtool/build-tools/pkg/version"
-
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type Args struct {

@@ -47,19 +47,16 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 		log.Error(err.Error())
 		return -1
 	} else {
-		var target *config.Target
-		if target, err = cfg.CurrentTarget(prepareArgs.Target); err != nil {
+		var target *config.Git
+		if target, err = cfg.CurrentGitops(prepareArgs.Target); err != nil {
 			log.Error(err.Error())
-			target = &config.Target{}
+			return -2
 		}
 		if prepareArgs.URL != "" {
-			target.GitURL = prepareArgs.URL
+			target.URL = prepareArgs.URL
 		}
 		if prepareArgs.Path != "" {
-			target.GitPath = prepareArgs.Path
-		}
-		if prepareArgs.Namespace != "" {
-			target.Namespace = prepareArgs.Namespace
+			target.Path = prepareArgs.Path
 		}
 		currentCI := cfg.CurrentCI()
 		if prepareArgs.Tag == "" {
@@ -76,14 +73,16 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 		if err := Prepare(dir, currentCI.BuildName(), tstamp, target, prepareArgs); err != nil {
 			log.Error(err.Error())
 			return -4
-
 		}
 	}
 	return 0
 }
 
-func Prepare(dir, name, timestamp string, target *config.Target, args Args) error {
+func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
+	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
+		return fmt.Errorf("no deployment descriptors found in k8s directory")
+	}
 
 	privKey := args.PrivateKey
 	if strings.HasPrefix(privKey, "~") {
@@ -105,7 +104,7 @@ func Prepare(dir, name, timestamp string, target *config.Target, args Args) erro
 		_ = os.RemoveAll(path)
 	}(cloneDir)
 	repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
-		URL:  target.GitURL,
+		URL:  target.URL,
 		Auth: keys,
 	})
 	if err != nil {
@@ -120,15 +119,15 @@ func Prepare(dir, name, timestamp string, target *config.Target, args Args) erro
 	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
 		return err
 	}
-	err = os.MkdirAll(filepath.Join(cloneDir, target.GitPath), 0777)
+	err = os.MkdirAll(filepath.Join(cloneDir, target.Path), 0777)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(cloneDir, target.GitPath, "deploy.yaml"), buffer.Bytes(), 0666)
+	err = os.WriteFile(filepath.Join(cloneDir, target.Path, "deploy.yaml"), buffer.Bytes(), 0666)
 	if err != nil {
 		return err
 	}
-	_, err = worktree.Add(filepath.Join(target.GitPath, "deploy.yaml"))
+	_, err = worktree.Add(filepath.Join(target.Path, "deploy.yaml"))
 	if err != nil {
 		return err
 	}
