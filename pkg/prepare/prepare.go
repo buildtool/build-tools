@@ -115,6 +115,7 @@ func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 		return err
 	}
 
+	log.Info("generating...")
 	buffer := &bytes.Buffer{}
 	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
 		return err
@@ -132,14 +133,15 @@ func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 		return err
 	}
 
-	commit, err := worktree.Commit(fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target), &git.CommitOptions{})
+	hash, err := worktree.Commit(fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target), &git.CommitOptions{})
 	if err != nil {
 		return err
 	}
-	_, err = repo.CommitObject(commit)
+	commit, err := repo.CommitObject(hash)
 	if err != nil {
 		return err
 	}
+	log.Infof("pushing commit %s to %s%s", commit.Hash, target.URL, target.Path)
 	err = repo.Push(&git.PushOptions{
 		Auth: keys,
 	})
