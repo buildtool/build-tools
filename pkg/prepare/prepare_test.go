@@ -40,10 +40,10 @@ func TestDoPrepare(t *testing.T) {
 			args: []string{"--help"},
 			want: 0,
 			wantLogged: []string{
-				"info: Usage:  [<target>]\n",
+				"info: Usage:  <target>\n",
 				"info: \n",
 				"info: Arguments:\n",
-				"info:   [<target>]    the target in the .buildtools.yaml\n",
+				"info:   <target>    the target in the .buildtools.yaml\n",
 				"info: \n",
 				"info: Flags:\n",
 				"info:   -h, --help                   Show context-sensitive help.\n",
@@ -67,7 +67,7 @@ func TestDoPrepare(t *testing.T) {
 			name: "broken config",
 			config: `ci: []
 `,
-			args:       []string{},
+			args:       []string{"dummy"},
 			want:       -1,
 			wantLogged: []string{"error: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig"},
 		},
@@ -87,21 +87,6 @@ gitops:
 			args:       []string{"dummy"},
 			want:       -3,
 			wantLogged: []string{"error: Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"},
-		},
-		{
-			name: "no env",
-			config: `
-gitops:
-  dummy: {}
-`,
-			env: map[string]string{
-				"CI_COMMIT_SHA":      "abc123",
-				"CI_PROJECT_NAME":    "dummy",
-				"CI_COMMIT_REF_NAME": "master",
-			},
-			args:       []string{},
-			want:       -2,
-			wantLogged: []string{"error: no gitops matching local found"},
 		},
 		{
 			name: "no options",

@@ -22,7 +22,7 @@ import (
 
 type Args struct {
 	args.Globals
-	Target     string `arg:"" name:"target" help:"the target in the .buildtools.yaml" default:"local"`
+	Target     string `arg:"" name:"target" help:"the target in the .buildtools.yaml" default:""`
 	Namespace  string `name:"namespace" short:"n" help:"override the namespace for default deployment target" default:""`
 	Tag        string `name:"tag" help:"override the tag to deploy, not using the CI or VCS evaluated value" default:""`
 	URL        string `name:"url" help:"override the URL to the Git repository where files will be generated" default:""`
