@@ -133,6 +133,9 @@ func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 	}
 
 	commit, err := worktree.Commit(fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target), &git.CommitOptions{})
+	if err != nil {
+		return err
+	}
 	_, err = repo.CommitObject(commit)
 	if err != nil {
 		return err
