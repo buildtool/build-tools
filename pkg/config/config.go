@@ -26,7 +26,8 @@ type Config struct {
 	CI                  *CIConfig         `yaml:"ci"`
 	Registry            *RegistryConfig   `yaml:"registry"`
 	Targets             map[string]Target `yaml:"targets"`
-	Gitops              map[string]Git    `yaml:"gitops"`
+	Git                 Git               `yaml:"git"`
+	Gitops              map[string]Gitops `yaml:"gitops"`
 	AvailableCI         []ci.CI
 	AvailableRegistries []registry.Registry
 }
@@ -59,6 +60,12 @@ type Target struct {
 }
 
 type Git struct {
+	Name  string `yaml:"name"`
+	Email string `yaml:"email"`
+	Key   string `yaml:"key"`
+}
+
+type Gitops struct {
 	URL  string `yaml:"url,omitempty"`
 	Path string `yaml:"path,omitempty"`
 }
@@ -175,7 +182,7 @@ func (c *Config) CurrentTarget(target string) (*Target, error) {
 	return nil, fmt.Errorf("no target matching %s found", target)
 }
 
-func (c *Config) CurrentGitops(target string) (*Git, error) {
+func (c *Config) CurrentGitops(target string) (*Gitops, error) {
 	if e, exists := c.Gitops[target]; exists {
 		return &e, nil
 	}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
 
 	"github.com/buildtool/build-tools/pkg/args"
@@ -28,7 +29,7 @@ type Args struct {
 	URL        string `name:"url" help:"override the URL to the Git repository where files will be generated" default:""`
 	Path       string `name:"path" help:"override the path in the Git repository where files will be generated" default:""`
 	User       string `name:"user" help:"username for Git access" default:"git"`
-	PrivateKey string `name:"key" help:"private key for Git access" default:"~/.ssh/id_rsa"`
+	PrivateKey string `name:"key" help:"private key for Git access (defaults to ~/.ssh/id_rsa)" default:""`
 	Password   string `name:"password" help:"password for private key" default:""`
 }
 
@@ -47,7 +48,7 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 		log.Error(err.Error())
 		return -1
 	} else {
-		var target *config.Git
+		var target *config.Gitops
 		if target, err = cfg.CurrentGitops(prepareArgs.Target); err != nil {
 			log.Error(err.Error())
 			return -2
@@ -70,7 +71,7 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 		}
 
 		tstamp := time.Now().Format(time.RFC3339)
-		if err := Prepare(dir, currentCI.BuildName(), tstamp, target, prepareArgs); err != nil {
+		if err := Prepare(dir, currentCI.BuildName(), tstamp, target, prepareArgs, cfg.Git); err != nil {
 			log.Error(err.Error())
 			return -4
 		}
@@ -78,13 +79,18 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 	return 0
 }
 
-func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
+func Prepare(dir, name, timestamp string, target *config.Gitops, args Args, gitConfig config.Git) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
 	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
 		return fmt.Errorf("no deployment descriptors found in k8s directory")
 	}
 
-	privKey := args.PrivateKey
+	privKey := "~/.ssh/id_rsa"
+	if args.PrivateKey != "" {
+		privKey = args.PrivateKey
+	} else if gitConfig.Key != "" {
+		privKey = gitConfig.Key
+	}
 	if strings.HasPrefix(privKey, "~") {
 		home, err := os.UserHomeDir()
 		if err != nil {
@@ -133,7 +139,15 @@ func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 		return err
 	}
 
-	hash, err := worktree.Commit(fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target), &git.CommitOptions{})
+	hash, err := worktree.Commit(
+		fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target),
+		&git.CommitOptions{
+			Author: &object.Signature{
+				Name:  ifEmpty(gitConfig.Name, "Buildtools"),
+				Email: ifEmpty(gitConfig.Email, "git@buildtools.io"),
+			},
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -149,6 +163,13 @@ func Prepare(dir, name, timestamp string, target *config.Git, args Args) error {
 		return err
 	}
 	return nil
+}
+
+func ifEmpty(s string, def string) string {
+	if strings.TrimSpace(s) == "" {
+		return def
+	}
+	return s
 }
 
 func processDir(writer io.StringWriter, dir, commit, timestamp, target string) error {

@@ -2,6 +2,10 @@ package prepare
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -51,21 +55,21 @@ func TestDoPrepare(t *testing.T) {
 				"info:   <target>    the target in the .buildtools.yaml\n",
 				"info: \n",
 				"info: Flags:\n",
-				"info:   -h, --help                   Show context-sensitive help.\n",
-				"info:       --version                Print args information and exit\n",
-				"info:   -v, --verbose                Enable verbose mode\n",
-				"info:       --config                 Print parsed config and exit\n",
-				"info:   -n, --namespace=STRING       override the namespace for default deployment\n",
-				"info:                                target\n",
-				"info:       --tag=STRING             override the tag to deploy, not using the CI or\n",
-				"info:                                VCS evaluated value\n",
-				"info:       --url=STRING             override the URL to the Git repository where\n",
-				"info:                                files will be generated\n",
-				"info:       --path=STRING            override the path in the Git repository where\n",
-				"info:                                files will be generated\n",
-				"info:       --user=\"git\"             username for Git access\n",
-				"info:       --key=\"~/.ssh/id_rsa\"    private key for Git access\n",
-				"info:       --password=STRING        password for private key\n",
+				"info:   -h, --help                Show context-sensitive help.\n",
+				"info:       --version             Print args information and exit\n",
+				"info:   -v, --verbose             Enable verbose mode\n",
+				"info:       --config              Print parsed config and exit\n",
+				"info:   -n, --namespace=STRING    override the namespace for default deployment target\n",
+				"info:       --tag=STRING          override the tag to deploy, not using the CI or VCS\n",
+				"info:                             evaluated value\n",
+				"info:       --url=STRING          override the URL to the Git repository where files\n",
+				"info:                             will be generated\n",
+				"info:       --path=STRING         override the path in the Git repository where files\n",
+				"info:                             will be generated\n",
+				"info:       --user=\"git\"          username for Git access\n",
+				"info:       --key=STRING          private key for Git access \\(defaults to\n",
+				"info:                             ~\\/.ssh\\/id_rsa\\)\n",
+				"info:       --password=STRING     password for private key\n",
 			},
 		},
 		{
@@ -112,6 +116,9 @@ gitops:
 		{
 			name: "generation successful",
 			config: `
+git:
+  name: Some User
+  email: some.user@example.org
 gitops:
   dummy:
     url: "{{.repo}}"
@@ -222,6 +229,13 @@ data:
 			logMock := mocks.New()
 			log.SetHandler(logMock)
 			oldPwd, _ := os.Getwd()
+			home, _ := ioutil.TempDir(os.TempDir(), "home")
+			defer func() { _ = os.RemoveAll(home) }()
+			_ = os.Setenv("HOME", home)
+			defer func() {
+				_ = os.Unsetenv("HOME")
+			}()
+			generateSSHKey(t, home)
 			name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
 			repo, _ := InitRepo(t, "git-repo")
@@ -267,6 +281,23 @@ data:
 			assert.Equal(t, tt.wantCommits, gotCommits)
 		})
 	}
+}
+
+func generateSSHKey(t *testing.T, dir string) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	assert.NoError(t, err)
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(key)
+	sshPath := filepath.Join(dir, ".ssh")
+	err = os.MkdirAll(sshPath, 0777)
+	assert.NoError(t, err)
+	pemFile, err := os.Create(filepath.Join(sshPath, "id_rsa"))
+	assert.NoError(t, err)
+	keyBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privateKeyBytes,
+	}
+	err = pem.Encode(pemFile, keyBlock)
+	assert.NoError(t, err)
 }
 
 func CheckLogged(t testing.TB, wantLogged []string, gotLogged []string) {
