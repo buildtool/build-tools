@@ -70,6 +70,8 @@ func TestDoPrepare(t *testing.T) {
 				"info:       --key=STRING          private key for Git access \\(defaults to\n",
 				"info:                             ~\\/.ssh\\/id_rsa\\)\n",
 				"info:       --password=STRING     password for private key\n",
+				"info:   -o, --out=STRING          write output to specified file instead of committing\n",
+				"info:                             and pushing to Git\n",
 			},
 		},
 		{
@@ -167,7 +169,7 @@ data:
 			},
 			want: 0,
 			wantLogged: []string{
-				"info: Using passed tag <green>testing</green> to deploy",
+				"info: Using passed tag <green>testing</green> to promote",
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path$",
 			},
@@ -194,8 +196,11 @@ data:
 				"CI_PROJECT_NAME":    "dummy",
 				"CI_COMMIT_REF_NAME": "master",
 			},
-			want:        -4,
-			wantLogged:  []string{"error: repository not found"},
+			want: -4,
+			wantLogged: []string{
+				"info: generating...",
+				"error: repository not found",
+			},
 			wantCommits: 0,
 		},
 		{
@@ -219,8 +224,11 @@ data:
 				"CI_PROJECT_NAME":    "dummy",
 				"CI_COMMIT_REF_NAME": "master",
 			},
-			want:        -4,
-			wantLogged:  []string{"error: open /missing/key: no such file or directory"},
+			want: -4,
+			wantLogged: []string{
+				"info: generating...",
+				"error: open /missing/key: no such file or directory",
+			},
 			wantCommits: 0,
 		},
 	}

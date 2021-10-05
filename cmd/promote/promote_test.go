@@ -17,7 +17,7 @@ func TestVersion(t *testing.T) {
 	exitFunc = func(code int) {
 		assert.Equal(t, 0, code)
 	}
-	os.Args = []string{"deploy", "--version"}
+	os.Args = []string{"promote", "--version"}
 	main()
 
 	logMock.Check(t, []string{"info: Version: 1.0.0, commit none, built at unknown\n"})

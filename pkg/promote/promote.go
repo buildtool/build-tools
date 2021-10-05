@@ -31,6 +31,7 @@ type Args struct {
 	User       string `name:"user" help:"username for Git access" default:"git"`
 	PrivateKey string `name:"key" help:"private key for Git access (defaults to ~/.ssh/id_rsa)" default:""`
 	Password   string `name:"password" help:"password for private key" default:""`
+	Out        string `name:"out" short:"o" help:"write output to specified file instead of committing and pushing to Git" default:""`
 }
 
 func DoPromote(dir string, info version.Info, osArgs ...string) int {
@@ -85,83 +86,92 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		return fmt.Errorf("no deployment descriptors found in k8s directory")
 	}
 
-	privKey := "~/.ssh/id_rsa"
-	if args.PrivateKey != "" {
-		privKey = args.PrivateKey
-	} else if gitConfig.Key != "" {
-		privKey = gitConfig.Key
-	}
-	if strings.HasPrefix(privKey, "~") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-		privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
-	}
-	keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
-	if err != nil {
-		return err
-	}
-	cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
-	if err != nil {
-		return err
-	}
-	defer func(path string) {
-		_ = os.RemoveAll(path)
-	}(cloneDir)
-	repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
-		URL:  target.URL,
-		Auth: keys,
-	})
-	if err != nil {
-		return err
-	}
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-
 	log.Info("generating...")
 	buffer := &bytes.Buffer{}
 	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
 		return err
 	}
-	err = os.MkdirAll(filepath.Join(cloneDir, target.Path), 0777)
-	if err != nil {
-		return err
-	}
-	err = os.WriteFile(filepath.Join(cloneDir, target.Path, "deploy.yaml"), buffer.Bytes(), 0666)
-	if err != nil {
-		return err
-	}
-	_, err = worktree.Add(filepath.Join(target.Path, "deploy.yaml"))
-	if err != nil {
-		return err
+
+	if args.Out == "" {
+		privKey := "~/.ssh/id_rsa"
+		if args.PrivateKey != "" {
+			privKey = args.PrivateKey
+		} else if gitConfig.Key != "" {
+			privKey = gitConfig.Key
+		}
+		if strings.HasPrefix(privKey, "~") {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return err
+			}
+			privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
+		}
+		keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
+		if err != nil {
+			return err
+		}
+		cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
+		if err != nil {
+			return err
+		}
+		defer func(path string) {
+			_ = os.RemoveAll(path)
+		}(cloneDir)
+		repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
+			URL:  target.URL,
+			Auth: keys,
+		})
+		if err != nil {
+			return err
+		}
+		worktree, err := repo.Worktree()
+		if err != nil {
+			return err
+		}
+
+		err = os.MkdirAll(filepath.Join(cloneDir, target.Path), 0777)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(filepath.Join(cloneDir, target.Path, "deploy.yaml"), buffer.Bytes(), 0666)
+		if err != nil {
+			return err
+		}
+		_, err = worktree.Add(filepath.Join(target.Path, "deploy.yaml"))
+		if err != nil {
+			return err
+		}
+
+		hash, err := worktree.Commit(
+			fmt.Sprintf("ci: promoting %s commit %s to %s", name, args.Tag, args.Target),
+			&git.CommitOptions{
+				Author: &object.Signature{
+					Name:  ifEmpty(gitConfig.Name, "Buildtools"),
+					Email: ifEmpty(gitConfig.Email, "git@buildtools.io"),
+				},
+			},
+		)
+		if err != nil {
+			return err
+		}
+		commit, err := repo.CommitObject(hash)
+		if err != nil {
+			return err
+		}
+		log.Infof("pushing commit %s to %s%s", commit.Hash, target.URL, target.Path)
+		err = repo.Push(&git.PushOptions{
+			Auth: keys,
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		err := os.WriteFile(args.Out, buffer.Bytes(), 0666)
+		if err != nil {
+			return err
+		}
 	}
 
-	hash, err := worktree.Commit(
-		fmt.Sprintf("ci: promoting %s commit %s to %s", name, args.Tag, args.Target),
-		&git.CommitOptions{
-			Author: &object.Signature{
-				Name:  ifEmpty(gitConfig.Name, "Buildtools"),
-				Email: ifEmpty(gitConfig.Email, "git@buildtools.io"),
-			},
-		},
-	)
-	if err != nil {
-		return err
-	}
-	commit, err := repo.CommitObject(hash)
-	if err != nil {
-		return err
-	}
-	log.Infof("pushing commit %s to %s%s", commit.Hash, target.URL, target.Path)
-	err = repo.Push(&git.PushOptions{
-		Auth: keys,
-	})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
