@@ -1,4 +1,4 @@
-package prepare
+package promote
 
 import (
 	"bytes"
@@ -33,9 +33,9 @@ type Args struct {
 	Password   string `name:"password" help:"password for private key" default:""`
 }
 
-func DoPrepare(dir string, info version.Info, osArgs ...string) int {
-	var prepareArgs Args
-	err := args.ParseArgs(dir, osArgs, info, &prepareArgs)
+func DoPromote(dir string, info version.Info, osArgs ...string) int {
+	var promoteArgs Args
+	err := args.ParseArgs(dir, osArgs, info, &promoteArgs)
 	if err != nil {
 		if err != args.Done {
 			return -1
@@ -49,29 +49,29 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 		return -1
 	} else {
 		var target *config.Gitops
-		if target, err = cfg.CurrentGitops(prepareArgs.Target); err != nil {
+		if target, err = cfg.CurrentGitops(promoteArgs.Target); err != nil {
 			log.Error(err.Error())
 			return -2
 		}
-		if prepareArgs.URL != "" {
-			target.URL = prepareArgs.URL
+		if promoteArgs.URL != "" {
+			target.URL = promoteArgs.URL
 		}
-		if prepareArgs.Path != "" {
-			target.Path = prepareArgs.Path
+		if promoteArgs.Path != "" {
+			target.Path = promoteArgs.Path
 		}
 		currentCI := cfg.CurrentCI()
-		if prepareArgs.Tag == "" {
+		if promoteArgs.Tag == "" {
 			if !ci.IsValid(currentCI) {
 				log.Errorf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?")
 				return -3
 			}
-			prepareArgs.Tag = currentCI.Commit()
+			promoteArgs.Tag = currentCI.Commit()
 		} else {
-			log.Infof("Using passed tag <green>%s</green> to deploy", prepareArgs.Tag)
+			log.Infof("Using passed tag <green>%s</green> to promote", promoteArgs.Tag)
 		}
 
 		tstamp := time.Now().Format(time.RFC3339)
-		if err := Prepare(dir, currentCI.BuildName(), tstamp, target, prepareArgs, cfg.Git); err != nil {
+		if err := Promote(dir, currentCI.BuildName(), tstamp, target, promoteArgs, cfg.Git); err != nil {
 			log.Error(err.Error())
 			return -4
 		}
@@ -79,7 +79,7 @@ func DoPrepare(dir string, info version.Info, osArgs ...string) int {
 	return 0
 }
 
-func Prepare(dir, name, timestamp string, target *config.Gitops, args Args, gitConfig config.Git) error {
+func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitConfig config.Git) error {
 	deploymentFiles := filepath.Join(dir, "k8s")
 	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
 		return fmt.Errorf("no deployment descriptors found in k8s directory")
@@ -140,7 +140,7 @@ func Prepare(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 	}
 
 	hash, err := worktree.Commit(
-		fmt.Sprintf("ci: deploy %s commit %s to %s", name, args.Tag, args.Target),
+		fmt.Sprintf("ci: promoting %s commit %s to %s", name, args.Tag, args.Target),
 		&git.CommitOptions{
 			Author: &object.Signature{
 				Name:  ifEmpty(gitConfig.Name, "Buildtools"),

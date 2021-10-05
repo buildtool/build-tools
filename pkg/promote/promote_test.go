@@ -1,4 +1,4 @@
-package prepare
+package promote
 
 import (
 	"bytes"
@@ -272,8 +272,8 @@ data:
 			for i, a := range tt.args {
 				args[i] = Template(t, a, repo, otherrepo).String()
 			}
-			if got := DoPrepare(name, version.Info{}, args...); got != tt.want {
-				t.Errorf("DoPrepare() = %v, want %v", got, tt.want)
+			if got := DoPromote(name, version.Info{}, args...); got != tt.want {
+				t.Errorf("DoPromote() = %v, want %v", got, tt.want)
 			}
 			CheckLogged(t, tt.wantLogged, logMock.Logged)
 

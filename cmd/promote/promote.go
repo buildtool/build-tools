@@ -6,7 +6,7 @@ import (
 	"github.com/apex/log"
 
 	"github.com/buildtool/build-tools/pkg/cli"
-	"github.com/buildtool/build-tools/pkg/prepare"
+	"github.com/buildtool/build-tools/pkg/promote"
 	ver "github.com/buildtool/build-tools/pkg/version"
 )
 
@@ -21,10 +21,10 @@ var (
 func main() {
 	log.SetHandler(handler)
 	dir, _ := os.Getwd()
-	exitFunc(prepare.DoPrepare(dir,
+	exitFunc(promote.DoPromote(dir,
 		ver.Info{
-			Name:        "build",
-			Description: "performs a docker build and tags the resulting image",
+			Name:        "promote",
+			Description: "templates deployment descriptors and promotes them to a Git-repository of choice",
 			Version:     version,
 			Commit:      commit,
 			Date:        date,
