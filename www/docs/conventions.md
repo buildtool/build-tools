@@ -2,11 +2,11 @@
 
 - The project folder must be a [Git](https://git-scm.com/) repository, with a least one commit
 - `Dockerfile` should be present in the root of the project directory
-  (this can be overriden with [flags](/commands/build)).
+  (this can be overridden with [flags](/commands/build)).
   The `Dockerfile` will be used to build the project into a runnable docker image.
-- Kubernetes descriptor files must be located in the `k8s` folder (only needed for `deploy`)
+- Kubernetes descriptor files must be located in the `k8s` folder (only needed for `deploy` and `promote`)
 - The `k8s` folder can also contain custom scripts that should be run during deployment
-- The name of the directory will be used as the name of the docker image (if running in CI `ENV` variables will be used
+- The name of the directory will be used as the name of the application (if running in CI `ENV` variables will be used
   to determine the name of the project being built)
 - The current commit id will be used as docker tag
 - The current branch will be used as docker tag. If you're on the `master` or `main`
