@@ -1,6 +1,8 @@
 # Frequently Asked Questions
 Or stuff just good-to-know...
 
+## What happened to X-action?
+We deprecated the build, push, deploy Github actions in favour of the new [setup-buildtools-action](/ci/github)
 ## Dealing with different docker versions
 buildtools defaults to using the latest version of the docker client
 (the actual version is determined by the docker client library that is used).

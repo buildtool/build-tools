@@ -1,40 +1,40 @@
 # Github Actions
-Build-tools can also be used within our official build-tools actions through [GitHub Actions][actions]
+Build-tools can also be used within our official build-tools actions through [GitHub Actions]
 
-You can create a workflow for pushing your releases by putting YAML configuration to `.github/workflows/build.yml`.
+You can create a workflow by putting YAML configuration to `.github/workflows/build.yml`.
 
-Below is a simple snippet to use the [build-action] and [push-action] in your workflow:
+Below is a simple snippet to use the [setup-buildtools-action] in your workflow:
 
 ```yaml
 name: Buildtool
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_USERNAME: sparetimecoders
-      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-      DOCKERHUB_NAMESPACE: sparetimecoders
+      GITHUB_USERNAME: dummy
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    name: build
     steps:
       - name: Checkout
         uses: actions/checkout@v1
       - name: build
-        uses: buildtool/build-action@v1
-      - name: push
-        uses: buildtool/push-action@v1
+        uses: buildtool/setup-buildtools-action@v0
+        with:
+          # use a specific version of buildtools
+          buildtools-version: 0.2.0-beta.1
+      - run: build
+      - name: prepare
+        uses: buildtool/setup-buildtools-action@v0
+        # use latest released version of buildtools
+      - run: push
 ```
 
-Read more about our actions here:
+Read more about available [commands](/commands/build):
 
-  - [build-action]
-  - [push-action]
-  - [deploy-action]
-
-> For detailed intructions please follow GitHub Actions [workflow syntax][syntax].
+> For detailed intructions please follow GitHub Actions [syntax].
 
 [Github Actions]: https://github.com/features/actions
-[build-action]: https://github.com/buildtool/build-action
-[push-action]: https://github.com/buildtool/push-action
-[deploy-action]: https://github.com/buildtool/deploy-action
-[actions]: https://github.com/features/actions
+[setup-buildtools-action]: https://github.com/buildtool/setup-buildtools-action
 [syntax]: https://help.github.com/en/articles/workflow-syntax-for-github-actions#About-yaml-syntax-for-workflows
