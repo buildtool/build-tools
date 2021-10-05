@@ -129,15 +129,15 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 			return err
 		}
 
-		err = os.MkdirAll(filepath.Join(cloneDir, target.Path), 0777)
+		err = os.MkdirAll(filepath.Join(cloneDir, target.Path, name), 0777)
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(filepath.Join(cloneDir, target.Path, "deploy.yaml"), buffer.Bytes(), 0666)
+		err = os.WriteFile(filepath.Join(cloneDir, target.Path, name, "deploy.yaml"), buffer.Bytes(), 0666)
 		if err != nil {
 			return err
 		}
-		_, err = worktree.Add(filepath.Join(target.Path, "deploy.yaml"))
+		_, err = worktree.Add(filepath.Join(target.Path, name, "deploy.yaml"))
 		if err != nil {
 			return err
 		}
