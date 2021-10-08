@@ -59,6 +59,8 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 		}
 		if promoteArgs.Path != "" {
 			target.Path = promoteArgs.Path
+		} else if target.Path == "" {
+			target.Path = "/"
 		}
 		currentCI := cfg.CurrentCI()
 		if promoteArgs.Tag == "" {
@@ -129,21 +131,22 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 			return err
 		}
 
-		err = os.MkdirAll(filepath.Join(cloneDir, target.Path, name), 0777)
+		normalized := strings.ReplaceAll(name, "_", "-")
+		err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
 		if err != nil {
 			return err
 		}
-		err = os.WriteFile(filepath.Join(cloneDir, target.Path, name, "deploy.yaml"), buffer.Bytes(), 0666)
+		err = os.WriteFile(filepath.Join(cloneDir, target.Path, normalized, "deploy.yaml"), buffer.Bytes(), 0666)
 		if err != nil {
 			return err
 		}
-		_, err = worktree.Add(filepath.Join(target.Path, name, "deploy.yaml"))
+		_, err = worktree.Add(filepath.Join(target.Path, normalized, "deploy.yaml"))
 		if err != nil {
 			return err
 		}
 
 		hash, err := worktree.Commit(
-			fmt.Sprintf("ci: promoting %s commit %s to %s", name, args.Tag, args.Target),
+			fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
 			&git.CommitOptions{
 				Author: &object.Signature{
 					Name:  ifEmpty(gitConfig.Name, "Buildtools"),
@@ -159,7 +162,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		if err != nil {
 			return err
 		}
-		log.Infof("pushing commit %s to %s/%s/%s", commit.Hash, target.URL, target.Path, name)
+		log.Infof("pushing commit %s to %s", commit.Hash, filepath.Join(target.URL, target.Path, normalized))
 		err = repo.Push(&git.PushOptions{
 			Auth: keys,
 		})

@@ -147,6 +147,37 @@ data:
 			wantCommits: 1,
 		},
 		{
+			name: "build name is normalized",
+			config: `
+git:
+  name: Some User
+  email: some.user@example.org
+gitops:
+  dummy:
+    url: "{{.repo}}"
+`,
+			descriptor: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+data:
+  BASE_URL: https://example.org
+`,
+			args: []string{"dummy"},
+			env: map[string]string{
+				"CI_COMMIT_SHA":      "abc123",
+				"CI_PROJECT_NAME":    "dummy_repo",
+				"CI_COMMIT_REF_NAME": "master",
+			},
+			want: 0,
+			wantLogged: []string{
+				"info: generating...",
+				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy-repo$",
+			},
+			wantCommits: 1,
+		},
+		{
 			name: "other repo, path and tag",
 			config: `
 gitops:
