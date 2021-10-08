@@ -161,7 +161,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--url", "{{.other}}", "--path", "/test/path", "--tag", "testing"},
+			args: []string{"dummy", "--url", "{{.other}}", "--path", "test/path", "--tag", "testing"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -171,7 +171,7 @@ data:
 			wantLogged: []string{
 				"info: Using passed tag <green>testing</green> to promote",
 				"info: generating...",
-				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path$",
+				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path/dummy$",
 			},
 			wantCommits: 0,
 		},

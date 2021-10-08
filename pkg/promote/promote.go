@@ -158,7 +158,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		if err != nil {
 			return err
 		}
-		log.Infof("pushing commit %s to %s%s", commit.Hash, target.URL, target.Path)
+		log.Infof("pushing commit %s to %s/%s/%s", commit.Hash, target.URL, target.Path, name)
 		err = repo.Push(&git.PushOptions{
 			Auth: keys,
 		})
