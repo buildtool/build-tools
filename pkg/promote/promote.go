@@ -148,6 +148,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 				Author: &object.Signature{
 					Name:  ifEmpty(gitConfig.Name, "Buildtools"),
 					Email: ifEmpty(gitConfig.Email, "git@buildtools.io"),
+					When:  time.Now(),
 				},
 			},
 		)
