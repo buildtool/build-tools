@@ -24,7 +24,7 @@ import (
 	"github.com/buildtool/build-tools/pkg/version"
 )
 
-func TestDoPrepare(t *testing.T) {
+func TestDoPromote(t *testing.T) {
 	tests := []struct {
 		name        string
 		config      string
@@ -207,6 +207,36 @@ data:
 			wantCommits: 0,
 		},
 		{
+			name: "other ssh key from config",
+			config: `
+gitops:
+  dummy:
+    url: "{{.repo}}"
+git:
+  key: ~/other/id_rsa
+`,
+			descriptor: `
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+data:
+  BASE_URL: https://example.org
+`,
+			args: []string{"dummy"},
+			env: map[string]string{
+				"CI_COMMIT_SHA":      "abc123",
+				"CI_PROJECT_NAME":    "dummy",
+				"CI_COMMIT_REF_NAME": "master",
+			},
+			want: 0,
+			wantLogged: []string{
+				"info: generating...",
+				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy$",
+			},
+			wantCommits: 1,
+		},
+		{
 			name: "clone error",
 			config: `
 gitops:
@@ -274,7 +304,10 @@ data:
 			defer func() {
 				_ = os.Unsetenv("HOME")
 			}()
-			generateSSHKey(t, home)
+			sshPath := filepath.Join(home, ".ssh")
+			generateSSHKey(t, sshPath)
+			otherSshPath := filepath.Join(home, "other")
+			generateSSHKey(t, otherSshPath)
 			name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
 			repo, _ := InitRepo(t, "git-repo")
@@ -323,13 +356,12 @@ data:
 }
 
 func generateSSHKey(t *testing.T, dir string) {
+	err := os.MkdirAll(dir, 0777)
+	assert.NoError(t, err)
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(key)
-	sshPath := filepath.Join(dir, ".ssh")
-	err = os.MkdirAll(sshPath, 0777)
-	assert.NoError(t, err)
-	pemFile, err := os.Create(filepath.Join(sshPath, "id_rsa"))
+	pemFile, err := os.Create(filepath.Join(dir, "id_rsa"))
 	assert.NoError(t, err)
 	keyBlock := &pem.Block{
 		Type:  "RSA PRIVATE KEY",
