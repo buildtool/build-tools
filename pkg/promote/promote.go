@@ -108,6 +108,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 			}
 			privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
 		}
+		log.Debugf("Will use SSH-key from %s", privKey)
 		keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
 		if err != nil {
 			return err
@@ -119,6 +120,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		defer func(path string) {
 			_ = os.RemoveAll(path)
 		}(cloneDir)
+		log.Debugf("Cloning into %s", cloneDir)
 		repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
 			URL:  target.URL,
 			Auth: keys,
@@ -132,6 +134,9 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		}
 
 		normalized := strings.ReplaceAll(name, "_", "-")
+		if name != normalized {
+			log.Debugf("Normalized name from %s to %s", name, normalized)
+		}
 		err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
 		if err != nil {
 			return err
