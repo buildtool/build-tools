@@ -258,7 +258,7 @@ data:
 			want: -4,
 			wantLogged: []string{
 				"info: generating...",
-				"error: open /missing/key: no such file or directory",
+				"error: ssh key: open /missing/key: no such file or directory",
 			},
 			wantCommits: 0,
 		},

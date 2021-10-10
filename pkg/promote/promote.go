@@ -111,7 +111,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		log.Debugf("Will use SSH-key from %s", privKey)
 		keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
 		if err != nil {
-			return err
+			return fmt.Errorf("ssh key: %w", err)
 		}
 		cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
 		if err != nil {
