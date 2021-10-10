@@ -154,8 +154,8 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 			fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
 			&git.CommitOptions{
 				Author: &object.Signature{
-					Name:  ifEmpty(gitConfig.Name, "Buildtools"),
-					Email: ifEmpty(gitConfig.Email, "git@buildtools.io"),
+					Name:  defaultIfEmpty(gitConfig.Name, "Buildtools"),
+					Email: defaultIfEmpty(gitConfig.Email, "git@buildtools.io"),
 					When:  time.Now(),
 				},
 			},
@@ -184,7 +184,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 	return nil
 }
 
-func ifEmpty(s string, def string) string {
+func defaultIfEmpty(s string, def string) string {
 	if strings.TrimSpace(s) == "" {
 		return def
 	}
