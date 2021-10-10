@@ -4,8 +4,6 @@ The `git` key in `.buildtools.yaml` defines the git configuration used for the p
 This will primarily be used for CI pipelines to push deployment descriptors images,
 i.e the `promote` command.
 
-TODO Use values from `~/.ssh/config`
-
 |      Key              |                   Description       |
 | :-------------------- | :---------------------------------- |
 | `name`                | The name to use as author for the [commit] message |
