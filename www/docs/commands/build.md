@@ -1,6 +1,7 @@
 # build
 
-Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image. By following the conventions no additional flags are needed, but the following flags are available:
+Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image.
+By following the conventions no additional flags are needed, but the following flags are available:
 
 |      Flag                        |                   Description                                        |
 | :------------------------------- | :-------------------------------------------------------------------- |

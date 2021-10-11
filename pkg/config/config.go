@@ -26,6 +26,8 @@ type Config struct {
 	CI                  *CIConfig         `yaml:"ci"`
 	Registry            *RegistryConfig   `yaml:"registry"`
 	Targets             map[string]Target `yaml:"targets"`
+	Git                 Git               `yaml:"git"`
+	Gitops              map[string]Gitops `yaml:"gitops"`
 	AvailableCI         []ci.CI
 	AvailableRegistries []registry.Registry
 }
@@ -55,6 +57,17 @@ type Target struct {
 	Context    string `yaml:"context"`
 	Namespace  string `yaml:"namespace,omitempty"`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
+}
+
+type Git struct {
+	Name  string `yaml:"name"`
+	Email string `yaml:"email"`
+	Key   string `yaml:"key"`
+}
+
+type Gitops struct {
+	URL  string `yaml:"url,omitempty"`
+	Path string `yaml:"path,omitempty"`
 }
 
 const envBuildtoolsContent = "BUILDTOOLS_CONTENT"
@@ -167,6 +180,13 @@ func (c *Config) CurrentTarget(target string) (*Target, error) {
 		return &e, nil
 	}
 	return nil, fmt.Errorf("no target matching %s found", target)
+}
+
+func (c *Config) CurrentGitops(target string) (*Gitops, error) {
+	if e, exists := c.Gitops[target]; exists {
+		return &e, nil
+	}
+	return nil, fmt.Errorf("no gitops matching %s found", target)
 }
 
 var abs = filepath.Abs

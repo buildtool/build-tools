@@ -2,10 +2,15 @@
 Configuration and setup is done in `.buildtools.yaml` file(s).
 A typical configuration file consists of a [`registry`](registry.md) config
 and a list of [`targets`](targets.md) to use.
-The only keys allowed in the file are:
 
-- targets
-- registry
+
+|      Key             |                   Description       |
+| :------------------- | :---------------------------------- |
+| registry  | [registry](registry.md) registry to push to    |
+| targets   | [targets](targets.md) to deploy to             |
+| git       |  [git](git.md) configuration block             |
+| gitops    |  [git repos](gitops.md) to push descriptors to |
+
 
 *Note:* [Multiple](files.md) files can be used for more advanced usage
 

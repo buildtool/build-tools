@@ -45,19 +45,30 @@ builds:
     main: ./cmd/kubecmd/kubecmd.go
     binary: kubecmd
     flags:
-      - -tags=prod
+    - -tags=prod
     goos:
-      - linux
-      - darwin
-      - windows
+    - linux
+    - darwin
+    - windows
     goarch:
-      - amd64
+    - amd64
+  - id: promote
+    main: ./cmd/promote/promote.go
+    binary: promote
+    flags:
+    - -tags=prod
+    goos:
+    - linux
+    - darwin
+    - windows
+    goarch:
+    - amd64
 dockers:
   -
     goos: linux
     goarch: amd64
     dockerfile: Dockerfile
-    ids: ["build", "push", "deploy", "kubecmd"]
+    ids: [ "build", "push", "deploy", "kubecmd" ,"promote" ]
     image_templates:
     - "buildtool/{{ .ProjectName }}:latest"
     - "buildtool/{{ .ProjectName }}:{{ .Tag }}"
@@ -74,6 +85,7 @@ brews:
       bin.install "push"
       bin.install "deploy"
       bin.install "kubecmd"
+      bin.install "promote"
     commit_author:
       name: peter-stc
       email: peter@sparetimecoders.com
