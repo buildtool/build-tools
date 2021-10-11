@@ -1,4 +1,4 @@
-# $Gitops
+# Gitops
 
 `gitops` is the equivalent to [targets](./targets.md), but determines where the generated files from
 `promote` will end up.

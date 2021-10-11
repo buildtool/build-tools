@@ -38,11 +38,14 @@ nav:
   - config/registry.md
   - config/files.md
   - config/k8s.md
+  - config/git.md
+  - config/gitops.md
 - conventions.md
 - Commands:
   - commands/build.md
   - commands/push.md
   - commands/deploy.md
+  - commands/promote.md
   - commands/kubecmd.md
 - Continuous Integration:
   - About: ci/ci.md
