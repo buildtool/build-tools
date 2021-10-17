@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"github.com/buildtool/build-tools/pkg/config"
 	"io"
 	"io/ioutil"
 	"os"
@@ -351,6 +352,53 @@ data:
 
 			gotCommits := CountCommits(t, repo)
 			assert.Equal(t, tt.wantCommits, gotCommits)
+		})
+	}
+}
+
+func TestPromote_OutParam(t *testing.T) {
+	type args struct {
+		target    *config.Gitops
+		args      Args
+		gitConfig config.Git
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantErr    bool
+		wantLogged []string
+	}{
+		{
+			name: "error writing file",
+			args: args{
+				args: Args{Out: "non-existing-dir/output.yaml"},
+			},
+			wantErr:    true,
+			wantLogged: []string{"info: generating..."},
+		},
+		{
+			name: "success writing file",
+			args: args{
+				args: Args{Out: filepath.Join(os.TempDir(), "output.yaml")},
+			},
+			wantErr:    false,
+			wantLogged: []string{"info: generating..."},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logMock := mocks.New()
+			log.SetHandler(logMock)
+			name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+			defer func() { _ = os.RemoveAll(name) }()
+			err := os.MkdirAll(filepath.Join(name, "k8s"), 0777)
+			assert.NoError(t, err)
+			err = ioutil.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0666)
+			assert.NoError(t, err)
+			if err := Promote(name, "dummy", "", tt.args.target, tt.args.args, tt.args.gitConfig); (err != nil) != tt.wantErr {
+				t.Errorf("Promote() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			CheckLogged(t, tt.wantLogged, logMock.Logged)
 		})
 	}
 }

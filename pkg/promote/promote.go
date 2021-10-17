@@ -83,94 +83,16 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 }
 
 func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitConfig config.Git) error {
-	deploymentFiles := filepath.Join(dir, "k8s")
-	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
-		return fmt.Errorf("no deployment descriptors found in k8s directory")
-	}
-
-	log.Info("generating...")
-	buffer := &bytes.Buffer{}
-	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
+	buffer, err := generate(dir, args, timestamp)
+	if err != nil {
 		return err
 	}
-
 	if args.Out == "" {
-		privKey := "~/.ssh/id_rsa"
-		if args.PrivateKey != "" {
-			privKey = args.PrivateKey
-		} else if gitConfig.Key != "" {
-			privKey = gitConfig.Key
-		}
-		if strings.HasPrefix(privKey, "~") {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return err
-			}
-			privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
-		}
-		log.Debugf("Will use SSH-key from %s", privKey)
-		keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
-		if err != nil {
-			return fmt.Errorf("ssh key: %w", err)
-		}
-		cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
+		keys, err := handleSSHKey(args, gitConfig)
 		if err != nil {
 			return err
 		}
-		defer func(path string) {
-			_ = os.RemoveAll(path)
-		}(cloneDir)
-		log.Debugf("Cloning into %s", cloneDir)
-		repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
-			URL:  target.URL,
-			Auth: keys,
-		})
-		if err != nil {
-			return err
-		}
-		worktree, err := repo.Worktree()
-		if err != nil {
-			return err
-		}
-
-		normalized := strings.ReplaceAll(name, "_", "-")
-		if name != normalized {
-			log.Debugf("Normalized name from %s to %s", name, normalized)
-		}
-		err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
-		if err != nil {
-			return err
-		}
-		err = os.WriteFile(filepath.Join(cloneDir, target.Path, normalized, "deploy.yaml"), buffer.Bytes(), 0666)
-		if err != nil {
-			return err
-		}
-		_, err = worktree.Add(filepath.Join(target.Path, normalized, "deploy.yaml"))
-		if err != nil {
-			return err
-		}
-
-		hash, err := worktree.Commit(
-			fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
-			&git.CommitOptions{
-				Author: &object.Signature{
-					Name:  defaultIfEmpty(gitConfig.Name, "Buildtools"),
-					Email: defaultIfEmpty(gitConfig.Email, "git@buildtools.io"),
-					When:  time.Now(),
-				},
-			},
-		)
-		if err != nil {
-			return err
-		}
-		commit, err := repo.CommitObject(hash)
-		if err != nil {
-			return err
-		}
-		log.Infof("pushing commit %s to %s", commit.Hash, filepath.Join(target.URL, target.Path, normalized))
-		err = repo.Push(&git.PushOptions{
-			Auth: keys,
-		})
+		err = commitAndPush(target, keys, name, buffer, args, gitConfig)
 		if err != nil {
 			return err
 		}
@@ -182,6 +104,107 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 	}
 
 	return nil
+}
+
+func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buffer *bytes.Buffer, args Args, gitConfig config.Git) error {
+	cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
+	if err != nil {
+		return err
+	}
+	defer func(path string) {
+		_ = os.RemoveAll(path)
+	}(cloneDir)
+	log.Debugf("Cloning into %s", cloneDir)
+	repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
+		URL:  target.URL,
+		Auth: keys,
+	})
+	if err != nil {
+		return err
+	}
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	normalized := strings.ReplaceAll(name, "_", "-")
+	if name != normalized {
+		log.Debugf("Normalized name from %s to %s", name, normalized)
+	}
+	err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(filepath.Join(cloneDir, target.Path, normalized, "deploy.yaml"), buffer.Bytes(), 0666)
+	if err != nil {
+		return err
+	}
+	_, err = worktree.Add(filepath.Join(target.Path, normalized, "deploy.yaml"))
+	if err != nil {
+		return err
+	}
+
+	hash, err := worktree.Commit(
+		fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
+		&git.CommitOptions{
+			Author: &object.Signature{
+				Name:  defaultIfEmpty(gitConfig.Name, "Buildtools"),
+				Email: defaultIfEmpty(gitConfig.Email, "git@buildtools.io"),
+				When:  time.Now(),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+	commit, err := repo.CommitObject(hash)
+	if err != nil {
+		return err
+	}
+	log.Infof("pushing commit %s to %s", commit.Hash, filepath.Join(target.URL, target.Path, normalized))
+	err = repo.Push(&git.PushOptions{
+		Auth: keys,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func handleSSHKey(args Args, gitConfig config.Git) (*ssh.PublicKeys, error) {
+	privKey := "~/.ssh/id_rsa"
+	if args.PrivateKey != "" {
+		privKey = args.PrivateKey
+	} else if gitConfig.Key != "" {
+		privKey = gitConfig.Key
+	}
+	if strings.HasPrefix(privKey, "~") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
+	}
+	log.Debugf("Will use SSH-key from %s", privKey)
+	keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
+	if err != nil {
+		return nil, fmt.Errorf("ssh key: %w", err)
+	}
+	return keys, err
+}
+
+func generate(dir string, args Args, timestamp string) (*bytes.Buffer, error) {
+	deploymentFiles := filepath.Join(dir, "k8s")
+	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
+		return nil, fmt.Errorf("no deployment descriptors found in k8s directory")
+	}
+
+	log.Info("generating...")
+	buffer := &bytes.Buffer{}
+	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
+		return nil, err
+	}
+	return buffer, nil
 }
 
 func defaultIfEmpty(s string, def string) string {
