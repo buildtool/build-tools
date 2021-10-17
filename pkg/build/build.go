@@ -58,7 +58,6 @@ func DoBuild(dir string, buildArgs Args) error {
 		return err
 	}
 	return build(dkrClient, dir, buildContext, buildArgs)
-
 }
 
 var dockerClient = func() (docker.Client, error) {
@@ -71,7 +70,6 @@ func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
 		return nil, err
 	}
 	return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
-
 }
 
 func setupSession(dir string) (*session.Session, session.Attachable) {
@@ -187,12 +185,12 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 		_ = s.Close()
 	}()
 	eg.Go(func() error {
-		return doBuild(client, eg, ctx, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, s, dockerAuthProvider)
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, s, dockerAuthProvider)
 	})
 	return eg.Wait()
 }
 
-func doBuild(dkrClient docker.Client, eg *errgroup.Group, ctx context.Context, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, s *session.Session, at session.Attachable) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, s *session.Session, at session.Attachable) (finalErr error) {
 	var outputs []types.ImageBuildOutput
 	if strings.HasPrefix(target, "export") {
 		outputs = append(outputs, types.ImageBuildOutput{
@@ -238,6 +236,7 @@ func doBuild(dkrClient docker.Client, eg *errgroup.Group, ctx context.Context, d
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
+			log.Infof("cancelling build due to error: %s\n", ctx.Err())
 			return dkrClient.BuildCancel(context.TODO(), buildID)
 		case <-done:
 		}
@@ -268,7 +267,7 @@ func doBuild(dkrClient docker.Client, eg *errgroup.Group, ctx context.Context, d
 	displayStatus(os.Stderr, t.displayCh)
 	defer close(t.displayCh)
 
-	buf := bytes.NewBuffer(nil)
+	buf := &bytes.Buffer{}
 	imageID := ""
 	writeAux := func(msg jsonmessage.JSONMessage) {
 		if msg.ID == "moby.image.id" {

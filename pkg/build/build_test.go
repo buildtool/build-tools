@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/apex/log"
@@ -24,21 +25,25 @@ import (
 var name string
 
 func TestMain(m *testing.M) {
-	tempDir := setup()
+	buildToolsTempDir, osTempDir := setup()
 	code := m.Run()
-	teardown(tempDir)
+	teardown(buildToolsTempDir, osTempDir)
 	os.Exit(code)
 }
 
-func setup() string {
+func setup() (string, string) {
 	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
+	temp, _ := ioutil.TempDir(os.TempDir(), "build-tools-temp")
 	os.Clearenv()
+	_ = os.Setenv("TMPDIR", temp)
+	_ = os.Setenv("TEMP", temp)
 
-	return name
+	return name, temp
 }
 
-func teardown(tempDir string) {
-	_ = os.RemoveAll(tempDir)
+func teardown(buildToolsTempDir, osTempDir string) {
+	_ = os.RemoveAll(buildToolsTempDir)
+	_ = os.RemoveAll(osTempDir)
 }
 
 func TestBuild_BrokenConfig(t *testing.T) {
@@ -243,6 +248,41 @@ func TestBuild_ErrorOutput(t *testing.T) {
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+	})
+}
+
+func TestBuild_ValidOutput(t *testing.T) {
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{ResponseBody: strings.NewReader(`{"id":"1","status":"msg 1"}
+{"id":"2","status":"msg 2"}
+{"id":"moby.image.id","aux":{\"id\":\"some-image-id\"}`)}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		BuildArgs:  nil,
+		NoLogin:    false,
+		NoPull:     false,
+	})
+
+	assert.NoError(t, err)
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: 1: msg 1\n2: msg 2\n",
 	})
 }
 

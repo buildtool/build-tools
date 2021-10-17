@@ -1,3 +1,4 @@
+//go:build !prod
 // +build !prod
 
 package docker
@@ -28,6 +29,7 @@ type MockDocker struct {
 	PushOutput    *string
 	BrokenOutput  bool
 	ResponseError error
+	ResponseBody  io.Reader
 }
 
 func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
@@ -44,7 +46,11 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	if len(m.BuildError) > m.BuildCount && m.BuildError[m.BuildCount] != nil {
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
 	}
-	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"stream":"Build successful"}`))}, nil
+	var body io.Reader = strings.NewReader(`{"stream":"Build successful"}`)
+	if m.ResponseBody != nil {
+		body = m.ResponseBody
+	}
+	return types.ImageBuildResponse{Body: ioutil.NopCloser(body)}, nil
 }
 
 func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {
@@ -77,7 +83,7 @@ func (m *MockDocker) DialHijack(ctx context.Context, url, proto string, meta map
 }
 
 func (m *MockDocker) BuildCancel(ctx context.Context, id string) error {
-	panic("implement me")
+	return nil
 }
 
 var _ Client = &MockDocker{}
