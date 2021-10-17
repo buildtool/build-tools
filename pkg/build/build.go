@@ -40,15 +40,6 @@ import (
 	"github.com/buildtool/build-tools/pkg/tar"
 )
 
-type responsetype struct {
-	Stream      string `json:"stream"`
-	ErrorDetail *struct {
-		Code    int64  `json:"code"`
-		Message string `json:"message"`
-	} `json:"errorDetail"`
-	Error string `json:"error"`
-}
-
 type Args struct {
 	args.Globals
 	Dockerfile string   `name:"file" short:"f" help:"name of the Dockerfile to use." default:"Dockerfile"`
@@ -58,15 +49,16 @@ type Args struct {
 }
 
 func DoBuild(dir string, buildArgs Args) error {
-	if dkrClient, err := dockerClient(); err != nil {
+	dkrClient, err := dockerClient()
+	if err != nil {
 		return err
-	} else {
-		if buildContext, err := createBuildContext(dir, buildArgs.Dockerfile); err != nil {
-			return err
-		} else {
-			return build(dkrClient, dir, buildContext, buildArgs)
-		}
 	}
+	buildContext, err := createBuildContext(dir, buildArgs.Dockerfile)
+	if err != nil {
+		return err
+	}
+	return build(dkrClient, dir, buildContext, buildArgs)
+
 }
 
 var dockerClient = func() (docker.Client, error) {
@@ -74,20 +66,21 @@ var dockerClient = func() (docker.Client, error) {
 }
 
 func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
-	if ignored, err := docker.ParseDockerignore(dir, dockerfile); err != nil {
+	ignored, err := docker.ParseDockerignore(dir, dockerfile)
+	if err != nil {
 		return nil, err
-	} else {
-		return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 	}
+	return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
+
 }
 
-func setupSession(dir string) (*session.Session, session.Attachable, error) {
+func setupSession(dir string) (*session.Session, session.Attachable) {
 	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
 	if err != nil {
-		return nil, nil, err
+		panic("session.NewSession changed behaviour and returned an error. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
 	if s == nil {
-		return nil, nil, fmt.Errorf("buildkit not supported by daemon")
+		panic("session.NewSession changed behaviour and did not return a session. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
 
 	dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
@@ -105,7 +98,7 @@ func setupSession(dir string) (*session.Session, session.Attachable, error) {
 		},
 	}))
 
-	return s, dockerAuthProvider, nil
+	return s, dockerAuthProvider
 }
 
 func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) error {
@@ -189,10 +182,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 
 func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfigs map[string]types.AuthConfig) error {
 	eg, ctx := errgroup.WithContext(context.Background())
-	s, dockerAuthProvider, err := setupSession(dir)
-	if err != nil {
-		return err
-	}
+	s, dockerAuthProvider := setupSession(dir)
 	defer func() { // make sure the Status ends cleanly on build errors
 		_ = s.Close()
 	}()
@@ -255,7 +245,6 @@ func doBuild(dkrClient docker.Client, eg *errgroup.Group, ctx context.Context, d
 	})
 
 	t := newTracer()
-	//ssArr := []*client.SolveStatus{}
 
 	displayStatus := func(out *os.File, displayCh chan *client.SolveStatus) {
 		var c console.Console
@@ -276,25 +265,6 @@ func doBuild(dkrClient docker.Client, eg *errgroup.Group, ctx context.Context, d
 		}
 	}
 
-	//eg.Go(func() error {
-	//	TODO: make sure t.displayCh closes
-	//for ss := range t.displayCh {
-	//	ssArr = append(ssArr, ss)
-	//}
-	//<-done
-	//TODO: verify that finalErr is indeed set when error occurs
-	//if finalErr != nil {
-	//	displayCh := make(chan *client.SolveStatus)
-	//	go func() {
-	//		for _, ss := range ssArr {
-	//			displayCh <- ss
-	//		}
-	//		close(displayCh)
-	//	}()
-	//	displayStatus(os.Stderr, displayCh)
-	//}
-	//return nil
-	//})
 	displayStatus(os.Stderr, t.displayCh)
 	defer close(t.displayCh)
 
