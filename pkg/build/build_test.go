@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -284,6 +285,40 @@ func TestBuild_ValidOutput(t *testing.T) {
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
 		"info: 1: msg 1\n2: msg 2\n",
+	})
+}
+
+func TestBuild_BrokenBuildResult(t *testing.T) {
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "feature1")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{ResponseBody: strings.NewReader(`{"id":"moby.image.id","aux":{"id":123}}`)}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		BuildArgs:  nil,
+		NoLogin:    false,
+		NoPull:     false,
+	})
+
+	assert.NoError(t, err)
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"error: failed to parse aux message: json: cannot unmarshal number into Go struct field BuildResult.ID of type string",
+		"info: ",
 	})
 }
 

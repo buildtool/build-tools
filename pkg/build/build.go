@@ -194,10 +194,7 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 		defer func() { // make sure the Status ends cleanly on build errors
 			m.Lock()
 			defer m.Unlock()
-			err := s.Close()
-			if err != nil {
-				log.Errorf("error closing session: %s\n", err)
-			}
+			_ = s.Close()
 		}()
 		var outputs []types.ImageBuildOutput
 		if strings.HasPrefix(stage, "export") {
