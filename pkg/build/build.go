@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/apex/log"
 	"github.com/buildtool/build-tools/pkg/args"
@@ -183,25 +184,32 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 		return client.DialHijack(ctx, "/session", proto, meta)
 	}
-	sessionSetupCompleted := make(chan bool)
+	m := &sync.Mutex{}
 	eg.Go(func() error {
-		defer func() {
-			sessionSetupCompleted <- true
-		}()
+		m.Lock()
+		defer m.Unlock()
 		return s.Run(context.TODO(), dialSession)
 	})
 	eg.Go(func() error {
 		defer func() { // make sure the Status ends cleanly on build errors
-			_ = s.Close()
+			m.Lock()
+			defer m.Unlock()
+			err := s.Close()
+			if err != nil {
+				log.Errorf("error closing session: %s\n", err)
+			}
 		}()
-		<-sessionSetupCompleted
 		var outputs []types.ImageBuildOutput
 		if strings.HasPrefix(stage, "export") {
 			outputs = append(outputs, types.ImageBuildOutput{
 				Type:  "local",
 				Attrs: map[string]string{},
 			})
-			s.Allow(filesync.NewFSSyncTargetDir("exported"))
+			func() {
+				m.Lock()
+				defer m.Unlock()
+				s.Allow(filesync.NewFSSyncTargetDir("exported"))
+			}()
 		}
 		sessionID := s.ID()
 		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
@@ -242,7 +250,6 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
-			log.Infof("cancelling build due to error: %s\n", ctx.Err())
 			return dkrClient.BuildCancel(context.TODO(), buildID)
 		case <-done:
 		}

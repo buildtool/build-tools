@@ -1,15 +1,16 @@
 package build
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"github.com/docker/docker/api/types"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
+
+	"github.com/docker/docker/api/types"
 
 	"github.com/apex/log"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
@@ -259,14 +260,14 @@ func TestBuild_ValidOutput(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
+	f, err := os.Open("testdata/build_body.txt")
+	assert.NoError(t, err)
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	client := &docker.MockDocker{ResponseBody: strings.NewReader(`{"id":"1","status":"msg 1"}
-{"id":"2","status":"msg 2"}
-{"id":"moby.image.id","aux":{\"id\":\"some-image-id\"}`)}
+	client := &docker.MockDocker{ResponseBody: bufio.NewReader(f)}
 	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	err = build(client, name, ioutil.NopCloser(buildContext), Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
