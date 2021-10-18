@@ -16,6 +16,11 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/ci"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/docker"
+	"github.com/buildtool/build-tools/pkg/tar"
 	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
 	dkr "github.com/docker/docker/client"
@@ -32,12 +37,6 @@ import (
 	fsutiltypes "github.com/tonistiigi/fsutil/types"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
-
-	"github.com/buildtool/build-tools/pkg/args"
-	"github.com/buildtool/build-tools/pkg/ci"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/buildtool/build-tools/pkg/tar"
 )
 
 type Args struct {
@@ -179,33 +178,38 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 }
 
 func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfigs map[string]types.AuthConfig) error {
-	eg, ctx := errgroup.WithContext(context.Background())
 	s, dockerAuthProvider := setupSession(dir)
-	defer func() { // make sure the Status ends cleanly on build errors
-		_ = s.Close()
-	}()
+	eg, ctx := errgroup.WithContext(context.Background())
+	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return client.DialHijack(ctx, "/session", proto, meta)
+	}
+	sessionSetupCompleted := make(chan bool)
 	eg.Go(func() error {
-		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, s, dockerAuthProvider)
+		defer func() {
+			sessionSetupCompleted <- true
+		}()
+		return s.Run(context.TODO(), dialSession)
+	})
+	eg.Go(func() error {
+		defer func() { // make sure the Status ends cleanly on build errors
+			_ = s.Close()
+		}()
+		<-sessionSetupCompleted
+		var outputs []types.ImageBuildOutput
+		if strings.HasPrefix(stage, "export") {
+			outputs = append(outputs, types.ImageBuildOutput{
+				Type:  "local",
+				Attrs: map[string]string{},
+			})
+			s.Allow(filesync.NewFSSyncTargetDir("exported"))
+		}
+		sessionID := s.ID()
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
 	})
 	return eg.Wait()
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, s *session.Session, at session.Attachable) (finalErr error) {
-	var outputs []types.ImageBuildOutput
-	if strings.HasPrefix(target, "export") {
-		outputs = append(outputs, types.ImageBuildOutput{
-			Type:  "local",
-			Attrs: map[string]string{},
-		})
-		s.Allow(filesync.NewFSSyncTargetDir("exported"))
-	}
-
-	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
-		return dkrClient.DialHijack(ctx, "/session", proto, meta)
-	}
-	eg.Go(func() error {
-		return s.Run(context.TODO(), dialSession)
-	})
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, sessionID string, at session.Attachable, outputs []types.ImageBuildOutput) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
 	options := types.ImageBuildOptions{
 		AuthConfigs:   authConfigs,
@@ -218,14 +222,16 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 		MemorySwap:    -1,
 		RemoteContext: "client-session",
 		Remove:        true,
-		SessionID:     s.ID(),
+		SessionID:     sessionID,
 		ShmSize:       256 * 1024 * 1024,
 		Tags:          tags,
 		Target:        target,
 		Version:       types.BuilderBuildKit,
 	}
 	logVerbose(options)
-	response, err := dkrClient.ImageBuild(context.Background(), nil, options)
+	var response types.ImageBuildResponse
+	var err error
+	response, err = dkrClient.ImageBuild(context.Background(), nil, options)
 	if err != nil {
 		return err
 	}
@@ -243,29 +249,10 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 		return nil
 	})
 
-	t := newTracer()
+	tracer := newTracer()
 
-	displayStatus := func(out *os.File, displayCh chan *client.SolveStatus) {
-		var c console.Console
-		// TODO: Handle tty output in non-tty environment.
-		if cons, err := console.ConsoleFromFile(out); err == nil {
-			c = cons
-		}
-		// not using shared context to not disrupt display but let it finish reporting errors
-		eg.Go(func() error {
-			return progressui.DisplaySolveStatus(context.TODO(), "", c, out, displayCh)
-		})
-		if s, ok := at.(interface {
-			SetLogger(progresswriter.Logger)
-		}); ok {
-			s.SetLogger(func(s *client.SolveStatus) {
-				displayCh <- s
-			})
-		}
-	}
-
-	displayStatus(os.Stderr, t.displayCh)
-	defer close(t.displayCh)
+	displayStatus(os.Stderr, tracer.displayCh, eg, at)
+	defer close(tracer.displayCh)
 
 	buf := &bytes.Buffer{}
 	imageID := ""
@@ -278,7 +265,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 			imageID = result.ID
 			return
 		}
-		t.write(msg)
+		tracer.write(msg)
 	}
 
 	err = jsonmessage.DisplayJSONMessagesStream(response.Body, buf, os.Stdout.Fd(), true, writeAux)
@@ -296,6 +283,25 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	log.Info(imageID)
 
 	return nil
+}
+
+func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group, at session.Attachable) {
+	var c console.Console
+	// TODO: Handle tty output in non-tty environment.
+	if cons, err := console.ConsoleFromFile(out); err == nil {
+		c = cons
+	}
+	// not using shared context to not disrupt display but let it finish reporting errors
+	eg.Go(func() error {
+		return progressui.DisplaySolveStatus(context.TODO(), "", c, out, displayCh)
+	})
+	if s, ok := at.(interface {
+		SetLogger(progresswriter.Logger)
+	}); ok {
+		s.SetLogger(func(s *client.SolveStatus) {
+			displayCh <- s
+		})
+	}
 }
 
 func logVerbose(options types.ImageBuildOptions) {
