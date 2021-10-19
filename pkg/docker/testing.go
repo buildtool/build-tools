@@ -74,12 +74,7 @@ func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (
 }
 
 func (m *MockDocker) DialHijack(context.Context, string, string, map[string][]string) (net.Conn, error) {
-	server, client := net.Pipe()
-	go func() {
-		_ = server.Close()
-	}()
-
-	return client, nil
+	return nil, nil
 }
 
 func (m *MockDocker) BuildCancel(ctx context.Context, id string) error {
