@@ -30,5 +30,6 @@
 {"id":"moby.buildkit.trace","aux": "ErwBClV3cml0aW5nIGltYWdlIHNoYTI1Njo5NWNjYjhmNTM0YWRmYzQ1YjM2YjI0OGM2MDkzNTA4MjYyNGMxODM1ZWMwMTU5MDgyMzNlNTdjMjYxNWJmZDJhEkdzaGEyNTY6ZThjNjEzZTA3YjBiN2ZmMzM4OTNiNjk0Zjc3NTlhMTBkNDJlMTgwZjJiNGRjMzQ5ZmI1N2RjNmI3MWRjYWIwMDIMCPbutYsGEKCm6t4COgwI9u61iwYQyNbp3gI="}
 {"id":"moby.buildkit.trace","aux": 123}
 {"id":"moby.buildkit.trace","aux": "eyJ2ZXJ0ZXhlcyI6e319Cg=="}
+{"id":"moby.buildkit.trace","aux": "GiUKBmRpZ2VzdBILCO6huYsGEODFgn8YASIMc29tZSBtZXNzYWdl"}
 {"id":"some.other.id","aux":{"id":"some-other-id"}}
 {"id":"moby.image.id","aux":{"id":"some-image-id"}}

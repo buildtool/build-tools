@@ -11,9 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-
 	"github.com/apex/log"
+	"github.com/docker/docker/api/types"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/docker/docker/pkg/archive"

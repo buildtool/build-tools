@@ -328,7 +328,7 @@ func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
 }
 
 func getBuildSharedKey(dir string) string {
-	// build session is hash of build dir with node based randomness
+	// build session id hash of build dir with node based randomness
 	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", tryNodeIdentifier(), dir)))
 	return hex.EncodeToString(s[:])
 }
