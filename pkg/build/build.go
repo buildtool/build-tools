@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/apex/log"
 	"github.com/buildtool/build-tools/pkg/args"
@@ -72,7 +71,9 @@ func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
 	return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 }
 
-func setupSession(dir string) (*session.Session, session.Attachable) {
+var setupSession = provideSession
+
+func provideSession(dir string) (Session, session.Attachable) {
 	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
 	if err != nil {
 		panic("session.NewSession changed behaviour and returned an error. Create an issue at https://github.com/buildtool/build-tools/issues/new")
@@ -184,16 +185,11 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 		return client.DialHijack(ctx, "/session", proto, meta)
 	}
-	m := &sync.Mutex{}
 	eg.Go(func() error {
-		m.Lock()
-		defer m.Unlock()
 		return s.Run(context.TODO(), dialSession)
 	})
 	eg.Go(func() error {
 		defer func() { // make sure the Status ends cleanly on build errors
-			m.Lock()
-			defer m.Unlock()
 			_ = s.Close()
 		}()
 		var outputs []types.ImageBuildOutput
@@ -203,8 +199,6 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 				Attrs: map[string]string{},
 			})
 			func() {
-				m.Lock()
-				defer m.Unlock()
 				s.Allow(filesync.NewFSSyncTargetDir("exported"))
 			}()
 		}

@@ -13,6 +13,8 @@ import (
 
 	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
+	"github.com/moby/buildkit/session"
+	"github.com/moby/buildkit/session/auth/authprovider"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/docker/docker/pkg/archive"
@@ -27,6 +29,9 @@ var name string
 
 func TestMain(m *testing.M) {
 	buildToolsTempDir, osTempDir := setup()
+	setupSession = func(dir string) (Session, session.Attachable) {
+		return &MockSession{}, authprovider.NewDockerAuthProvider(os.Stderr)
+	}
 	code := m.Run()
 	teardown(buildToolsTempDir, osTempDir)
 	os.Exit(code)

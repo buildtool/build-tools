@@ -73,7 +73,7 @@ func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (
 	return registry.AuthenticateOKBody{Status: "Logged in"}, nil
 }
 
-func (m *MockDocker) DialHijack(ctx context.Context, url, proto string, meta map[string][]string) (net.Conn, error) {
+func (m *MockDocker) DialHijack(context.Context, string, string, map[string][]string) (net.Conn, error) {
 	server, client := net.Pipe()
 	go func() {
 		_ = server.Close()

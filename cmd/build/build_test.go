@@ -1,10 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/apex/log"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
@@ -48,5 +54,44 @@ func TestArguments(t *testing.T) {
 
 	logMock.Check(t, []string{
 		"info: build: error: unknown flag --unknown\n",
+	})
+}
+
+func TestSuccess(t *testing.T) {
+	logMock := mocks.New()
+	handler = logMock
+	exitFunc = func(code int) {
+		assert.Equal(t, 0, code)
+	}
+	dir := t.TempDir()
+	err := os.Chdir(dir)
+	assert.NoError(t, err)
+	repo, err := git.PlainInit(dir, false)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(dir, "Dockerfile"), []byte(`FROM scratch`), 0666)
+	assert.NoError(t, err)
+	tree, err := repo.Worktree()
+	assert.NoError(t, err)
+	_, err = tree.Add("Dockerfile")
+	assert.NoError(t, err)
+	commit, err := tree.Commit("initial commit", &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "John Doe",
+			Email: "john@example.com",
+			When:  time.Now(),
+		}})
+	assert.NoError(t, err)
+	os.Args = []string{"build"}
+	main()
+	base := filepath.Base(dir)
+	hash := commit.String()
+	logMock.Check(t, []string{
+		"debug: Using CI <green>none</green>\n",
+		"debug: Using registry <green>No docker registry</green>\n",
+		"debug: Authenticating against registry <green>No docker registry</green>\n",
+		"debug: Authentication <yellow>not supported</yellow> for registry <green>No docker registry</green>\n",
+		fmt.Sprintf("debug: Using build variables commit <green>%s</green> on branch <green>master</green>\n", hash),
+		fmt.Sprintf("debug: performing docker build with options (auths removed):\ntags:\n    - noregistry/%[1]s:%[2]s\n    - noregistry/%[1]s:master\n    - noregistry/%[1]s:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: %[2]s\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - noregistry/%[1]s:master\n    - noregistry/%[1]s:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n", base, hash),
+		fmt.Sprintf("info: Successfully tagged noregistry/%[1]s:%[2]s\nSuccessfully tagged noregistry/%[1]s:master\nSuccessfully tagged noregistry/%[1]s:latest\n", base, hash),
 	})
 }
