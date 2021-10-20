@@ -62,8 +62,8 @@ execute() {
 }
 get_binaries() {
   case "$PLATFORM" in
-    darwin/amd64) BINARIES="build push deploy kubecmd" ;;
-    linux/amd64) BINARIES="build push deploy kubecmd" ;;
+    darwin/amd64) BINARIES="build push deploy kubecmd promote" ;;
+    linux/amd64) BINARIES="build push deploy kubecmd promote" ;;
     *)
       log_crit "platform $PLATFORM is not supported.  Make sure this script is up-to-date and file request at https://github.com/${PREFIX}/issues/new"
       exit 1
