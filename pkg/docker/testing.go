@@ -1,3 +1,4 @@
+//go:build !prod
 // +build !prod
 
 package docker
@@ -7,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -27,6 +29,7 @@ type MockDocker struct {
 	PushOutput    *string
 	BrokenOutput  bool
 	ResponseError error
+	ResponseBody  io.Reader
 }
 
 func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
@@ -35,7 +38,7 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	m.BuildOptions = append(m.BuildOptions, options)
 
 	if m.BrokenOutput {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"code":123,`))}, nil
+		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
 	}
 	if m.ResponseError != nil {
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
@@ -43,7 +46,11 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	if len(m.BuildError) > m.BuildCount && m.BuildError[m.BuildCount] != nil {
 		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
 	}
-	return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"stream":"Build successful"}`))}, nil
+	var body io.Reader = strings.NewReader(`{"stream":"Build successful"}`)
+	if m.ResponseBody != nil {
+		body = m.ResponseBody
+	}
+	return types.ImageBuildResponse{Body: ioutil.NopCloser(body)}, nil
 }
 
 func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {
@@ -64,6 +71,14 @@ func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (
 		return registry.AuthenticateOKBody{Status: "Invalid username/password"}, m.LoginError
 	}
 	return registry.AuthenticateOKBody{Status: "Logged in"}, nil
+}
+
+func (m *MockDocker) DialHijack(context.Context, string, string, map[string][]string) (net.Conn, error) {
+	return nil, nil
+}
+
+func (m *MockDocker) BuildCancel(ctx context.Context, id string) error {
+	return nil
 }
 
 var _ Client = &MockDocker{}

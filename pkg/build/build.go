@@ -1,37 +1,43 @@
 package build
 
 import (
-	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
-	dkr "github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
-	"gopkg.in/yaml.v3"
-
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
 	"github.com/buildtool/build-tools/pkg/tar"
-	"github.com/buildtool/build-tools/pkg/version"
+	"github.com/containerd/console"
+	"github.com/docker/docker/api/types"
+	dkr "github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/pkg/stringid"
+	controlapi "github.com/moby/buildkit/api/services/control"
+	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/session"
+	"github.com/moby/buildkit/session/auth/authprovider"
+	"github.com/moby/buildkit/session/filesync"
+	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/moby/buildkit/util/progress/progresswriter"
+	fsutiltypes "github.com/tonistiigi/fsutil/types"
+	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 )
-
-type responsetype struct {
-	Stream      string `json:"stream"`
-	ErrorDetail *struct {
-		Code    int64  `json:"code"`
-		Message string `json:"message"`
-	} `json:"errorDetail"`
-	Error string `json:"error"`
-}
 
 type Args struct {
 	args.Globals
@@ -41,29 +47,16 @@ type Args struct {
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
 }
 
-func DoBuild(dir string, info version.Info, osArgs ...string) int {
-	var buildArgs Args
-	// TODO See if we can move this "up" one level to remove out,eout completely
-	err := args.ParseArgs(dir, osArgs, info, &buildArgs)
+func DoBuild(dir string, buildArgs Args) error {
+	dkrClient, err := dockerClient()
 	if err != nil {
-		if err != args.Done {
-			return -1
-		} else {
-			return 0
-		}
+		return err
 	}
-
-	if client, err := dockerClient(); err != nil {
-		log.Error(err.Error())
-		return -1
-	} else {
-		if buildContext, err := createBuildContext(dir, buildArgs.Dockerfile); err != nil {
-			log.Error(err.Error())
-			return -2
-		} else {
-			return build(client, dir, buildContext, buildArgs)
-		}
+	buildContext, err := createBuildContext(dir, buildArgs.Dockerfile)
+	if err != nil {
+		return err
 	}
+	return build(dkrClient, dir, buildContext, buildArgs)
 }
 
 var dockerClient = func() (docker.Client, error) {
@@ -71,18 +64,46 @@ var dockerClient = func() (docker.Client, error) {
 }
 
 func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
-	if ignored, err := docker.ParseDockerignore(dir, dockerfile); err != nil {
+	ignored, err := docker.ParseDockerignore(dir, dockerfile)
+	if err != nil {
 		return nil, err
-	} else {
-		return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 	}
+	return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 }
 
-func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) int {
+var setupSession = provideSession
+
+func provideSession(dir string) (Session, session.Attachable) {
+	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
+	if err != nil {
+		panic("session.NewSession changed behaviour and returned an error. Create an issue at https://github.com/buildtool/build-tools/issues/new")
+	}
+	if s == nil {
+		panic("session.NewSession changed behaviour and did not return a session. Create an issue at https://github.com/buildtool/build-tools/issues/new")
+	}
+
+	dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
+	s.Allow(dockerAuthProvider)
+
+	s.Allow(filesync.NewFSSyncProvider([]filesync.SyncedDir{
+		{
+			Name: "context",
+			Dir:  dir,
+			Map:  resetUIDAndGID,
+		},
+		{
+			Name: "dockerfile",
+			Dir:  dir,
+		},
+	}))
+
+	return s, dockerAuthProvider
+}
+
+func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) error {
 	cfg, err := config.Load(dir)
 	if err != nil {
-		log.Error(err.Error())
-		return -3
+		return err
 	}
 	currentCI := cfg.CurrentCI()
 	log.Debugf("Using CI <green>%s</green>\n", currentCI.Name())
@@ -95,8 +116,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	} else {
 		log.Debugf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name())
 		if err := currentRegistry.Login(client); err != nil {
-			log.Error(err.Error())
-			return -4
+			return err
 		}
 		authConfigs[currentRegistry.RegistryUrl()] = currentRegistry.GetAuthConfig()
 	}
@@ -105,12 +125,10 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	tee := io.TeeReader(buildContext, &buf)
 	stages, err := findStages(tee, buildVars.Dockerfile)
 	if err != nil {
-		log.Error(err.Error())
-		return -5
+		return err
 	}
 	if !ci.IsValid(currentCI) {
-		log.Debugf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?\n")
-		return -6
+		return fmt.Errorf("commit and/or branch information is <red>missing</red> (perhaps you're not in a Git repository or forgot to set environment variables?)")
 	}
 
 	commit := currentCI.Commit()
@@ -136,12 +154,13 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 			}
 		}
 	}
+
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, []string{tag}, caches, stage, authConfigs, !buildVars.NoPull); err != nil {
-			log.Error(err.Error())
-			return -7
+		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authConfigs)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -157,53 +176,137 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	}
 
 	caches = append([]string{branchTag, latestTag}, caches...)
-	if err := doBuild(client, bytes.NewBuffer(buf.Bytes()), buildVars.Dockerfile, buildArgs, tags, caches, "", authConfigs, !buildVars.NoPull); err != nil {
-		log.Error(err.Error())
-		return -7
-	}
-
-	return 0
+	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authConfigs)
 }
 
-func doBuild(client docker.Client, buildContext io.Reader, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool) error {
+func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfigs map[string]types.AuthConfig) error {
+	s, dockerAuthProvider := setupSession(dir)
+	eg, ctx := errgroup.WithContext(context.Background())
+	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		return client.DialHijack(ctx, "/session", proto, meta)
+	}
+	eg.Go(func() error {
+		return s.Run(context.TODO(), dialSession)
+	})
+	eg.Go(func() error {
+		defer func() { // make sure the Status ends cleanly on build errors
+			_ = s.Close()
+		}()
+		var outputs []types.ImageBuildOutput
+		if strings.HasPrefix(stage, "export") {
+			outputs = append(outputs, types.ImageBuildOutput{
+				Type:  "local",
+				Attrs: map[string]string{},
+			})
+			func() {
+				s.Allow(filesync.NewFSSyncTargetDir("exported"))
+			}()
+		}
+		sessionID := s.ID()
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
+	})
+	return eg.Wait()
+}
+
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, sessionID string, at session.Attachable, outputs []types.ImageBuildOutput) (finalErr error) {
+	buildID := stringid.GenerateRandomID()
 	options := types.ImageBuildOptions{
-		AuthConfigs: authConfigs,
-		BuildArgs:   args,
-		CacheFrom:   caches,
-		Dockerfile:  dockerfile,
-		PullParent:  pullParent,
-		MemorySwap:  -1,
-		Remove:      true,
-		ShmSize:     256 * 1024 * 1024,
-		Tags:        tags,
-		Target:      target,
+		AuthConfigs:   authConfigs,
+		BuildArgs:     args,
+		BuildID:       buildID,
+		CacheFrom:     caches,
+		Dockerfile:    dockerfile,
+		Outputs:       outputs,
+		PullParent:    pullParent,
+		MemorySwap:    -1,
+		RemoteContext: "client-session",
+		Remove:        true,
+		SessionID:     sessionID,
+		ShmSize:       256 * 1024 * 1024,
+		Tags:          tags,
+		Target:        target,
+		Version:       types.BuilderBuildKit,
 	}
 	logVerbose(options)
-	response, err := client.ImageBuild(context.Background(), buildContext, options)
+	var response types.ImageBuildResponse
+	var err error
+	response, err = dkrClient.ImageBuild(context.Background(), nil, options)
 	if err != nil {
 		return err
-	} else {
-		scanner := bufio.NewScanner(response.Body)
-		for scanner.Scan() {
-			r := &responsetype{}
-			response := scanner.Bytes()
-			if err := json.Unmarshal(response, &r); err != nil {
-				return fmt.Errorf("unable to parse response: %s, Error: %v", string(response), err)
-			} else {
-				if r.ErrorDetail != nil {
-					return fmt.Errorf("error Code: %v Message: %v", r.ErrorDetail.Code, r.ErrorDetail.Message)
-				} else {
-					log.Info(r.Stream)
-				}
+	}
+	defer func() { _ = response.Body.Close() }()
+
+	done := make(chan struct{})
+	defer close(done)
+	eg.Go(func() error {
+		select {
+		case <-ctx.Done():
+			return dkrClient.BuildCancel(context.TODO(), buildID)
+		case <-done:
+		}
+		return nil
+	})
+
+	tracer := newTracer()
+
+	displayStatus(os.Stderr, tracer.displayCh, eg, at)
+	defer close(tracer.displayCh)
+
+	buf := &bytes.Buffer{}
+	imageID := ""
+	writeAux := func(msg jsonmessage.JSONMessage) {
+		if msg.ID == "moby.image.id" {
+			var result types.BuildResult
+			if err := json.Unmarshal(*msg.Aux, &result); err != nil {
+				log.Errorf("failed to parse aux message: %v", err)
 			}
+			imageID = result.ID
+			return
+		}
+		tracer.write(msg)
+	}
+
+	err = jsonmessage.DisplayJSONMessagesStream(response.Body, buf, os.Stdout.Fd(), true, writeAux)
+	if err != nil {
+		if jerr, ok := err.(*jsonmessage.JSONError); ok {
+			// If no error code is set, default to 1
+			if jerr.Code == 0 {
+				jerr.Code = 1
+			}
+			return fmt.Errorf("code: %d, status: %s", jerr.Code, jerr.Message)
 		}
 	}
+
+	imageID = buf.String()
+	log.Info(imageID)
+
 	return nil
+}
+
+func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group, at session.Attachable) {
+	var c console.Console
+	// TODO: Handle tty output in non-tty environment.
+	if cons, err := console.ConsoleFromFile(out); err == nil {
+		c = cons
+	}
+	// not using shared context to not disrupt display but let it finish reporting errors
+	eg.Go(func() error {
+		return progressui.DisplaySolveStatus(context.TODO(), "", c, out, displayCh)
+	})
+	if s, ok := at.(interface {
+		SetLogger(progresswriter.Logger)
+	}); ok {
+		s.SetLogger(func(s *client.SolveStatus) {
+			displayCh <- s
+		})
+	}
 }
 
 func logVerbose(options types.ImageBuildOptions) {
 	loggableOptions := options
 	loggableOptions.AuthConfigs = nil
+	loggableOptions.BuildID = ""
+	loggableOptions.SessionID = ""
 	marshal, _ := yaml.Marshal(loggableOptions)
 	log.Debugf("performing docker build with options (auths removed):\n%s\n", marshal)
 }
@@ -216,4 +319,102 @@ func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
 	stages := docker.FindStages(content)
 
 	return stages, nil
+}
+
+func getBuildSharedKey(dir string) string {
+	// build session id hash of build dir with node based randomness
+	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", tryNodeIdentifier(), dir)))
+	return hex.EncodeToString(s[:])
+}
+
+func tryNodeIdentifier() string {
+	out := filepath.Join(os.TempDir(), ".buildtools") // return config dir as default on permission error
+	if err := os.MkdirAll(out, 0700); err == nil {
+		sessionFile := filepath.Join(out, ".buildNodeID")
+		if _, err := os.Lstat(sessionFile); err != nil {
+			if os.IsNotExist(err) { // create a new file with stored randomness
+				b := make([]byte, 32)
+				if _, err := rand.Read(b); err != nil {
+					return out
+				}
+				if err := ioutil.WriteFile(sessionFile, []byte(hex.EncodeToString(b)), 0600); err != nil {
+					return out
+				}
+			}
+		}
+
+		dt, err := ioutil.ReadFile(sessionFile)
+		if err == nil {
+			return string(dt)
+		}
+	}
+	return out
+}
+
+func resetUIDAndGID(_ string, s *fsutiltypes.Stat) bool {
+	s.Uid = 0
+	s.Gid = 0
+	return true
+}
+
+type tracer struct {
+	displayCh chan *client.SolveStatus
+}
+
+func newTracer() *tracer {
+	return &tracer{
+		displayCh: make(chan *client.SolveStatus),
+	}
+}
+
+func (t *tracer) write(msg jsonmessage.JSONMessage) {
+	var resp controlapi.StatusResponse
+
+	if msg.ID != "moby.buildkit.trace" {
+		return
+	}
+
+	var dt []byte
+	// ignoring all messages that are not understood
+	if err := json.Unmarshal(*msg.Aux, &dt); err != nil {
+		return
+	}
+	if err := (&resp).Unmarshal(dt); err != nil {
+		return
+	}
+
+	s := client.SolveStatus{}
+	for _, v := range resp.Vertexes {
+		s.Vertexes = append(s.Vertexes, &client.Vertex{
+			Digest:    v.Digest,
+			Inputs:    v.Inputs,
+			Name:      v.Name,
+			Started:   v.Started,
+			Completed: v.Completed,
+			Error:     v.Error,
+			Cached:    v.Cached,
+		})
+	}
+	for _, v := range resp.Statuses {
+		s.Statuses = append(s.Statuses, &client.VertexStatus{
+			ID:        v.ID,
+			Vertex:    v.Vertex,
+			Name:      v.Name,
+			Total:     v.Total,
+			Current:   v.Current,
+			Timestamp: v.Timestamp,
+			Started:   v.Started,
+			Completed: v.Completed,
+		})
+	}
+	for _, v := range resp.Logs {
+		s.Logs = append(s.Logs, &client.VertexLog{
+			Vertex:    v.Vertex,
+			Stream:    int(v.Stream),
+			Data:      v.Msg,
+			Timestamp: v.Timestamp,
+		})
+	}
+
+	t.displayCh <- &s
 }
