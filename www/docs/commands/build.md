@@ -49,6 +49,10 @@ RUN echo "text to be copied to localhost" >> /testfile
 FROM scratch as export
 # Copies the file /testfile from `build` stage to localhost
 COPY --from=build  /testfile .
+
+# -- resulting image stage
+FROM scratch
+# Do other stuff
 ```
 
 Let's try it:
@@ -66,6 +70,11 @@ FROM scratch as export
 # Copies the file /testfile from `build` stage to localhost
 COPY --from=build  /testfile .
 
+# -- resulting image stage
+FROM scratch
+# Do other stuff
+$ build
+... <build output>
 $ ls
 Dockerfile  exported
 
