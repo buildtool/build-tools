@@ -15,7 +15,7 @@ $ build --file docker/Dockerfile.build --skip-login --build-arg AUTH_TOKEN=abc
 ```
 
 ## Build-args
-The following [build-arg] are automatically made available:
+The following [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) are automatically made available:
 
 |      Arg    |                   Value                                |
 | :---------- | :----------------------------------------------------- |
@@ -33,7 +33,7 @@ RUN echo "Building $CI_BRANCH"
 
 ## Export content from build
 Buildtools `build` command support exporting content from the actual docker build process,
-see [Custom build outputs].
+see [Custom build outputs](https://docs.docker.com/engine/reference/commandline/build/#custom-build-outputs).
 By specifying a special stage in the `Dockerfile` and name it `export` you can use the `COPY`
 directive to copy files from the build context to the local machine.
 The copied files will be placed in a folder `exported`
@@ -86,4 +86,3 @@ text to be copied to localhost
 ```
 
 [Custom build outputs]: (https://docs.docker.com/engine/reference/commandline/build/#custom-build-outputs)
-[build-args]: (https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)
