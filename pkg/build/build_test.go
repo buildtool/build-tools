@@ -745,6 +745,72 @@ COPY --from=test file2 .
 		"info: Build successful"})
 }
 
+func TestBuild_ExportAsLastStage(t *testing.T) {
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{}
+	dockerfile := `
+FROM scratch as build
+RUN echo apa > file
+FROM scratch as test
+RUN echo cepa > file2
+FROM scratch as export
+COPY --from=build file .
+COPY --from=test file2 .
+`
+
+	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
+	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		BuildArgs:  nil,
+		NoLogin:    false,
+		NoPull:     false,
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, 4, len(client.BuildOptions))
+	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].Tags)
+	assert.Equal(t, []string{"repo/reponame:test"}, client.BuildOptions[1].Tags)
+	assert.Equal(t, []string{"repo/reponame:export"}, client.BuildOptions[2].Tags)
+	assert.Equal(t, []types.ImageBuildOutput{
+		{
+			Type:  "local",
+			Attrs: map[string]string{},
+		},
+	}, client.BuildOptions[2].Outputs)
+	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[3].Tags)
+	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].CacheFrom)
+	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[1].CacheFrom)
+	assert.Equal(t, []string{"repo/reponame:export", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[2].CacheFrom)
+	assert.Equal(t, []string{"repo/reponame:master", "repo/reponame:latest", "repo/reponame:export", "repo/reponame:test", "repo/reponame:build"}, client.BuildOptions[3].CacheFrom)
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>master</green>\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:build\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:build\nsecurityopt: []\nextrahosts: []\ntarget: build\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: Build successful",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:test\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:test\n    - repo/reponame:build\nsecurityopt: []\nextrahosts: []\ntarget: test\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: Build successful",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:export\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\nsecurityopt: []\nextrahosts: []\ntarget: export\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs:\n    - type: local\n      attrs: {}\n\n",
+		"info: Build successful",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: Build successful"})
+}
+
 type brokenReader struct{}
 
 func (b brokenReader) Read([]byte) (n int, err error) {
