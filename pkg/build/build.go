@@ -30,10 +30,8 @@ import (
 	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/session"
-	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
-	"github.com/moby/buildkit/util/progress/progresswriter"
 	fsutiltypes "github.com/tonistiigi/fsutil/types"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
@@ -73,8 +71,7 @@ func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
 
 var setupSession = provideSession
 
-// TODO Remove the dockerAuthProvider?
-func provideSession(dir string) (Session, session.Attachable) {
+func provideSession(dir string) Session {
 	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
 	if err != nil {
 		panic("session.NewSession changed behaviour and returned an error. Create an issue at https://github.com/buildtool/build-tools/issues/new")
@@ -82,8 +79,6 @@ func provideSession(dir string) (Session, session.Attachable) {
 	if s == nil {
 		panic("session.NewSession changed behaviour and did not return a session. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
-
-	dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
 
 	s.Allow(filesync.NewFSSyncProvider([]filesync.SyncedDir{
 		{
@@ -97,7 +92,7 @@ func provideSession(dir string) (Session, session.Attachable) {
 		},
 	}))
 
-	return s, dockerAuthProvider
+	return s
 }
 
 func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) error {
@@ -110,7 +105,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 
 	currentRegistry := cfg.CurrentRegistry()
 	log.Debugf("Using registry <green>%s</green>\n", currentRegistry.Name())
-	var authConfig types.AuthConfig
+	var authenticator docker.Authenticator
 	if buildVars.NoLogin {
 		log.Debugf("Login <yellow>disabled</yellow>\n")
 	} else {
@@ -118,7 +113,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 		if err := currentRegistry.Login(client); err != nil {
 			return err
 		}
-		authConfig = currentRegistry.GetAuthConfig()
+		authenticator = docker.NewAuthenticator(currentRegistry.GetAuthConfig())
 	}
 
 	var buf bytes.Buffer
@@ -158,7 +153,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authConfig)
+		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authenticator)
 		if err != nil {
 			return err
 		}
@@ -176,13 +171,17 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	}
 
 	caches = append([]string{branchTag, latestTag}, caches...)
-	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authConfig)
+	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
 }
 
-func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfig types.AuthConfig) error {
-	s, dockerAuthProvider := setupSession(dir)
-	authenticator := docker.NewAuthenticator(authConfig)
-	s.Allow(authenticator)
+func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
+	s := setupSession(dir)
+	if authenticator != nil {
+		//dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
+		//s.Allow(dockerAuthProvider)
+
+		s.Allow(authenticator)
+	}
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
@@ -206,12 +205,12 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 			}()
 		}
 		sessionID := s.ID()
-		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs)
 	})
 	return eg.Wait()
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, at session.Attachable, outputs []types.ImageBuildOutput) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []types.ImageBuildOutput) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
 	options := types.ImageBuildOptions{
 		BuildArgs:     args,
@@ -251,7 +250,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 
 	tracer := newTracer()
 
-	displayStatus(os.Stderr, tracer.displayCh, eg, at)
+	displayStatus(os.Stderr, tracer.displayCh, eg)
 	defer close(tracer.displayCh)
 
 	buf := &bytes.Buffer{}
@@ -285,7 +284,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	return nil
 }
 
-func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group, at session.Attachable) {
+func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group) {
 	var c console.Console
 	// TODO: Handle tty output in non-tty environment.
 	if cons, err := console.ConsoleFromFile(out); err == nil {
@@ -295,13 +294,6 @@ func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgrou
 	eg.Go(func() error {
 		return progressui.DisplaySolveStatus(context.TODO(), "", c, out, displayCh)
 	})
-	if s, ok := at.(interface {
-		SetLogger(progresswriter.Logger)
-	}); ok {
-		s.SetLogger(func(s *client.SolveStatus) {
-			displayCh <- s
-		})
-	}
 }
 
 func logVerbose(options types.ImageBuildOptions) {
