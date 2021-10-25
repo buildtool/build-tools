@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go v1.41.4
 	github.com/caarlos0/env/v6 v6.7.2
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
-	github.com/containerd/console v1.0.2
+	github.com/containerd/console v1.0.3
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
