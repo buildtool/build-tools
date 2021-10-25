@@ -73,6 +73,7 @@ func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
 
 var setupSession = provideSession
 
+// TODO Remove the dockerAuthProvider?
 func provideSession(dir string) (Session, session.Attachable) {
 	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
 	if err != nil {
@@ -83,7 +84,6 @@ func provideSession(dir string) (Session, session.Attachable) {
 	}
 
 	dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
-	s.Allow(dockerAuthProvider)
 
 	s.Allow(filesync.NewFSSyncProvider([]filesync.SyncedDir{
 		{
@@ -110,7 +110,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 
 	currentRegistry := cfg.CurrentRegistry()
 	log.Debugf("Using registry <green>%s</green>\n", currentRegistry.Name())
-	authConfigs := make(map[string]types.AuthConfig)
+	var authConfig types.AuthConfig
 	if buildVars.NoLogin {
 		log.Debugf("Login <yellow>disabled</yellow>\n")
 	} else {
@@ -118,7 +118,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 		if err := currentRegistry.Login(client); err != nil {
 			return err
 		}
-		authConfigs[currentRegistry.RegistryUrl()] = currentRegistry.GetAuthConfig()
+		authConfig = currentRegistry.GetAuthConfig()
 	}
 
 	var buf bytes.Buffer
@@ -158,7 +158,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authConfigs)
+		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authConfig)
 		if err != nil {
 			return err
 		}
@@ -176,11 +176,14 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 	}
 
 	caches = append([]string{branchTag, latestTag}, caches...)
-	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authConfigs)
+	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authConfig)
 }
 
-func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfigs map[string]types.AuthConfig) error {
+func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authConfig types.AuthConfig) error {
 	s, dockerAuthProvider := setupSession(dir)
+	authenticator := docker.NewAuthenticator(authConfig)
+	s.Allow(authenticator)
+
 	eg, ctx := errgroup.WithContext(context.Background())
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 		return client.DialHijack(ctx, "/session", proto, meta)
@@ -203,15 +206,14 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 			}()
 		}
 		sessionID := s.ID()
-		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, authConfigs, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, dockerAuthProvider, outputs)
 	})
 	return eg.Wait()
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, authConfigs map[string]types.AuthConfig, pullParent bool, sessionID string, at session.Attachable, outputs []types.ImageBuildOutput) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, at session.Attachable, outputs []types.ImageBuildOutput) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
 	options := types.ImageBuildOptions{
-		AuthConfigs:   authConfigs,
 		BuildArgs:     args,
 		BuildID:       buildID,
 		CacheFrom:     caches,
