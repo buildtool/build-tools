@@ -2,10 +2,19 @@ package docker
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/hmac"
+	"crypto/sha256"
+	"fmt"
+	"net/http"
+	"time"
+
+	authutil "github.com/containerd/containerd/remotes/docker/auth"
 
 	"github.com/docker/docker/api/types"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth"
+	"golang.org/x/crypto/nacl/sign"
 	"google.golang.org/grpc"
 )
 
@@ -13,31 +22,75 @@ type authenticator struct {
 	authConfig types.AuthConfig
 }
 
-func NewAuthenticator(authConfig types.AuthConfig) session.Attachable {
+func NewAuthenticator(authConfig types.AuthConfig) Authenticator {
 	return &authenticator{
 		authConfig: authConfig,
 	}
 }
 
-func (a authenticator) Register(server *grpc.Server) {
+func (a *authenticator) Register(server *grpc.Server) {
 	auth.RegisterAuthServer(server, a)
 }
 
-func (a authenticator) Credentials(ctx context.Context, request *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
-	return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
+func (a authenticator) Credentials(ctx context.Context, req *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
+	if a.authConfig.Username != "" {
+		return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
+	}
+	return nil, fmt.Errorf("no creds")
 }
 
-func (a authenticator) FetchToken(ctx context.Context, request *auth.FetchTokenRequest) (*auth.FetchTokenResponse, error) {
-	panic("implement me FetchToken")
+func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenRequest) (*auth.FetchTokenResponse, error) {
+	to := authutil.TokenOptions{
+		Realm:    req.Realm,
+		Service:  req.Service,
+		Scopes:   req.Scopes,
+		Username: "",
+		Secret:   "",
+	}
+	// do request anonymously
+	resp, err := authutil.FetchToken(ctx, http.DefaultClient, nil, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch anonymous token, %w", err)
+	}
+	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresIn), nil
 }
 
-func (a authenticator) GetTokenAuthority(ctx context.Context, request *auth.GetTokenAuthorityRequest) (*auth.GetTokenAuthorityResponse, error) {
-	panic("implement me GetTokenAuthority")
+func (ap *authenticator) GetTokenAuthority(ctx context.Context, req *auth.GetTokenAuthorityRequest) (*auth.GetTokenAuthorityResponse, error) {
+	key := ap.getAuthorityKey(req.Host, req.Salt)
+
+	return &auth.GetTokenAuthorityResponse{PublicKey: key[32:]}, nil
 }
 
-func (a authenticator) VerifyTokenAuthority(ctx context.Context, request *auth.VerifyTokenAuthorityRequest) (*auth.VerifyTokenAuthorityResponse, error) {
-	panic("implement me VerifyTokenAuthority")
+func (ap *authenticator) VerifyTokenAuthority(ctx context.Context, req *auth.VerifyTokenAuthorityRequest) (*auth.VerifyTokenAuthorityResponse, error) {
+	key := ap.getAuthorityKey(req.Host, req.Salt)
+
+	priv := new([64]byte)
+	copy((*priv)[:], key)
+
+	return &auth.VerifyTokenAuthorityResponse{Signed: sign.Sign(nil, req.Payload, priv)}, nil
 }
 
-var _ auth.AuthServer = &authenticator{}
-var _ session.Attachable = &authenticator{}
+var _ Authenticator = &authenticator{}
+
+type Authenticator interface {
+	auth.AuthServer
+	session.Attachable
+}
+
+func toTokenResponse(token string, issuedAt time.Time, expires int) *auth.FetchTokenResponse {
+	resp := &auth.FetchTokenResponse{
+		Token:     token,
+		ExpiresIn: int64(expires),
+	}
+	if !issuedAt.IsZero() {
+		resp.IssuedAt = issuedAt.Unix()
+	}
+	return resp
+}
+
+func (ap *authenticator) getAuthorityKey(host string, salt []byte) ed25519.PrivateKey {
+	mac := hmac.New(sha256.New, salt)
+	sum := mac.Sum(nil)
+
+	return ed25519.NewKeyFromSeed(sum[:ed25519.SeedSize])
+}
