@@ -5,7 +5,6 @@ Normal usage `promote <target>`, but additional flags can be used to override:
 
 |      Flag             |                   Description                                                   |
 | :-------------------- | :-------------------------------------------------------------------------------|
-| `--namespace`, `-n`   | Use a different namespace than the one found in configuration                   |
 | `--tag`               | Override the default tag to use (instead of the current commit tag or the value from CI) |
 | `--url`               | override the URL to the Git repository where files will be generated |
 | `--path`              | override the path in the Git repository where files will be generated |
@@ -21,8 +20,8 @@ Only the `target` name has to be specified
 $ promote local
 ```
 
-### Overriding namespace from config:
+### Generate file locally:
 ```sh
-$ promote --namespace test local
+$ promote --out out.yaml local
 ```
 
