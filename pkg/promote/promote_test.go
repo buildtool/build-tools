@@ -7,13 +7,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"github.com/buildtool/build-tools/pkg/config"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"text/template"
+
+	"github.com/buildtool/build-tools/pkg/config"
 
 	"github.com/apex/log"
 	"github.com/go-git/go-git/v5"
@@ -56,23 +57,22 @@ func TestDoPromote(t *testing.T) {
 				"info:   <target>    the target in the .buildtools.yaml\n",
 				"info: \n",
 				"info: Flags:\n",
-				"info:   -h, --help                Show context-sensitive help.\n",
-				"info:       --version             Print args information and exit\n",
-				"info:   -v, --verbose             Enable verbose mode\n",
-				"info:       --config              Print parsed config and exit\n",
-				"info:   -n, --namespace=STRING    override the namespace for default deployment target\n",
-				"info:       --tag=STRING          override the tag to deploy, not using the CI or VCS\n",
-				"info:                             evaluated value\n",
-				"info:       --url=STRING          override the URL to the Git repository where files\n",
-				"info:                             will be generated\n",
-				"info:       --path=STRING         override the path in the Git repository where files\n",
-				"info:                             will be generated\n",
-				"info:       --user=\"git\"          username for Git access\n",
-				"info:       --key=STRING          private key for Git access \\(defaults to\n",
-				"info:                             ~\\/.ssh\\/id_rsa\\)\n",
-				"info:       --password=STRING     password for private key\n",
-				"info:   -o, --out=STRING          write output to specified file instead of committing\n",
-				"info:                             and pushing to Git\n",
+				"info:   -h, --help               Show context-sensitive help.\n",
+				"info:       --version            Print args information and exit\n",
+				"info:   -v, --verbose            Enable verbose mode\n",
+				"info:       --config             Print parsed config and exit\n",
+				"info:       --tag=STRING         override the tag to deploy, not using the CI or VCS\n",
+				"info:                            evaluated value\n",
+				"info:       --url=STRING         override the URL to the Git repository where files\n",
+				"info:                            will be generated\n",
+				"info:       --path=STRING        override the path in the Git repository where files\n",
+				"info:                            will be generated\n",
+				"info:       --user=\"git\"         username for Git access\n",
+				"info:       --key=STRING         private key for Git access \\(defaults to\n",
+				"info:                            ~\\/.ssh\\/id_rsa\\)\n",
+				"info:       --password=STRING    password for private key\n",
+				"info:   -o, --out=STRING         write output to specified file instead of committing\n",
+				"info:                            and pushing to Git\n",
 			},
 		},
 		{
