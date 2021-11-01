@@ -19,12 +19,14 @@ import (
 )
 
 type authenticator struct {
-	authConfig types.AuthConfig
+	authConfig   types.AuthConfig
+	registryHost string
 }
 
-func NewAuthenticator(authConfig types.AuthConfig) Authenticator {
+func NewAuthenticator(registryHost string, authConfig types.AuthConfig) Authenticator {
 	return &authenticator{
-		authConfig: authConfig,
+		authConfig:   authConfig,
+		registryHost: registryHost,
 	}
 }
 
@@ -33,10 +35,10 @@ func (a *authenticator) Register(server *grpc.Server) {
 }
 
 func (a authenticator) Credentials(ctx context.Context, req *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
-	if a.authConfig.Username != "" {
-		return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
+	if req.Host != a.registryHost {
+		return &auth.CredentialsResponse{}, nil
 	}
-	return nil, fmt.Errorf("no creds")
+	return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
 }
 
 func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenRequest) (*auth.FetchTokenResponse, error) {
