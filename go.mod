@@ -13,7 +13,7 @@ require (
 	github.com/caarlos0/env/v6 v6.7.2
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/containerd/console v1.0.3
-	github.com/containerd/containerd v1.5.7 // indirect
+	github.com/containerd/containerd v1.5.7
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/docker/docker v20.10.9+incompatible
@@ -47,7 +47,7 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	gitlab.com/unboundsoftware/apex-mocks v0.0.4
 	go.starlark.net v0.0.0-20210901212718-87f333178d59 // indirect
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/net v0.0.0-20211005001312-d4b1ae081e3b // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -57,10 +57,10 @@ require (
 	google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e // indirect
 	google.golang.org/grpc v1.41.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/client-go v0.22.2
+	k8s.io/client-go v0.22.3
 	k8s.io/klog/v2 v2.20.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20210929172449-94abcedd1aa4 // indirect
-	k8s.io/kubectl v0.22.2
+	k8s.io/kubectl v0.22.3
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
 	sigs.k8s.io/kustomize/kustomize/v4 v4.4.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
@@ -75,9 +75,7 @@ require (
 	github.com/containerd/cgroups v1.0.1 // indirect
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/cli v20.10.7+incompatible // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/evanphx/json-patch v4.11.0+incompatible // indirect
@@ -135,12 +133,12 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.22.2 // indirect
-	k8s.io/apimachinery v0.22.2 // indirect
-	k8s.io/cli-runtime v0.22.2 // indirect
-	k8s.io/component-base v0.22.2 // indirect
-	k8s.io/component-helpers v0.22.2 // indirect
-	k8s.io/metrics v0.22.2 // indirect
+	k8s.io/api v0.22.3 // indirect
+	k8s.io/apimachinery v0.22.3 // indirect
+	k8s.io/cli-runtime v0.22.3 // indirect
+	k8s.io/component-base v0.22.3 // indirect
+	k8s.io/component-helpers v0.22.3 // indirect
+	k8s.io/metrics v0.22.3 // indirect
 	sigs.k8s.io/kustomize/api v0.10.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.12.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
