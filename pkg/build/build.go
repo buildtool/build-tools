@@ -113,7 +113,7 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 		if err := currentRegistry.Login(client); err != nil {
 			return err
 		}
-		authenticator = docker.NewAuthenticator(currentRegistry.GetAuthConfig())
+		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
 	}
 
 	var buf bytes.Buffer
@@ -177,9 +177,6 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
 	s := setupSession(dir)
 	if authenticator != nil {
-		//dockerAuthProvider := authprovider.NewDockerAuthProvider(os.Stderr)
-		//s.Allow(dockerAuthProvider)
-
 		s.Allow(authenticator)
 	}
 
