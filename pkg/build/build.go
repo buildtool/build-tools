@@ -179,6 +179,7 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 	if authenticator != nil {
 		s.Allow(authenticator)
 	}
+	s.Allow(filesync.NewFSSyncTargetDir("exported"))
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
@@ -197,9 +198,6 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 				Type:  "local",
 				Attrs: map[string]string{},
 			})
-			func() {
-				s.Allow(filesync.NewFSSyncTargetDir("exported"))
-			}()
 		}
 		sessionID := s.ID()
 		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs)
