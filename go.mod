@@ -7,7 +7,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.22 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
-	github.com/alecthomas/kong v0.2.17
+	github.com/alecthomas/kong v0.2.18
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go v1.41.14
 	github.com/caarlos0/env/v6 v6.7.2
