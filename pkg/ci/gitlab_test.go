@@ -17,7 +17,7 @@ func TestGitlab_Name(t *testing.T) {
 }
 
 func TestGitlab_BuildName(t *testing.T) {
-	ci := &Gitlab{CIBuildName: "Name"}
+	ci := &Gitlab{Common: &Common{}, CIBuildName: "Name"}
 
 	assert.Equal(t, "name", ci.BuildName())
 }

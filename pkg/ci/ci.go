@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,18 +17,28 @@ type CI interface {
 	BranchReplaceSlash() string
 	Commit() string
 	SetVCS(vcs vcs.VCS)
+	SetImageName(imageName string)
 	Configured() bool
 }
 
 type Common struct {
-	VCS vcs.VCS
+	VCS       vcs.VCS
+	ImageName string
 }
 
 func (c *Common) SetVCS(vcs vcs.VCS) {
 	c.VCS = vcs
 }
 
+func (c *Common) SetImageName(imageName string) {
+	c.ImageName = imageName
+}
+
 func (c *Common) BuildName(name string) string {
+	if c.ImageName != "" {
+		fmt.Printf("Using %s as BuildName", name)
+		return c.ImageName
+	}
 	if name != "" {
 		return strings.ToLower(name)
 	}

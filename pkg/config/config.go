@@ -42,6 +42,7 @@ type CIConfig struct {
 	Gitlab    *ci.Gitlab    `yaml:"gitlab"`
 	Github    *ci.Github    `yaml:"github"`
 	TeamCity  *ci.TeamCity  `yaml:"teamcity"`
+	ImageName string        `env:"IMAGE_NAME"`
 }
 
 type RegistryConfig struct {
@@ -138,11 +139,13 @@ func (c *Config) CurrentCI() ci.CI {
 	for _, x := range c.AvailableCI {
 		if x.Configured() {
 			x.SetVCS(c.CurrentVCS())
+			x.SetImageName(c.CI.ImageName)
 			return x
 		}
 	}
 	x := &ci.No{Common: &ci.Common{}}
 	x.SetVCS(c.CurrentVCS())
+	x.SetImageName(c.CI.ImageName)
 	return x
 }
 
