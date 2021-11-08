@@ -18,7 +18,7 @@ func TestAzure_Name(t *testing.T) {
 }
 
 func TestAzure_BuildName(t *testing.T) {
-	ci := &Azure{CIBuildName: "Name"}
+	ci := &Azure{Common: &Common{}, CIBuildName: "Name"}
 
 	assert.Equal(t, "name", ci.BuildName())
 }

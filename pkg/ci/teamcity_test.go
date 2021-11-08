@@ -30,7 +30,7 @@ func TestTeamCityCI_BranchReplaceSlash_VCS_Fallback(t *testing.T) {
 }
 
 func TestTeamCityCI_BuildName(t *testing.T) {
-	ci := &TeamCity{CIBuildName: "project"}
+	ci := &TeamCity{Common: &Common{}, CIBuildName: "project"}
 
 	assert.Equal(t, "project", ci.BuildName())
 }

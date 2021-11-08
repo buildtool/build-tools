@@ -17,9 +17,15 @@ func TestGithub_Name(t *testing.T) {
 }
 
 func TestGithub_BuildName(t *testing.T) {
-	ci := &Github{CIBuildName: "/home/runner/work/name"}
+	ci := &Github{Common: &Common{}, CIBuildName: "/home/runner/work/name"}
 
 	assert.Equal(t, "name", ci.BuildName())
+}
+
+func TestGithub_Override_ImageName(t *testing.T) {
+	ci := &Github{Common: &Common{}, CIBuildName: "/home/runner/work/name"}
+	ci.SetImageName("override")
+	assert.Equal(t, "override", ci.BuildName())
 }
 
 func TestGithub_BuildName_Fallback(t *testing.T) {

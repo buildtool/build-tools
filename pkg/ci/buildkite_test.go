@@ -17,7 +17,7 @@ func TestBuildkite_Name(t *testing.T) {
 }
 
 func TestBuildkite_BuildName(t *testing.T) {
-	ci := &Buildkite{CIBuildName: "Name"}
+	ci := &Buildkite{Common: &Common{}, CIBuildName: "Name"}
 
 	assert.Equal(t, "name", ci.BuildName())
 }
