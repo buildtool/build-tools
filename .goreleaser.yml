@@ -19,6 +19,7 @@ builds:
       - windows
     goarch:
       - amd64
+      - arm64
   - id: push
     main: ./cmd/push/push.go
     binary: push
@@ -30,6 +31,7 @@ builds:
       - windows
     goarch:
       - amd64
+      - arm64
   - id: deploy
     main: ./cmd/deploy/deploy.go
     binary: deploy
@@ -41,28 +43,31 @@ builds:
       - windows
     goarch:
       - amd64
+      - arm64
   - id: kubecmd
     main: ./cmd/kubecmd/kubecmd.go
     binary: kubecmd
     flags:
     - -tags=prod
     goos:
-    - linux
-    - darwin
-    - windows
+      - linux
+      - darwin
+      - windows
     goarch:
-    - amd64
+      - amd64
+      - arm64
   - id: promote
     main: ./cmd/promote/promote.go
     binary: promote
     flags:
     - -tags=prod
     goos:
-    - linux
-    - darwin
-    - windows
+      - linux
+      - darwin
+      - windows
     goarch:
-    - amd64
+      - amd64
+      - arm64
 dockers:
   -
     goos: linux
