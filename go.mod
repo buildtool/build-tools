@@ -5,7 +5,7 @@ go 1.17
 require (
 	cloud.google.com/go v0.97.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
-	github.com/Microsoft/hcsshim v0.8.22 // indirect
+	github.com/Microsoft/hcsshim v0.8.23 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
 	github.com/alecthomas/kong v0.2.18
 	github.com/apex/log v1.9.0
@@ -13,7 +13,7 @@ require (
 	github.com/caarlos0/env/v6 v6.7.2
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/containerd/console v1.0.3
-	github.com/containerd/containerd v1.5.7
+	github.com/containerd/containerd v1.5.8
 	github.com/containerd/continuity v0.2.0 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/docker/docker v20.10.10+incompatible
