@@ -2,9 +2,15 @@ package deploy
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/apex/log"
+	"github.com/buildtool/build-tools/pkg/file"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -12,12 +18,6 @@ import (
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/kubectl"
 	"github.com/buildtool/build-tools/pkg/version"
-
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type Args struct {
@@ -100,30 +100,29 @@ func Deploy(dir, buildName, timestamp string, client kubectl.Kubectl, deployArgs
 }
 
 func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) error {
-	if infos, err := ioutil.ReadDir(dir); err == nil {
-		for _, info := range infos {
-			if fileIsForTarget(info, target) {
-				log.Debugf("using file '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
-				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
-					return err
-				} else {
-					if err := processFile(file, commit, timestamp, client); err != nil {
-						return err
-					}
-				}
-			} else if fileIsScriptForTarget(info, target, dir) {
-				log.Debugf("using script '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
-				if err := execFile(filepath.Join(dir, info.Name())); err != nil {
-					return err
-				}
-			} else {
-				log.Debugf("not using file '<red>%s</red>' for target: <green>%s</green>\n", info.Name(), target)
-			}
-		}
-		return nil
-	} else {
+	files, err := file.FindFilesForTarget(dir, target)
+	if err != nil {
 		return err
 	}
+	scripts, err := file.FindScriptsForTarget(dir, target)
+	if err != nil {
+		return err
+	}
+	for _, info := range files {
+		if f, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
+			return err
+		} else {
+			if err := processFile(f, commit, timestamp, client); err != nil {
+				return err
+			}
+		}
+	}
+	for _, info := range scripts {
+		if err := execFile(filepath.Join(dir, info.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func execFile(file string) error {
@@ -146,13 +145,4 @@ func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl
 		}
 		return nil
 	}
-}
-
-func fileIsForTarget(info os.FileInfo, env string) bool {
-	log.Debugf("considering file '<yellow>%s</yellow>' for target: <green>%s</green>\n", info.Name(), env)
-	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
-}
-
-func fileIsScriptForTarget(info os.FileInfo, env, dir string) bool {
-	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.sh", env))
 }

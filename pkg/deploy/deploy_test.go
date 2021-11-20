@@ -234,11 +234,9 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 		"debug: not using file '<red>ns-dummy.yaml</red>' for target: <green>prod</green>\n",
 		"debug: considering file '<yellow>ns-prod.yaml</yellow>' for target: <green>prod</green>\n",
 		"debug: using file '<green>ns-prod.yaml</green>' for target: <green>prod</green>\n",
+		"debug: considering script '<yellow>other-dummy.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using script '<red>other-dummy.sh</red>' for target: <green>prod</green>\n",
 		"debug: trying to apply: \n---\nprod content\n---\n",
-		"debug: considering file '<yellow>other-dummy.sh</yellow>' for target: <green>prod</green>\n",
-		"debug: not using file '<red>other-dummy.sh</red>' for target: <green>prod</green>\n",
-		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
-		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
 	})
 }
 
@@ -268,15 +266,13 @@ echo "Prod-script with suffix"`
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
 	logMock.Check(t, []string{
-		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
-		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
-		"debug: considering file '<yellow>setup-prod.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: considering script '<yellow>setup-prod.sh</yellow>' for target: <green>prod</green>\n",
 		"debug: using script '<green>setup-prod.sh</green>' for target: <green>prod</green>\n",
 		"info: Prod-script with suffix\n",
 	})
 }
 
-func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
+func TestDeploy_ScriptExecution_No_Execute_Of_Common_If_Specific_Exists(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
 	}
@@ -287,6 +283,9 @@ func TestDeploy_ScriptExecution_NoSuffixInK8s(t *testing.T) {
 	script := `#!/usr/bin/env bash
 echo "Script without suffix should not execute"`
 	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "setup.sh"), []byte(script), 0777)
+	script2 := `#!/usr/bin/env bash
+echo "Prod-script with suffix"`
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script2), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -302,10 +301,11 @@ echo "Script without suffix should not execute"`
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(client.Inputs))
 	logMock.Check(t, []string{
-		"debug: considering file '<yellow>prod</yellow>' for target: <green>prod</green>\n",
-		"debug: not using file '<red>prod</red>' for target: <green>prod</green>\n",
-		"debug: considering file '<yellow>setup.sh</yellow>' for target: <green>prod</green>\n",
-		"debug: not using file '<red>setup.sh</red>' for target: <green>prod</green>\n",
+		"debug: considering script '<yellow>setup-prod.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: considering script '<yellow>setup.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: using script '<green>setup-prod.sh</green>' for target: <green>prod</green>\n",
+		"debug: not using script '<red>setup.sh</red>' for target: <green>prod</green>\n",
+		"info: Prod-script with suffix\n",
 	})
 }
 
