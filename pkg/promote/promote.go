@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+	"github.com/buildtool/build-tools/pkg/file"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
@@ -214,25 +215,20 @@ func defaultIfEmpty(s string, def string) string {
 }
 
 func processDir(writer io.StringWriter, dir, commit, timestamp, target string) error {
-	if infos, err := ioutil.ReadDir(dir); err == nil {
-		for _, info := range infos {
-			if fileIsForTarget(info, target) {
-				log.Debugf("using file '<green>%s</green>' for target: <green>%s</green>\n", info.Name(), target)
-				if file, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
-					return err
-				} else {
-					if err := processFile(writer, file, commit, timestamp); err != nil {
-						return err
-					}
-				}
-			} else {
-				log.Debugf("not using file '<red>%s</red>' for target: <green>%s</green>\n", info.Name(), target)
-			}
-		}
-		return nil
-	} else {
+	files, err := file.FindFilesForTarget(dir, target)
+	if err != nil {
 		return err
 	}
+	for _, info := range files {
+		if f, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
+			return err
+		} else {
+			if err := processFile(writer, f, commit, timestamp); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func processFile(writer io.StringWriter, file *os.File, commit, timestamp string) error {
@@ -253,9 +249,4 @@ func processFile(writer io.StringWriter, file *os.File, commit, timestamp string
 
 		return nil
 	}
-}
-
-func fileIsForTarget(info os.FileInfo, env string) bool {
-	log.Debugf("considering file '<yellow>%s</yellow>' for target: <green>%s</green>\n", info.Name(), env)
-	return strings.HasSuffix(info.Name(), fmt.Sprintf("-%s.yaml", env)) || (strings.HasSuffix(info.Name(), ".yaml") && !strings.Contains(info.Name(), "-"))
 }
