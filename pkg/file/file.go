@@ -11,14 +11,14 @@ import (
 )
 
 func FindFilesForTarget(dir, target string) ([]os.FileInfo, error) {
-	return filesForTarget(dir, target, "file", ".yaml")
+	return filesForTarget(dir, target, "file", ".yaml", false)
 }
 
 func FindScriptsForTarget(dir, target string) ([]os.FileInfo, error) {
-	return filesForTarget(dir, target, "script", ".sh")
+	return filesForTarget(dir, target, "script", ".sh", true)
 }
 
-func filesForTarget(dir, target, filetype, suffix string) ([]os.FileInfo, error) {
+func filesForTarget(dir, target, filetype, suffix string, strict bool) ([]os.FileInfo, error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func filesForTarget(dir, target, filetype, suffix string) ([]os.FileInfo, error)
 		if strings.HasSuffix(k, fmt.Sprintf("-%s%s", target, suffix)) {
 			log.Debugf("using %s '<green>%s</green>' for target: <green>%s</green>\n", filetype, k, target)
 			result = append(result, v)
-		} else {
+		} else if !strict {
 			name := fmt.Sprintf("%s-%s%s", strings.TrimSuffix(k, suffix), target, suffix)
 			if _, exists := matching[name]; !exists {
 				log.Debugf("using %s '<green>%s</green>' for target: <green>%s</green>\n", filetype, k, target)
@@ -48,6 +48,8 @@ func filesForTarget(dir, target, filetype, suffix string) ([]os.FileInfo, error)
 			} else {
 				log.Debugf("not using %s '<red>%s</red>' for target: <green>%s</green>\n", filetype, k, target)
 			}
+		} else {
+			log.Debugf("not using %s '<red>%s</red>' for target: <green>%s</green>\n", filetype, k, target)
 		}
 	}
 	sort.Slice(result, func(i, j int) bool {

@@ -13,7 +13,7 @@ applied to all other targets.
 
 Files with a `.sh` suffix will be run on the machine executing the [`deploy`](/commands/deploy) command. This can be
 useful to setup secrets/configurations, mostly for local use. Note that only `.sh` files matching the `target` using the
-rules in the above paragraph will be executed.
+rules in the above paragraph will be executed, with the difference that no **common** files will be executed.
 
 All other files in `k8s` will be ignored by the `deploy` command.
 
