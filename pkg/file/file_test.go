@@ -105,7 +105,7 @@ func TestFindScriptsForTarget(t *testing.T) {
 				dir:    "testdata/only_common_files",
 				target: "local",
 			},
-			want:    []string{"setup.sh"},
+			want:    []string{},
 			wantErr: false,
 		},
 		{
@@ -132,7 +132,7 @@ func TestFindScriptsForTarget(t *testing.T) {
 				dir:    "testdata/specific_and_common_config_files",
 				target: "prod",
 			},
-			want:    []string{"setup.sh"},
+			want:    []string{},
 			wantErr: false,
 		},
 	}
