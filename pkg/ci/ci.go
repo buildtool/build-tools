@@ -36,7 +36,7 @@ func (c *Common) SetImageName(imageName string) {
 
 func (c *Common) BuildName(name string) string {
 	if c.ImageName != "" {
-		fmt.Printf("Using %s as BuildName", name)
+		fmt.Printf("Using %s as BuildName\n", c.ImageName)
 		return c.ImageName
 	}
 	if name != "" {
