@@ -556,6 +556,9 @@ func TestBuild_WithImageName(t *testing.T) {
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>main</green>\n",
+		"info: Using other as BuildName\n",
+		"info: Using other as BuildName\n",
+		"info: Using other as BuildName\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/other:abc123\n    - repo/other:main\n    - repo/other:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: main\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/other:main\n    - repo/other:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
 		"info: Build successful"})
 }
