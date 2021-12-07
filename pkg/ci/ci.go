@@ -1,11 +1,11 @@
 package ci
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/apex/log"
 	"github.com/buildtool/build-tools/pkg/vcs"
 )
 
@@ -36,7 +36,7 @@ func (c *Common) SetImageName(imageName string) {
 
 func (c *Common) BuildName(name string) string {
 	if c.ImageName != "" {
-		fmt.Printf("Using %s as BuildName", name)
+		log.Infof("Using %s as BuildName\n", c.ImageName)
 		return c.ImageName
 	}
 	if name != "" {

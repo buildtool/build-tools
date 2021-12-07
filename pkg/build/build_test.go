@@ -523,6 +523,46 @@ func TestBuild_MainBranch(t *testing.T) {
 		"info: Build successful"})
 }
 
+func TestBuild_WithImageName(t *testing.T) {
+	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "main")()
+	defer pkg.SetEnv("IMAGE_NAME", "other")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
+	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		BuildArgs:  nil,
+		NoLogin:    false,
+		NoPull:     false,
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Dockerfile", client.BuildOptions[0].Dockerfile)
+	assert.Equal(t, int64(-1), client.BuildOptions[0].MemorySwap)
+	assert.Equal(t, true, client.BuildOptions[0].Remove)
+	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
+	assert.Equal(t, []string{"repo/other:abc123", "repo/other:main", "repo/other:latest"}, client.BuildOptions[0].Tags)
+	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>abc123</green> on branch <green>main</green>\n",
+		"info: Using other as BuildName\n",
+		"info: Using other as BuildName\n",
+		"info: Using other as BuildName\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/other:abc123\n    - repo/other:main\n    - repo/other:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: main\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/other:main\n    - repo/other:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: Build successful"})
+}
+
 func TestBuild_BadDockerHost(t *testing.T) {
 	defer pkg.SetEnv("DOCKER_HOST", "abc-123")()
 	logMock := mocks.New()
