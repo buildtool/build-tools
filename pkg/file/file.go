@@ -35,16 +35,24 @@ func filesForTarget(dir, target, filetype, suffix string, strict bool) ([]os.Fil
 			}
 		}
 	}
+	matchingKeys := make([]string, len(matching))
+	i := 0
+	for k := range matching {
+		matchingKeys[i] = k
+		i++
+	}
+	sort.Strings(matchingKeys)
+
 	var result []os.FileInfo
-	for k, v := range matching {
+	for _, k := range matchingKeys {
 		if strings.HasSuffix(k, fmt.Sprintf("-%s%s", target, suffix)) {
 			log.Debugf("using %s '<green>%s</green>' for target: <green>%s</green>\n", filetype, k, target)
-			result = append(result, v)
+			result = append(result, matching[k])
 		} else if !strict {
 			name := fmt.Sprintf("%s-%s%s", strings.TrimSuffix(k, suffix), target, suffix)
 			if _, exists := matching[name]; !exists {
 				log.Debugf("using %s '<green>%s</green>' for target: <green>%s</green>\n", filetype, k, target)
-				result = append(result, v)
+				result = append(result, matching[k])
 			} else {
 				log.Debugf("not using %s '<red>%s</red>' for target: <green>%s</green>\n", filetype, k, target)
 			}
