@@ -9,7 +9,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7 // indirect
 	github.com/alecthomas/kong v0.2.18
 	github.com/apex/log v1.9.0
-	github.com/aws/aws-sdk-go v1.42.0
+	github.com/aws/aws-sdk-go v1.42.30
 	github.com/caarlos0/env/v6 v6.7.2
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/containerd/console v1.0.3
@@ -49,7 +49,7 @@ require (
 	gitlab.com/unboundsoftware/apex-mocks v0.0.4
 	go.starlark.net v0.0.0-20210901212718-87f333178d59 // indirect
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
-	golang.org/x/net v0.0.0-20211005001312-d4b1ae081e3b // indirect
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211004093028-2c5d950f24ef // indirect
