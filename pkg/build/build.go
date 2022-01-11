@@ -43,6 +43,7 @@ type Args struct {
 	BuildArgs  []string `name:"build-arg" type:"list" help:"additional docker build-args to use, see https://docs.docker.com/engine/reference/commandline/build/ for more information."`
 	NoLogin    bool     `help:"disable login to docker registry" default:"false" `
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
+	Platform   string   `help:"specify target platform to build" default:""`
 }
 
 func DoBuild(dir string, buildArgs Args) error {
@@ -101,6 +102,10 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 		return err
 	}
 	currentCI := cfg.CurrentCI()
+	if buildVars.Platform != "" {
+		log.Infof("building for platform <green>%s</green>\n", buildVars.Platform)
+	}
+
 	log.Debugf("Using CI <green>%s</green>\n", currentCI.Name())
 
 	currentRegistry := cfg.CurrentRegistry()
@@ -200,12 +205,12 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 			})
 		}
 		sessionID := s.ID()
-		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs)
+		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
 	})
 	return eg.Wait()
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []types.ImageBuildOutput) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []types.ImageBuildOutput, platform string) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
 	options := types.ImageBuildOptions{
 		BuildArgs:     args,
@@ -222,6 +227,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 		Tags:          tags,
 		Target:        target,
 		Version:       types.BuilderBuildKit,
+		Platform:      platform,
 	}
 	logVerbose(options)
 	var response types.ImageBuildResponse
