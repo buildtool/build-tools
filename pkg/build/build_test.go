@@ -380,6 +380,36 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 		"info: Build successful"})
 }
 
+func TestBuild_WithPlatform(t *testing.T) {
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
+	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{}
+	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
+	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		NoLogin:    false,
+		NoPull:     false,
+		Platform:   "linux/amd64",
+	})
+	assert.NoError(t, err)
+
+	logMock.Check(t, []string{
+		"info: building for platform <green>linux/amd64</green>\n",
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    CI_BRANCH: master\n    CI_COMMIT: sha\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: linux/amd64\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
+		"info: Build successful"})
+}
+
 func TestBuild_WithSkipLogin(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()

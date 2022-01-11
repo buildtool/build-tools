@@ -1,21 +1,25 @@
 # build
 
-Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image.
-By following the conventions no additional flags are needed, but the following flags are available:
+Performs a `docker build`, using a `Dockerfile` to build the application and tags the resulting image. By following the
+conventions no additional flags are needed, but the following flags are available:
 
-|      Flag                        |                   Description                                        |
-| :------------------------------- | :-------------------------------------------------------------------- |
-| `--file`,`-f` `<path to Dockerfile>`    | Used to override the default `Dockerfile` location (which is `$PWD`) |
-| `--no-login`                     | Disables login to docker registry (good for local testing)           |
-| `--no-pull`                      | Disables pulling of remote images if they already exist (good for local testing)           |
-| `--build-arg key=value`          | Additional Docker [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) |
+| Flag                                 | Description                                                                                                                                             |
+|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--file`,`-f` `<path to Dockerfile>` | Used to override the default `Dockerfile` location (which is `$PWD`)                                                                                    |
+| `--no-login`                         | Disables login to docker registry (good for local testing)                                                                                              |
+| `--no-pull`                          | Disables pulling of remote images if they already exist (good for local testing)                                                                        |
+| `--build-arg key=value`              | Additional Docker [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)                         |
+| `--platform value`                   | Specify target architecture [architecture](https://docs.docker.com/desktop/multi-arch/). should be a single string for example `--platform linux/amd64` |
 
 ```sh
 $ build --file docker/Dockerfile.build --skip-login --build-arg AUTH_TOKEN=abc
 ```
 
 ## Build-args
-The following [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) are automatically made available:
+
+The
+following [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)
+are automatically made available:
 
 |      Arg    |                   Value                                |
 | :---------- | :----------------------------------------------------- |
@@ -32,13 +36,15 @@ RUN echo "Building $CI_BRANCH"
 ```
 
 ## Export content from build
+
 Buildtools `build` command support exporting content from the actual docker build process,
-see [Custom build outputs](https://docs.docker.com/engine/reference/commandline/build/#custom-build-outputs).
-By specifying a special stage in the `Dockerfile` and name it `export` you can use the `COPY`
-directive to copy files from the build context to the local machine.
-The copied files will be placed in a folder `exported`
+see [Custom build outputs](https://docs.docker.com/engine/reference/commandline/build/#custom-build-outputs). By
+specifying a special stage in the `Dockerfile` and name it `export` you can use the `COPY`
+directive to copy files from the build context to the local machine. The copied files will be placed in a
+folder `exported`
 
 ### Example
+
 Consider a `Dockerfile` like this:
 
 ```dockerfile
