@@ -10,7 +10,7 @@ require (
 	github.com/alecthomas/kong v0.2.18
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go v1.42.35
-	github.com/caarlos0/env/v6 v6.7.2
+	github.com/caarlos0/env/v6 v6.9.1
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/containerd/console v1.0.3
 	github.com/containerd/containerd v1.5.9
