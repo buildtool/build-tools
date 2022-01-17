@@ -94,7 +94,16 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		}
 		err = commitAndPush(target, keys, name, buffer, args, gitConfig)
 		if err != nil {
-			return err
+			if strings.HasPrefix(err.Error(), git.ErrNonFastForwardUpdate.Error()) {
+				// Retry one more time
+				log.Infof("Non fast-forward error during push, retrying")
+				err = commitAndPush(target, keys, name, buffer, args, gitConfig)
+				if err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
 		}
 	} else {
 		err := os.WriteFile(args.Out, buffer.Bytes(), 0666)
