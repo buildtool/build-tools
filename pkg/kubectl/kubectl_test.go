@@ -403,7 +403,7 @@ var cmdError *string
 var cmdOut *string
 var fatal = false
 
-func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
+func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 	var ctx, ns, file *string
 	var timeout *time.Duration
 	var showEvents *bool
@@ -469,6 +469,6 @@ func mockCmd(_ io.Reader, out, _ io.Writer) *cobra.Command {
 	selector = cmd.Flags().StringP("selector", "l", "", "")
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 	verbose = cmd.Flags().StringP("v", "v", "0", "")
-
+	cmd.SetArgs(args)
 	return &cmd
 }

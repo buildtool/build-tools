@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,12 +14,14 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/klog/v2"
 	"k8s.io/kubectl/pkg/cmd"
+	"k8s.io/kubectl/pkg/cmd/plugin"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
-	// To enable flags for kubectl like --v
-	_ "k8s.io/kubectl/pkg/util/logs"
 
 	"github.com/buildtool/build-tools/pkg/cli"
 	"github.com/buildtool/build-tools/pkg/config"
@@ -41,7 +44,21 @@ type kubectl struct {
 	out     io.Writer
 }
 
-var newKubectlCmd = cmd.NewKubectlCommand
+func init() {
+	// To enable flags for kubectl like --v
+	klog.InitFlags(flag.CommandLine)
+}
+
+var newKubectlCmd = func(in io.Reader, out, errout io.Writer, args []string) *cobra.Command {
+	c := cmd.NewKubectlCommand(cmd.KubectlOptions{
+		PluginHandler: cmd.NewDefaultPluginHandler(plugin.ValidPluginFilenamePrefixes),
+		ConfigFlags:   genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag(),
+		IOStreams:     genericclioptions.IOStreams{In: in, Out: out, ErrOut: errout},
+	})
+	c.SetArgs(args)
+	c.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+	return c
+}
 
 func New(target *config.Target) Kubectl {
 	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
@@ -107,8 +124,7 @@ func (k kubectl) Apply(input string) error {
 	}
 
 	args := append(k.defaultArgs(), "apply", "-f", file)
-	c := newKubectlCmd(os.Stdin, k.out, k.out)
-	c.SetArgs(args)
+	c := newKubectlCmd(os.Stdin, k.out, k.out, args)
 	return c.Execute()
 }
 
@@ -121,8 +137,7 @@ func (k kubectl) DeploymentExists(name string) bool {
 	args = append(args, "get", "deployment", name, "--ignore-not-found")
 	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
-	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
-	c.SetArgs(args)
+	c := newKubectlCmd(os.Stdin, &buffer, &buffer, args)
 	_ = c.Execute()
 	return buffer.Len() > 0
 }
@@ -131,8 +146,7 @@ func (k kubectl) RolloutStatus(name, timeout string) bool {
 	args := k.defaultArgs()
 	args = append(args, "rollout", "status", "deployment", fmt.Sprintf("--timeout=%s", timeout), name)
 	log.Debugf("kubectl %s\n", strings.Join(args, " "))
-	c := newKubectlCmd(os.Stdin, k.out, k.out)
-	c.SetArgs(args)
+	c := newKubectlCmd(os.Stdin, k.out, k.out, args)
 	success := true
 	cmdutil.BehaviorOnFatal(func(str string, code int) {
 		fmt.Println(str)
@@ -149,8 +163,7 @@ func (k kubectl) DeploymentEvents(name string) string {
 	args = append(args, "describe", "deployment", name, "--show-events=true")
 	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
-	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
-	c.SetArgs(args)
+	c := newKubectlCmd(os.Stdin, &buffer, &buffer, args)
 	if err := c.Execute(); err != nil {
 		return err.Error()
 	}
@@ -162,8 +175,7 @@ func (k kubectl) PodEvents(name string) string {
 	args = append(args, "describe", "pods", "-l", fmt.Sprintf("app=%s", name), "--show-events=true")
 	log.Debugf("kubectl %s\n", strings.Join(args, " "))
 	buffer := bytes.Buffer{}
-	c := newKubectlCmd(os.Stdin, &buffer, &buffer)
-	c.SetArgs(args)
+	c := newKubectlCmd(os.Stdin, &buffer, &buffer, args)
 	if err := c.Execute(); err != nil {
 		return err.Error()
 	}
