@@ -142,7 +142,7 @@ data:
 			want: 0,
 			wantLogged: []string{
 				"info: generating...",
-				"^info: pushing commit [0-9a-f]+ to .*$",
+				"^info: pushing commit [0-9a-f]+ to .*\n$",
 			},
 			wantCommits: 1,
 		},
@@ -173,7 +173,7 @@ data:
 			want: 0,
 			wantLogged: []string{
 				"info: generating...",
-				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy-repo$",
+				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy-repo\n$",
 			},
 			wantCommits: 1,
 		},
@@ -200,9 +200,9 @@ data:
 			},
 			want: 0,
 			wantLogged: []string{
-				"info: Using passed tag <green>testing</green> to promote",
-				"info: generating...",
-				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path/dummy$",
+				"info: Using passed tag <green>testing</green> to promote\n",
+				"info: generating...\n",
+				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path/dummy\n$",
 			},
 			wantCommits: 0,
 		},
@@ -232,7 +232,7 @@ data:
 			want: 0,
 			wantLogged: []string{
 				"info: generating...",
-				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy$",
+				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy\n$",
 			},
 			wantCommits: 1,
 		},
