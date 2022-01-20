@@ -65,12 +65,12 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 		currentCI := cfg.CurrentCI()
 		if promoteArgs.Tag == "" {
 			if !ci.IsValid(currentCI) {
-				log.Errorf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?")
+				log.Errorf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?\n")
 				return -3
 			}
 			promoteArgs.Tag = currentCI.Commit()
 		} else {
-			log.Infof("Using passed tag <green>%s</green> to promote", promoteArgs.Tag)
+			log.Infof("Using passed tag <green>%s</green> to promote\n", promoteArgs.Tag)
 		}
 
 		tstamp := time.Now().Format(time.RFC3339)
@@ -94,9 +94,9 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitC
 		}
 		err = commitAndPush(target, keys, name, buffer, args, gitConfig)
 		if err != nil {
-			if strings.HasPrefix(err.Error(), git.ErrNonFastForwardUpdate.Error()) {
+			if strings.HasPrefix(err.Error(), "git push error") {
 				// Retry one more time
-				log.Infof("Non fast-forward error during push, retrying")
+				log.Infof("error during push, retrying\n")
 				err = commitAndPush(target, keys, name, buffer, args, gitConfig)
 				if err != nil {
 					return err
@@ -123,7 +123,7 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 	defer func(path string) {
 		_ = os.RemoveAll(path)
 	}(cloneDir)
-	log.Debugf("Cloning into %s", cloneDir)
+	log.Debugf("Cloning into %s\n", cloneDir)
 	repo, err := git.PlainClone(cloneDir, false, &git.CloneOptions{
 		URL:  target.URL,
 		Auth: keys,
@@ -138,7 +138,7 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 
 	normalized := strings.ReplaceAll(name, "_", "-")
 	if name != normalized {
-		log.Debugf("Normalized name from %s to %s", name, normalized)
+		log.Debugf("Normalized name from %s to %s\n", name, normalized)
 	}
 	err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
 	if err != nil {
@@ -170,12 +170,12 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 	if err != nil {
 		return err
 	}
-	log.Infof("pushing commit %s to %s", commit.Hash, filepath.Join(target.URL, target.Path, normalized))
+	log.Infof("pushing commit %s to %s\n", commit.Hash, filepath.Join(target.URL, target.Path, normalized))
 	err = repo.Push(&git.PushOptions{
 		Auth: keys,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("git push error: %w", err)
 	}
 	return nil
 }
@@ -194,7 +194,7 @@ func handleSSHKey(args Args, gitConfig config.Git) (*ssh.PublicKeys, error) {
 		}
 		privKey = fmt.Sprintf("%s%s", home, strings.TrimPrefix(privKey, "~"))
 	}
-	log.Debugf("Will use SSH-key from %s", privKey)
+	log.Debugf("Will use SSH-key from %s\n", privKey)
 	keys, err := ssh.NewPublicKeysFromFile(args.User, privKey, args.Password)
 	if err != nil {
 		return nil, fmt.Errorf("ssh key: %w", err)
@@ -208,7 +208,7 @@ func generate(dir string, args Args, timestamp string) (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("no deployment descriptors found in k8s directory")
 	}
 
-	log.Info("generating...")
+	log.Info("generating...\n")
 	buffer := &bytes.Buffer{}
 	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
 		return nil, err
