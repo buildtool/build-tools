@@ -31,7 +31,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
-	github.com/liamg/tml v0.4.0
+	github.com/liamg/tml v0.6.0
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/moby/buildkit v0.9.3
