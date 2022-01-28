@@ -58,11 +58,11 @@ require (
 	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
 	google.golang.org/grpc v1.42.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	k8s.io/client-go v0.23.2
+	k8s.io/client-go v0.23.3
 	k8s.io/klog/v2 v2.30.0
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubectl v0.23.2
-	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
+	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
 	sigs.k8s.io/kustomize/kustomize/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
@@ -135,8 +135,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/api v0.23.2 // indirect
-	k8s.io/apimachinery v0.23.2 // indirect
+	k8s.io/api v0.23.3 // indirect
+	k8s.io/apimachinery v0.23.3 // indirect
 	k8s.io/component-base v0.23.2 // indirect
 	k8s.io/component-helpers v0.23.2 // indirect
 	k8s.io/metrics v0.23.2 // indirect
