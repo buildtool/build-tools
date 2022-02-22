@@ -125,7 +125,17 @@ func (k kubectl) Apply(input string) error {
 
 	args := append(k.defaultArgs(), "apply", "-f", file)
 	c := newKubectlCmd(os.Stdin, k.out, k.out, args)
-	return c.Execute()
+	var cmdErr error
+	cmdutil.BehaviorOnFatal(func(s string, i int) {
+		if !strings.Contains(s, "Kind") {
+			cmdErr = fmt.Errorf("OK")
+		}
+	})
+	err = c.Execute()
+	if cmdErr != nil {
+		return err
+	}
+	return err
 }
 
 func (k kubectl) Cleanup() {

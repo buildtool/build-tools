@@ -25,7 +25,7 @@ func TestDeploy_MissingDeploymentFilesDir(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(".", "abc123", "20190513-17:22:36", client, Args{
+	err := Deploy(".", "abc123", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -50,7 +50,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -84,7 +84,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -115,7 +115,7 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -146,7 +146,7 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -183,7 +183,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "dummy",
 		Context:   "",
@@ -218,7 +218,7 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -255,7 +255,7 @@ echo "Prod-script with suffix"`
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -290,7 +290,7 @@ echo "Prod-script with suffix"`
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -322,7 +322,7 @@ echo "Prod-script with suffix"`
 	scriptName := filepath.Join(name, "k8s", "setup-prod.sh")
 	_ = ioutil.WriteFile(scriptName, []byte(script), 0666)
 
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "prod",
 		Context:   "",
@@ -353,7 +353,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -370,7 +370,7 @@ metadata:
 	})
 }
 
-func TestDeploy_ReplacingCommitAndTimestamp(t *testing.T) {
+func TestDeploy_ReplacingCommitAndTimestampAndImage(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},
 	}
@@ -384,6 +384,7 @@ kind: Namespace
 metadata:
   name: dummy
   commit: ${COMMIT}
+  image: ${IMAGE}
   timestamp: ${TIMESTAMP}
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
@@ -392,7 +393,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "2019-05-13T17:22:36Z01:00", client, Args{
+	err := Deploy(name, "registryUrl", "image", "2019-05-13T17:22:36Z01:00", client, Args{
 		Globals:   args.Globals{},
 		Target:    "test",
 		Context:   "",
@@ -408,13 +409,14 @@ kind: Namespace
 metadata:
   name: dummy
   commit: abc123
+  image: registryUrl/image:abc123
   timestamp: 2019-05-13T17:22:36Z01:00
 `
 	assert.Equal(t, expectedInput, client.Inputs[0])
 	logMock.Check(t, []string{
 		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green>test</green>\n",
 		"debug: using file '<green>deploy.yaml</green>' for target: <green>test</green>\n",
-		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n  commit: abc123\n  timestamp: 2019-05-13T17:22:36Z01:00\n\n---\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n  commit: abc123\n  image: registryUrl/image:abc123\n  timestamp: 2019-05-13T17:22:36Z01:00\n\n---\n",
 	})
 }
 
@@ -439,7 +441,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",
@@ -483,7 +485,7 @@ metadata:
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := Deploy(name, "image", "20190513-17:22:36", client, Args{
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
 		Target:    "",
 		Context:   "",

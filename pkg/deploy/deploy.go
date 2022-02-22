@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
+
 	"github.com/buildtool/build-tools/pkg/file"
 
 	"github.com/buildtool/build-tools/pkg/args"
@@ -73,7 +74,7 @@ func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 		tstamp := time.Now().Format(time.RFC3339)
 		client := kubectl.New(env)
 		defer client.Cleanup()
-		if err := Deploy(dir, currentCI.BuildName(), tstamp, client, deployArgs); err != nil {
+		if err := Deploy(dir, cfg.CurrentRegistry().RegistryUrl(), currentCI.BuildName(), tstamp, client, deployArgs); err != nil {
 			log.Error(err.Error())
 			return -4
 
@@ -82,9 +83,11 @@ func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 	return 0
 }
 
-func Deploy(dir, buildName, timestamp string, client kubectl.Kubectl, deployArgs Args) error {
+func Deploy(dir, registryUrl, buildName, timestamp string, client kubectl.Kubectl, deployArgs Args) error {
+	imageName := fmt.Sprintf("%s/%s:%s", registryUrl, buildName, deployArgs.Tag)
+
 	deploymentFiles := filepath.Join(dir, "k8s")
-	if err := processDir(deploymentFiles, deployArgs.Tag, timestamp, deployArgs.Target, client); err != nil {
+	if err := processDir(deploymentFiles, deployArgs.Tag, timestamp, deployArgs.Target, imageName, client); err != nil {
 		return err
 	}
 
@@ -99,7 +102,7 @@ func Deploy(dir, buildName, timestamp string, client kubectl.Kubectl, deployArgs
 	return nil
 }
 
-func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) error {
+func processDir(dir, commit, timestamp, target, imageName string, client kubectl.Kubectl) error {
 	files, err := file.FindFilesForTarget(dir, target)
 	if err != nil {
 		return err
@@ -112,7 +115,7 @@ func processDir(dir, commit, timestamp, target string, client kubectl.Kubectl) e
 		if f, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 			return err
 		} else {
-			if err := processFile(f, commit, timestamp, client); err != nil {
+			if err := processFile(f, commit, timestamp, imageName, client); err != nil {
 				return err
 			}
 		}
@@ -132,12 +135,12 @@ func execFile(file string) error {
 	return cmd.Run()
 }
 
-func processFile(file *os.File, commit, timestamp string, client kubectl.Kubectl) error {
+func processFile(file *os.File, commit, timestamp, image string, client kubectl.Kubectl) error {
 	if bytes, err := ioutil.ReadAll(file); err != nil {
 		return err
 	} else {
 		content := string(bytes)
-		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
+		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp, "${IMAGE}", image)
 		kubeContent := r.Replace(content)
 		log.Debugf("trying to apply: \n---\n%s\n---\n", kubeContent)
 		if err := client.Apply(kubeContent); err != nil {

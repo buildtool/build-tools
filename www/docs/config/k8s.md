@@ -17,6 +17,17 @@ rules in the above paragraph will be executed, with the difference that no **com
 
 All other files in `k8s` will be ignored by the `deploy` command.
 
+## Available variables
+The following variables are possible to use for substitution in the descriptor files:
+
+
+| Parameter   | Description                                                 |
+|:------------|:------------------------------------------------------------|
+| `IMAGE`     | The full image name (`registry/name:tag`)                   |
+| `COMMIT`    | The commit SHA (`3b701067e6a6943c773b9dc183fcc39cd31a2ff0`) |
+| `TIMESTAMP` | The current time (`2022-02-22T09:16:01+01:00`)              |
+
+
 ## Example
 
 ````

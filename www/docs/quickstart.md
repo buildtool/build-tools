@@ -93,6 +93,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: quickstart
+  annotations:
+    kubernetes.io/change-cause: "${TIMESTAMP} Deployed commit id: ${COMMIT}"
   labels:
     app: quickstart
 spec:
@@ -108,7 +110,7 @@ spec:
       containers:
       - name: quickstart
         imagePullPolicy: IfNotPresent
-        image: noregistry/quickstart:${COMMIT}
+        image: ${IMAGE}
 
 ```
 
