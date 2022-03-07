@@ -357,9 +357,8 @@ data:
 
 func TestPromote_OutParam(t *testing.T) {
 	type args struct {
-		target    *config.Gitops
-		args      Args
-		gitConfig config.Git
+		target *config.Gitops
+		args   Args
 	}
 	tests := []struct {
 		name       string
@@ -394,7 +393,9 @@ func TestPromote_OutParam(t *testing.T) {
 			assert.NoError(t, err)
 			err = ioutil.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0666)
 			assert.NoError(t, err)
-			if err := Promote(name, "dummy", "", tt.args.target, tt.args.args, tt.args.gitConfig); (err != nil) != tt.wantErr {
+			cfg := config.InitEmptyConfig()
+
+			if err := Promote(name, "dummy", "", tt.args.target, tt.args.args, cfg); (err != nil) != tt.wantErr {
 				t.Errorf("Promote() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			CheckLogged(t, tt.wantLogged, logMock.Logged)

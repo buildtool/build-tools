@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/buildtool/build-tools/pkg/file"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+
+	"github.com/buildtool/build-tools/pkg/file"
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/ci"
@@ -74,7 +75,7 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 		}
 
 		tstamp := time.Now().Format(time.RFC3339)
-		if err := Promote(dir, currentCI.BuildName(), tstamp, target, promoteArgs, cfg.Git); err != nil {
+		if err := Promote(dir, currentCI.BuildName(), tstamp, target, promoteArgs, cfg); err != nil {
 			log.Error(err.Error())
 			return -4
 		}
@@ -82,22 +83,23 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 	return 0
 }
 
-func Promote(dir, name, timestamp string, target *config.Gitops, args Args, gitConfig config.Git) error {
-	buffer, err := generate(dir, args, timestamp)
+func Promote(dir, name, timestamp string, target *config.Gitops, args Args, cfg *config.Config) error {
+	imageName := fmt.Sprintf("%s/%s:%s", cfg.CurrentRegistry().RegistryUrl(), cfg.CurrentCI().BuildName(), args.Tag)
+	buffer, err := generate(dir, args, timestamp, imageName)
 	if err != nil {
 		return err
 	}
 	if args.Out == "" {
-		keys, err := handleSSHKey(args, gitConfig)
+		keys, err := handleSSHKey(args, cfg.Git)
 		if err != nil {
 			return err
 		}
-		err = commitAndPush(target, keys, name, buffer, args, gitConfig)
+		err = commitAndPush(target, keys, name, buffer, args, cfg.Git)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "git push error") {
 				// Retry one more time
 				log.Infof("error during push, retrying\n")
-				err = commitAndPush(target, keys, name, buffer, args, gitConfig)
+				err = commitAndPush(target, keys, name, buffer, args, cfg.Git)
 				if err != nil {
 					return err
 				}
@@ -202,7 +204,7 @@ func handleSSHKey(args Args, gitConfig config.Git) (*ssh.PublicKeys, error) {
 	return keys, err
 }
 
-func generate(dir string, args Args, timestamp string) (*bytes.Buffer, error) {
+func generate(dir string, args Args, timestamp, imageName string) (*bytes.Buffer, error) {
 	deploymentFiles := filepath.Join(dir, "k8s")
 	if _, err := os.Lstat(deploymentFiles); os.IsNotExist(err) {
 		return nil, fmt.Errorf("no deployment descriptors found in k8s directory")
@@ -210,7 +212,7 @@ func generate(dir string, args Args, timestamp string) (*bytes.Buffer, error) {
 
 	log.Info("generating...\n")
 	buffer := &bytes.Buffer{}
-	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target); err != nil {
+	if err := processDir(buffer, deploymentFiles, args.Tag, timestamp, args.Target, imageName); err != nil {
 		return nil, err
 	}
 	return buffer, nil
@@ -223,7 +225,7 @@ func defaultIfEmpty(s string, def string) string {
 	return s
 }
 
-func processDir(writer io.StringWriter, dir, commit, timestamp, target string) error {
+func processDir(writer io.StringWriter, dir, commit, timestamp, target, imageName string) error {
 	files, err := file.FindFilesForTarget(dir, target)
 	if err != nil {
 		return err
@@ -232,7 +234,7 @@ func processDir(writer io.StringWriter, dir, commit, timestamp, target string) e
 		if f, err := os.Open(filepath.Join(dir, info.Name())); err != nil {
 			return err
 		} else {
-			if err := processFile(writer, f, commit, timestamp); err != nil {
+			if err := processFile(writer, f, commit, timestamp, imageName); err != nil {
 				return err
 			}
 		}
@@ -240,12 +242,12 @@ func processDir(writer io.StringWriter, dir, commit, timestamp, target string) e
 	return nil
 }
 
-func processFile(writer io.StringWriter, file *os.File, commit, timestamp string) error {
+func processFile(writer io.StringWriter, file *os.File, commit, timestamp, imageName string) error {
 	if buff, err := ioutil.ReadAll(file); err != nil {
 		return err
 	} else {
 		content := string(buff)
-		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp)
+		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp, "${IMAGE}", imageName)
 		kubeContent := r.Replace(content)
 		_, err := writer.WriteString(kubeContent)
 		if err != nil {
