@@ -96,7 +96,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, cfg 
 		}
 		err = commitAndPush(target, keys, name, buffer, args, cfg.Git)
 		if err != nil {
-			if strings.HasPrefix(err.Error(), "git push error") {
+			if strings.HasPrefix(err.Error(), "git push error") || strings.Contains(err.Error(), "cannot lock ref") {
 				// Retry one more time
 				log.Infof("error during push, retrying\n")
 				err = commitAndPush(target, keys, name, buffer, args, cfg.Git)
