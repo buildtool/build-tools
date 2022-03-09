@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
-	"github.com/docker/docker/pkg/archive"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/buildtool/build-tools/pkg"
@@ -60,8 +59,9 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -75,9 +75,8 @@ func TestBuild_BrokenConfig(t *testing.T) {
 }
 
 func TestBuild_NoRegistry(t *testing.T) {
-	filename := filepath.Join(name, "Dockerfile")
-	_ = ioutil.WriteFile(filename, []byte("FROM scratch"), 0777)
-	defer func() { _ = os.RemoveAll(filename) }()
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
 
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
@@ -115,8 +114,9 @@ func TestBuild_LoginError(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -141,8 +141,9 @@ func TestBuild_NoCI(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -171,8 +172,9 @@ func TestBuild_BuildError(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -203,8 +205,9 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -235,8 +238,9 @@ func TestBuild_ErrorOutput(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{BrokenOutput: true}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -269,8 +273,9 @@ func TestBuild_ValidOutput(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{ResponseBody: bufio.NewReader(f)}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err = build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err = build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -302,8 +307,9 @@ func TestBuild_BrokenBuildResult(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{ResponseBody: strings.NewReader(`{"id":"moby.image.id","aux":{"id":123}}`)}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -330,8 +336,10 @@ func TestBuild_WithBuildArgs(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
 	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1", "buildargs2=2"},
@@ -355,8 +363,10 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1=1", "buildargs2", "buildargs3=", "buildargs4"},
@@ -389,8 +399,10 @@ func TestBuild_WithPlatform(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		NoLogin:    false,
@@ -418,9 +430,11 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -448,9 +462,11 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -493,8 +509,10 @@ func TestBuild_MasterBranch(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -529,8 +547,10 @@ func TestBuild_MainBranch(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -565,9 +585,11 @@ func TestBuild_WithImageName(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
 	client := &docker.MockDocker{}
-	buildContext, _ := archive.Generate("Dockerfile", "FROM scratch")
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -603,18 +625,6 @@ func TestBuild_BadDockerHost(t *testing.T) {
 	logMock.Check(t, []string{})
 }
 
-func TestBuild_UnreadableDockerignore(t *testing.T) {
-	filename := filepath.Join(name, ".dockerignore")
-	_ = os.Mkdir(filename, 0777)
-	defer func() { _ = os.RemoveAll(filename) }()
-	logMock := mocks.New()
-	log.SetHandler(logMock)
-	log.SetLevel(log.DebugLevel)
-	err := DoBuild(name, Args{})
-	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
-	logMock.Check(t, []string{})
-}
-
 func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	defer pkg.SetEnv("CI_COMMIT_SHA", "abc123")()
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
@@ -623,12 +633,16 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	defer pkg.SetEnv("DOCKERHUB_USERNAME", "user")()
 	defer pkg.SetEnv("DOCKERHUB_PASSWORD", "pass")()
 
+	defer func() { _ = os.RemoveAll(name) }()
+	dockerfile := filepath.Join(name, "Dockerfile")
+	_ = os.MkdirAll(dockerfile, 0777)
+
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 
-	err := build(client, name, ioutil.NopCloser(&brokenReader{}), Args{
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -636,12 +650,14 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 		NoPull:     false,
 	})
 
-	assert.EqualError(t, err, "read error")
+	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", dockerfile))
 	logMock.Check(t, []string{
 		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
-		"debug: Logged in\n"})
+		"debug: Logged in\n",
+		fmt.Sprintf("error: <red>read %s: is a directory</red>", dockerfile),
+	})
 }
 
 func TestBuild_HandleCaching(t *testing.T) {
@@ -656,6 +672,7 @@ func TestBuild_HandleCaching(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
+
 	dockerfile := `
 FROM scratch as build
 RUN echo apa > file
@@ -665,9 +682,10 @@ FROM scratch
 COPY --from=build file .
 COPY --from=test file2 .
 `
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", dockerfile)
 
-	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -721,9 +739,9 @@ FROM scratch
 COPY --from=build file .
 COPY --from=test file2 .
 `
-
-	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", dockerfile)
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -768,9 +786,9 @@ FROM scratch
 COPY --from=build file .
 COPY --from=test file2 .
 `
-
-	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", dockerfile)
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -834,9 +852,9 @@ FROM scratch as export
 COPY --from=build file .
 COPY --from=test file2 .
 `
-
-	buildContext, _ := archive.Generate("Dockerfile", dockerfile)
-	err := build(client, name, ioutil.NopCloser(buildContext), Args{
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", dockerfile)
+	err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -886,3 +904,10 @@ func (b brokenReader) Read([]byte) (n int, err error) {
 }
 
 var _ io.Reader = &brokenReader{}
+
+func write(dir, file, content string) error {
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+}

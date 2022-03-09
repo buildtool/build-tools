@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -16,15 +15,9 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/buildtool/build-tools/pkg/args"
-	"github.com/buildtool/build-tools/pkg/ci"
-	"github.com/buildtool/build-tools/pkg/config"
-	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/buildtool/build-tools/pkg/tar"
 	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
 	dkr "github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	controlapi "github.com/moby/buildkit/api/services/control"
@@ -35,6 +28,11 @@ import (
 	fsutiltypes "github.com/tonistiigi/fsutil/types"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
+
+	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/ci"
+	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/buildtool/build-tools/pkg/docker"
 )
 
 type Args struct {
@@ -51,23 +49,11 @@ func DoBuild(dir string, buildArgs Args) error {
 	if err != nil {
 		return err
 	}
-	buildContext, err := createBuildContext(dir, buildArgs.Dockerfile)
-	if err != nil {
-		return err
-	}
-	return build(dkrClient, dir, buildContext, buildArgs)
+	return build(dkrClient, dir, buildArgs)
 }
 
 var dockerClient = func() (docker.Client, error) {
 	return dkr.NewClientWithOpts(dkr.FromEnv)
-}
-
-func createBuildContext(dir, dockerfile string) (io.ReadCloser, error) {
-	ignored, err := docker.ParseDockerignore(dir, dockerfile)
-	if err != nil {
-		return nil, err
-	}
-	return archive.TarWithOptions(dir, &archive.TarOptions{ExcludePatterns: ignored})
 }
 
 var setupSession = provideSession
@@ -96,7 +82,7 @@ func provideSession(dir string) Session {
 	return s
 }
 
-func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVars Args) error {
+func build(client docker.Client, dir string, buildVars Args) error {
 	cfg, err := config.Load(dir)
 	if err != nil {
 		return err
@@ -121,12 +107,12 @@ func build(client docker.Client, dir string, buildContext io.ReadCloser, buildVa
 		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
 	}
 
-	var buf bytes.Buffer
-	tee := io.TeeReader(buildContext, &buf)
-	stages, err := findStages(tee, buildVars.Dockerfile)
+	content, err := ioutil.ReadFile(filepath.Join(dir, buildVars.Dockerfile))
 	if err != nil {
+		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return err
 	}
+	stages := docker.FindStages(string(content))
 	if !ci.IsValid(currentCI) {
 		return fmt.Errorf("commit and/or branch information is <red>missing</red> (perhaps you're not in a Git repository or forgot to set environment variables?)")
 	}
@@ -304,16 +290,6 @@ func logVerbose(options types.ImageBuildOptions) {
 	loggableOptions.SessionID = ""
 	marshal, _ := yaml.Marshal(loggableOptions)
 	log.Debugf("performing docker build with options (auths removed):\n%s\n", marshal)
-}
-
-func findStages(buildContext io.Reader, dockerfile string) ([]string, error) {
-	content, err := tar.ExtractFileContent(buildContext, dockerfile)
-	if err != nil {
-		return nil, err
-	}
-	stages := docker.FindStages(content)
-
-	return stages, nil
 }
 
 func getBuildSharedKey(dir string) string {
