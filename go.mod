@@ -65,7 +65,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require k8s.io/cli-runtime v0.23.4
+require k8s.io/cli-runtime v0.23.5
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
