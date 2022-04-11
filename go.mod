@@ -57,7 +57,7 @@ require (
 	google.golang.org/grpc v1.43.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/client-go v0.23.5
-	k8s.io/klog/v2 v2.40.1
+	k8s.io/klog/v2 v2.60.1
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubectl v0.23.4
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
@@ -65,7 +65,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require k8s.io/cli-runtime v0.23.4
+require k8s.io/cli-runtime v0.23.5
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
