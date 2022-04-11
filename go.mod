@@ -40,7 +40,7 @@ require (
 	github.com/russross/blackfriday v1.6.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/cobra v1.3.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	github.com/tonistiigi/fsutil v0.0.0-20210609172227-d72af97c0eaf
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
@@ -57,7 +57,7 @@ require (
 	google.golang.org/grpc v1.43.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/client-go v0.23.5
-	k8s.io/klog/v2 v2.40.1
+	k8s.io/klog/v2 v2.60.1
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubectl v0.23.4
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
