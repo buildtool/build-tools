@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
 	dkr "github.com/docker/docker/client"
@@ -123,8 +124,9 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	var caches []string
 
 	buildArgs := map[string]*string{
-		"CI_COMMIT": &commit,
-		"CI_BRANCH": &branch,
+		"BUILDKIT_INLINE_CACHE": aws.String("1"),
+		"CI_COMMIT":             &commit,
+		"CI_BRANCH":             &branch,
 	}
 	for _, arg := range buildVars.BuildArgs {
 		split := strings.Split(arg, "=")
