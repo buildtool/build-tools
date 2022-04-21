@@ -1,6 +1,6 @@
 FROM golang:1.18.0 as go-build
 
-RUN go get sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator
+RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@latest
 
 FROM debian:bullseye-20220328-slim
 
