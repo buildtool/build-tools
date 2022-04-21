@@ -52,7 +52,13 @@ func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenReque
 	// do request anonymously
 	resp, err := authutil.FetchToken(ctx, http.DefaultClient, nil, to)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch anonymous token, %w", err)
+		// try with auth
+		to.Username = a.authConfig.Username
+		to.Secret = a.authConfig.Password
+		resp, err = authutil.FetchToken(ctx, http.DefaultClient, nil, to)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch anonymous and authenticated token, %w", err)
+		}
 	}
 	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresIn), nil
 }
