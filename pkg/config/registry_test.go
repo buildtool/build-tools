@@ -76,7 +76,7 @@ func TestEcr_Identify_MissingDockerRegistry(t *testing.T) {
 func TestGitlab_Identify(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
-	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
+	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name)
@@ -90,7 +90,7 @@ func TestGitlab_Identify(t *testing.T) {
 func TestGitlab_Name(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
-	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
+	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
 	cfg, err := Load(name)
 	assert.NoError(t, err)
@@ -101,7 +101,7 @@ func TestGitlab_Name(t *testing.T) {
 func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com")()
-	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
+	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
 	out := &bytes.Buffer{}
 	cfg, err := Load(name)
@@ -115,7 +115,7 @@ func TestGitlab_RepositoryWithoutSlash(t *testing.T) {
 func TestGitlab_RegistryFallback(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "")()
-	defer pkg.SetEnv("CI_BUILD_TOKEN", "token")()
+	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
 	dir, _ := ioutil.TempDir("", "build-tools")
 	defer os.RemoveAll(dir)
