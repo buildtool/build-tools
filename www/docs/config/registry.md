@@ -58,11 +58,12 @@ To authenticate `token` or a combination of `username` and `password` must be pr
 ### gitlab
 
 
-| Parameter        | Description                                          | Env variable            |
-| :--------------- | :--------------------------------------------------- | :---------------------- |
-| `registry`       | The repository part of the docker image name         | `CI_REGISTRY`           |
-| `repository`     | The repository part of the docker image name         | `CI_REGISTRY_IMAGE`     |
-| `token`          | A personal access token to use for authentication    | `CI_TOKEN`              |
+| Parameter    | Description                                       | Env variable        |
+|:-------------|:--------------------------------------------------|:--------------------|
+| `registry`   | The registry part of the docker image name        | `CI_REGISTRY`       |
+| `repository` | The repository part of the docker image name      | `CI_REGISTRY_IMAGE` |
+| `user`       | User to authenticate                              | `CI_REGISTRY_USER`  |
+| `token`      | A personal access token to use for authentication | `CI_JOB_TOKEN`      |
 
 ### quay
 
