@@ -75,6 +75,7 @@ func TestEcr_Identify_MissingDockerRegistry(t *testing.T) {
 
 func TestGitlab_Identify(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
+	defer pkg.SetEnv("CI_REGISTRY_USER", "gitlab-ci-token")()
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "registry.gitlab.com/group/image")()
 	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 

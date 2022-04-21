@@ -15,6 +15,7 @@ import (
 type Gitlab struct {
 	dockerRegistry `yaml:"-"`
 	Registry       string `yaml:"registry" env:"CI_REGISTRY"`
+	User           string `yaml:"user" env:"CI_REGISTRY_USER"`
 	Repository     string `yaml:"repository" env:"CI_REGISTRY_IMAGE"`
 	Token          string `yaml:"token,omitempty" env:"CI_JOB_TOKEN"`
 }
@@ -30,7 +31,7 @@ func (r Gitlab) Configured() bool {
 }
 
 func (r Gitlab) Login(client docker.Client) error {
-	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
 		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
@@ -39,7 +40,7 @@ func (r Gitlab) Login(client docker.Client) error {
 }
 
 func (r Gitlab) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: "gitlab-ci-token", Password: r.Token, ServerAddress: r.Registry}
+	return types.AuthConfig{Username: r.User, Password: r.Token, ServerAddress: r.Registry}
 }
 
 func (r Gitlab) GetAuthInfo() string {
