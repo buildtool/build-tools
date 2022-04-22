@@ -121,7 +121,18 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
 	log.Debugf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch)
-	var caches []string
+	var tags []string
+	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
+	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
+	tags = append(tags, []string{
+		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+		branchTag,
+	}...)
+	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
+		tags = append(tags, latestTag)
+	}
+
+	caches := []string{branchTag, latestTag}
 
 	buildArgs := map[string]*string{
 		"BUILDKIT_INLINE_CACHE": aws.String("1"),
@@ -152,18 +163,6 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		}
 	}
 
-	var tags []string
-	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
-	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
-	tags = append(tags, []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
-		branchTag,
-	}...)
-	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
-		tags = append(tags, latestTag)
-	}
-
-	caches = append([]string{branchTag, latestTag}, caches...)
 	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
 }
 
