@@ -13,3 +13,4 @@ HTTPHeaders:
   "Range": "bytes=0-10"
   "Accept": "*/*"
   "User-Agent": "chrome"
+  "Accept-Encoding": "gzip"
