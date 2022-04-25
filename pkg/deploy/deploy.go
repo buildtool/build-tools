@@ -140,6 +140,10 @@ func processFile(file *os.File, commit, timestamp, image string, client kubectl.
 		return err
 	} else {
 		content := string(bytes)
+		if len(strings.TrimSpace(content)) == 0 {
+			log.Debugf("ignoring empty file '<yellow>%s</yellow>'\n", filepath.Base(file.Name()))
+			return nil
+		}
 		r := strings.NewReplacer("${COMMIT}", commit, "${TIMESTAMP}", timestamp, "${IMAGE}", image)
 		kubeContent := r.Replace(content)
 		log.Debugf("trying to apply: \n---\n%s\n---\n", kubeContent)

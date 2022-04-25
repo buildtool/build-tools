@@ -240,6 +240,43 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 	})
 }
 
+func TestDeploy_IgnoreEmptyFiles(t *testing.T) {
+	client := &kubectl.MockKubectl{
+		Responses: []error{nil},
+	}
+
+	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
+	_ = ioutil.WriteFile(deployFile, []byte("dummy yaml content"), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte(""), 0777)
+	_ = ioutil.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0777)
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
+		Globals:   args.Globals{},
+		Target:    "prod",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		Timeout:   "2m",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(client.Inputs))
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>ns-dummy.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: not using file '<red>ns-dummy.yaml</red>' for target: <green>prod</green>\n",
+		"debug: considering file '<yellow>ns-prod.yaml</yellow>' for target: <green>prod</green>\n",
+		"debug: using file '<green>ns-prod.yaml</green>' for target: <green>prod</green>\n",
+		"debug: considering script '<yellow>other-dummy.sh</yellow>' for target: <green>prod</green>\n",
+		"debug: not using script '<red>other-dummy.sh</red>' for target: <green>prod</green>\n",
+		"debug: ignoring empty file '<yellow>ns-prod.yaml</yellow>'\n",
+	})
+}
+
 func TestDeploy_ScriptExecution_NameSuffix(t *testing.T) {
 	client := &kubectl.MockKubectl{
 		Responses: []error{nil},

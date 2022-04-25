@@ -21,7 +21,7 @@ The following registries are supported:
 | :------------- | :--------------------- |
 | [`dockerhub`](#dockerhub) | [Docker hub](https://hub.docker.com/) |
 | [`ecr`](#ecr) | [AWS Elastic Container Registry](https://docs.aws.amazon.com/ecr/index.html)  |
-| [`github`](#github) | [Github package registry](https://help.github.com/en/github/managing-packages-with-github-package-registry/about-github-package-registry) |
+| [`github`](#github) | [Github package registry](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages) |
 | [`gitlab`](#gitlab) | [Gitlab container registry](https://docs.gitlab.com/ee/user/packages/container_registry/) |
 | [`quay`](#quay) | [Quay docker registry](https://docs.quay.io/) |
 | [`gcr`](#gcr) | [Google Container registry](https://cloud.google.com/container-registry) |

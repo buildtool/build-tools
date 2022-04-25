@@ -37,4 +37,4 @@ Read more about available [commands](/commands/build):
 
 [Github Actions]: https://github.com/features/actions
 [setup-buildtools-action]: https://github.com/buildtool/setup-buildtools-action
-[syntax]: https://help.github.com/en/articles/workflow-syntax-for-github-actions#About-yaml-syntax-for-workflows
+[syntax]: https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#About-yaml-syntax-for-workflows
