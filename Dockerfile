@@ -1,4 +1,4 @@
-FROM golang:1.18.1 as go-build
+FROM golang:1.18.3 as go-build
 
 RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@latest
 
