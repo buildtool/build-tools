@@ -134,7 +134,7 @@ data:
 `,
 			args: []string{"target"},
 			env: map[string]string{
-				"CI_COMMIT_SHA":      "abc123",
+				"CI_COMMIT_SHA":      "abc12345678",
 				"CI_PROJECT_NAME":    "dummy",
 				"CI_COMMIT_REF_NAME": "master",
 			},
@@ -143,7 +143,7 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*\n$",
 			},
-			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc123"),
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc1234"),
 		},
 		{
 			name: "build name is normalized",
@@ -221,7 +221,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"target"},
+			args: []string{"target", "--tag", "providedlongtag"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -229,10 +229,11 @@ data:
 			},
 			want: 0,
 			wantLogged: []string{
+				"info: Using passed tag <green>providedlongtag</green> to promote\n",
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy\n$",
 			},
-			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc123"),
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit providedlongtag"),
 		},
 		{
 			name: "clone error",
