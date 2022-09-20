@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,7 +23,7 @@ func TestAzure_BuildName(t *testing.T) {
 }
 
 func TestAzure_BuildName_Fallback(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	oldpwd, _ := os.Getwd()
 	defer func() { _ = os.Chdir(oldpwd) }()

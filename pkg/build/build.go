@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -108,7 +107,7 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
 	}
 
-	content, err := ioutil.ReadFile(filepath.Join(dir, buildVars.Dockerfile))
+	content, err := os.ReadFile(filepath.Join(dir, buildVars.Dockerfile))
 	if err != nil {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return err
@@ -309,13 +308,13 @@ func tryNodeIdentifier() string {
 				if _, err := rand.Read(b); err != nil {
 					return out
 				}
-				if err := ioutil.WriteFile(sessionFile, []byte(hex.EncodeToString(b)), 0600); err != nil {
+				if err := os.WriteFile(sessionFile, []byte(hex.EncodeToString(b)), 0600); err != nil {
 					return out
 				}
 			}
 		}
 
-		dt, err := ioutil.ReadFile(sessionFile)
+		dt, err := os.ReadFile(sessionFile)
 		if err == nil {
 			return string(dt)
 		}

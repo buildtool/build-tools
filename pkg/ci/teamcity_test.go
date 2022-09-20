@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -37,7 +36,7 @@ func TestTeamCityCI_BuildName(t *testing.T) {
 
 func TestTeamCityCI_BuildName_VCS_Fallback(t *testing.T) {
 	oldpwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = os.Chdir(name)
 	defer func() { _ = os.Chdir(oldpwd) }()

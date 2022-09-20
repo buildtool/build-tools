@@ -2,7 +2,7 @@ package config
 
 import (
 	"bytes"
-	"io/ioutil"
+
 	"os"
 	"testing"
 
@@ -118,7 +118,7 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY_IMAGE", "")()
 	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer os.RemoveAll(dir)
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,8 +34,8 @@ func TestMain(m *testing.M) {
 }
 
 func setup() (string, string) {
-	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
-	temp, _ := ioutil.TempDir(os.TempDir(), "build-tools-temp")
+	name, _ = os.MkdirTemp(os.TempDir(), "build-tools")
+	temp, _ := os.MkdirTemp(os.TempDir(), "build-tools-temp")
 	os.Clearenv()
 	_ = os.Setenv("TMPDIR", temp)
 	_ = os.Setenv("TEMP", temp)
@@ -52,7 +51,7 @@ func teardown(buildToolsTempDir, osTempDir string) {
 func TestBuild_BrokenConfig(t *testing.T) {
 	yaml := `ci: [] `
 	file := filepath.Join(name, ".buildtools.yaml")
-	_ = ioutil.WriteFile(file, []byte(yaml), 0777)
+	_ = os.WriteFile(file, []byte(yaml), 0777)
 	defer func() { _ = os.Remove(file) }()
 
 	logMock := mocks.New()
@@ -909,5 +908,5 @@ func write(dir, file, content string) error {
 	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
 }

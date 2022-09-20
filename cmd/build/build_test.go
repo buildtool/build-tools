@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -76,9 +75,9 @@ ADD . /test
 FROM scratch as export
 COPY --from=build /test/testfile testfile
    `)
-	err = ioutil.WriteFile(filepath.Join(dir, "testfile"), []byte("test"), 0666)
+	err = os.WriteFile(filepath.Join(dir, "testfile"), []byte("test"), 0666)
 	assert.NoError(t, err)
-	err = ioutil.WriteFile(filepath.Join(dir, "Dockerfile"), dockerFile, 0666)
+	err = os.WriteFile(filepath.Join(dir, "Dockerfile"), dockerFile, 0666)
 
 	assert.NoError(t, err)
 	tree, err := repo.Worktree()

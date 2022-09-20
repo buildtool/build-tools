@@ -2,7 +2,6 @@ package file
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strings"
@@ -10,20 +9,20 @@ import (
 	"github.com/apex/log"
 )
 
-func FindFilesForTarget(dir, target string) ([]os.FileInfo, error) {
+func FindFilesForTarget(dir, target string) ([]os.DirEntry, error) {
 	return filesForTarget(dir, target, "file", ".yaml", false)
 }
 
-func FindScriptsForTarget(dir, target string) ([]os.FileInfo, error) {
+func FindScriptsForTarget(dir, target string) ([]os.DirEntry, error) {
 	return filesForTarget(dir, target, "script", ".sh", true)
 }
 
-func filesForTarget(dir, target, filetype, suffix string, strict bool) ([]os.FileInfo, error) {
-	files, err := ioutil.ReadDir(dir)
+func filesForTarget(dir, target, filetype, suffix string, strict bool) ([]os.DirEntry, error) {
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	matching := map[string]os.FileInfo{}
+	matching := map[string]os.DirEntry{}
 
 	for _, info := range files {
 		if strings.HasSuffix(info.Name(), suffix) {
@@ -43,7 +42,7 @@ func filesForTarget(dir, target, filetype, suffix string, strict bool) ([]os.Fil
 	}
 	sort.Strings(matchingKeys)
 
-	var result []os.FileInfo
+	var result []os.DirEntry
 	for _, k := range matchingKeys {
 		if strings.HasSuffix(k, fmt.Sprintf("-%s%s", target, suffix)) {
 			log.Debugf("using %s '<green>%s</green>' for target: <green>%s</green>\n", filetype, k, target)

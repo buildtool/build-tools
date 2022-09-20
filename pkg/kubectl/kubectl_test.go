@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -40,7 +39,7 @@ func TestNew_NoNamespace(t *testing.T) {
 
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
-	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
 	k := &kubectl{args: map[string]string{"context": "missing"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
 
@@ -56,7 +55,7 @@ func TestNew_NoContext(t *testing.T) {
 	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
-	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
 	k := &kubectl{args: map[string]string{"namespace": "namespace"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
 
@@ -73,7 +72,7 @@ func TestKubectl_Apply(t *testing.T) {
 	log.SetLevel(log.InfoLevel)
 	calls = [][]string{}
 	newKubectlCmd = mockCmd
-	tempDir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
 	k := &kubectl{args: map[string]string{"context": "missing", "namespace": "default"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
 
@@ -214,7 +213,7 @@ func TestKubectl_KubeconfigSet(t *testing.T) {
 	k := New(&config.Target{})
 
 	kubeconfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
-	fileContent, err := ioutil.ReadFile(kubeconfigFile)
+	fileContent, err := os.ReadFile(kubeconfigFile)
 	assert.NoError(t, err)
 	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
 	assert.Equal(t, kubeconfigFile, k.(*kubectl).args["kubeconfig"])
@@ -240,7 +239,7 @@ func TestKubectl_KubeconfigBase64Set(t *testing.T) {
 	k := New(&config.Target{})
 
 	kubeconfigFile := filepath.Join(k.(*kubectl).tempDir, "kubeconfig")
-	fileContent, err := ioutil.ReadFile(kubeconfigFile)
+	fileContent, err := os.ReadFile(kubeconfigFile)
 	assert.NoError(t, err)
 	assert.Equal(t, "contexts:\n- context:\n    cluster: k8s.prod\n    user: user@example.org\n", string(fileContent))
 	assert.Equal(t, kubeconfigFile, k.(*kubectl).args["kubeconfig"])
@@ -249,7 +248,7 @@ func TestKubectl_KubeconfigBase64Set(t *testing.T) {
 
 func TestKubectl_KubeconfigExistingFile(t *testing.T) {
 
-	name, _ := ioutil.TempFile(os.TempDir(), "kubecontent")
+	name, _ := os.CreateTemp(os.TempDir(), "kubecontent")
 	defer func() {
 		_ = os.Remove(name.Name())
 	}()

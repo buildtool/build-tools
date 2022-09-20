@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"strings"
 
@@ -38,29 +37,29 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	m.BuildOptions = append(m.BuildOptions, options)
 
 	if m.BrokenOutput {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
+		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
 	}
 	if m.ResponseError != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
+		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
 	}
 	if len(m.BuildError) > m.BuildCount && m.BuildError[m.BuildCount] != nil {
-		return types.ImageBuildResponse{Body: ioutil.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
+		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
 	}
 	var body io.Reader = strings.NewReader(`{"stream":"Build successful"}`)
 	if m.ResponseBody != nil {
 		body = m.ResponseBody
 	}
-	return types.ImageBuildResponse{Body: ioutil.NopCloser(body)}, nil
+	return types.ImageBuildResponse{Body: io.NopCloser(body)}, nil
 }
 
 func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {
 	m.Images = append(m.Images, image)
 
 	if m.PushError != nil {
-		return ioutil.NopCloser(strings.NewReader("Push error")), m.PushError
+		return io.NopCloser(strings.NewReader("Push error")), m.PushError
 	}
 
-	return ioutil.NopCloser(strings.NewReader(*m.PushOutput)), nil
+	return io.NopCloser(strings.NewReader(*m.PushOutput)), nil
 }
 
 func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error) {

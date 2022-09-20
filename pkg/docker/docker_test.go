@@ -2,7 +2,6 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestParseDockerignore_FileMissing(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	defaultIgnores := []string{"k8s"}
@@ -21,11 +20,11 @@ func TestParseDockerignore_FileMissing(t *testing.T) {
 }
 
 func TestParseDockerignore_EmptyFile(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	content := ``
-	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
 	defaultIgnores := []string{"k8s"}
 	result, err := ParseDockerignore(name, "Dockerfile")
@@ -34,7 +33,7 @@ func TestParseDockerignore_EmptyFile(t *testing.T) {
 }
 
 func TestParseDockerignore_UnreadableFile(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".dockerignore")
 	_ = os.Mkdir(filename, 0777)
@@ -44,13 +43,13 @@ func TestParseDockerignore_UnreadableFile(t *testing.T) {
 }
 
 func TestParseDockerignore(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	content := `
 node_modules
 *.swp`
-	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
 	result, err := ParseDockerignore(name, "Dockerfile")
 	assert.NoError(t, err)
@@ -58,14 +57,14 @@ node_modules
 }
 
 func TestParseDockerignore_Dockerfile_Ignored(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	content := `
 node_modules
 Dockerfile
 *.swp`
-	_ = ioutil.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
 
 	result, err := ParseDockerignore(name, "Dockerfile")
 	assert.NoError(t, err)

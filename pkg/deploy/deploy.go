@@ -2,7 +2,7 @@ package deploy
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -136,7 +136,7 @@ func execFile(file string) error {
 }
 
 func processFile(file *os.File, commit, timestamp, image string, client kubectl.Kubectl) error {
-	if bytes, err := ioutil.ReadAll(file); err != nil {
+	if bytes, err := io.ReadAll(file); err != nil {
 		return err
 	} else {
 		content := string(bytes)

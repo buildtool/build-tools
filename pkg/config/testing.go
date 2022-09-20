@@ -4,7 +4,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	git2 "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -19,7 +19,7 @@ func InitRepo(dir string) *git2.Repository {
 func InitRepoWithCommit(dir string) (plumbing.Hash, *git2.Repository) {
 	repo := InitRepo(dir)
 	tree, _ := repo.Worktree()
-	file, _ := ioutil.TempFile(dir, "file")
+	file, _ := os.CreateTemp(dir, "file")
 	_, _ = file.WriteString("test")
 	_ = file.Close()
 	_, _ = tree.Add(file.Name())

@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -298,7 +297,7 @@ data:
 			logMock := mocks.New()
 			log.SetHandler(logMock)
 			oldPwd, _ := os.Getwd()
-			home, _ := ioutil.TempDir(os.TempDir(), "home")
+			home, _ := os.MkdirTemp(os.TempDir(), "home")
 			defer func() { _ = os.RemoveAll(home) }()
 			_ = os.Setenv("HOME", home)
 			defer func() {
@@ -308,7 +307,7 @@ data:
 			generateSSHKey(t, sshPath)
 			otherSshPath := filepath.Join(home, "other")
 			generateSSHKey(t, otherSshPath)
-			name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+			name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
 			repo, _ := InitRepo(t, "git-repo")
 			defer func() { _ = os.RemoveAll(repo) }()
@@ -316,14 +315,14 @@ data:
 			defer func() { _ = os.RemoveAll(otherrepo) }()
 
 			buff := Template(t, tt.config, repo, otherrepo)
-			err := ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), buff.Bytes(), 0777)
+			err := os.WriteFile(filepath.Join(name, ".buildtools.yaml"), buff.Bytes(), 0777)
 			assert.NoError(t, err)
 
 			if tt.descriptor != "" {
 				k8s := filepath.Join(name, "k8s")
 				err = os.MkdirAll(k8s, 0777)
 				assert.NoError(t, err)
-				err = ioutil.WriteFile(filepath.Join(k8s, "descriptor.yaml"), []byte(tt.descriptor), 0666)
+				err = os.WriteFile(filepath.Join(k8s, "descriptor.yaml"), []byte(tt.descriptor), 0666)
 				assert.NoError(t, err)
 			}
 			err = os.Chdir(name)
@@ -387,11 +386,11 @@ func TestPromote_OutParam(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logMock := mocks.New()
 			log.SetHandler(logMock)
-			name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+			name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
 			err := os.MkdirAll(filepath.Join(name, "k8s"), 0777)
 			assert.NoError(t, err)
-			err = ioutil.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0666)
+			err = os.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0666)
 			assert.NoError(t, err)
 			cfg := config.InitEmptyConfig()
 
@@ -432,13 +431,13 @@ func CheckLogged(t testing.TB, wantLogged []string, gotLogged []string) {
 }
 
 func InitRepo(t *testing.T, prefix string) (string, plumbing.Hash) {
-	repo, err := ioutil.TempDir(os.TempDir(), prefix)
+	repo, err := os.MkdirTemp(os.TempDir(), prefix)
 	assert.NoError(t, err)
 	gitrepo, err := git.PlainInit(repo, false)
 	assert.NoError(t, err)
 	tree, err := gitrepo.Worktree()
 	assert.NoError(t, err)
-	err = ioutil.WriteFile(filepath.Join(repo, "file"), []byte("test"), 0666)
+	err = os.WriteFile(filepath.Join(repo, "file"), []byte("test"), 0666)
 	assert.NoError(t, err)
 	_, err = tree.Add("file")
 	assert.NoError(t, err)

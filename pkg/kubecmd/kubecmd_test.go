@@ -2,7 +2,6 @@ package kubecmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,12 +31,12 @@ func TestKubecmd_MissingArgumentsPrintUsageToOutWriter(t *testing.T) {
 }
 
 func TestKubecmd_BrokenConfig(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = ioutil.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -50,11 +49,11 @@ func TestKubecmd_BrokenConfig(t *testing.T) {
 }
 
 func TestKubecmd_MissingTarget(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := ``
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = ioutil.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -67,7 +66,7 @@ func TestKubecmd_MissingTarget(t *testing.T) {
 }
 
 func TestKubecmd_NoOptions(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 targets:
@@ -76,7 +75,7 @@ targets:
     namespace: none
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = ioutil.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -87,7 +86,7 @@ targets:
 }
 
 func TestKubecmd_ContextAndNamespaceSpecified(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 targets:
@@ -96,7 +95,7 @@ targets:
     namespace: none
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = ioutil.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
