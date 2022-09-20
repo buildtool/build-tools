@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -118,7 +117,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, cfg 
 }
 
 func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buffer *bytes.Buffer, args Args, gitConfig config.Git) error {
-	cloneDir, err := ioutil.TempDir(os.TempDir(), "build-tools")
+	cloneDir, err := os.MkdirTemp(os.TempDir(), "build-tools")
 	if err != nil {
 		return err
 	}
@@ -243,7 +242,7 @@ func processDir(writer io.StringWriter, dir, commit, timestamp, target, imageNam
 }
 
 func processFile(writer io.StringWriter, file *os.File, commit, timestamp, imageName string) error {
-	if buff, err := ioutil.ReadAll(file); err != nil {
+	if buff, err := io.ReadAll(file); err != nil {
 		return err
 	} else {
 		content := string(buff)

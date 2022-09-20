@@ -2,7 +2,7 @@ package push
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/apex/log"
@@ -62,7 +62,7 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string) in
 		return -4
 	}
 
-	content, err := ioutil.ReadFile(filepath.Join(dir, dockerfile))
+	content, err := os.ReadFile(filepath.Join(dir, dockerfile))
 	if err != nil {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return -5

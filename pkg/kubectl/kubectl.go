@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -61,7 +60,7 @@ var newKubectlCmd = func(in io.Reader, out, errout io.Writer, args []string) *co
 }
 
 func New(target *config.Target) Kubectl {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
 	args := argsFromTarget(target, name)
 
@@ -96,7 +95,7 @@ func argsFromTarget(e *config.Target, tempDir string) map[string]string {
 
 func writeKubeconfigFile(tempDir string, content []byte) (string, error) {
 	kubeconfigFile := filepath.Join(tempDir, "kubeconfig")
-	err := ioutil.WriteFile(kubeconfigFile, content, 0777)
+	err := os.WriteFile(kubeconfigFile, content, 0777)
 	return kubeconfigFile, err
 }
 
@@ -118,7 +117,7 @@ func (k kubectl) defaultArgs() (args []string) {
 
 func (k kubectl) Apply(input string) error {
 	file := filepath.Join(k.tempDir, "content.yaml")
-	err := ioutil.WriteFile(file, []byte(input), 0777)
+	err := os.WriteFile(file, []byte(input), 0777)
 	if err != nil {
 		return err
 	}

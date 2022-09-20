@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,7 +15,7 @@ import (
 func TestIdentify(t *testing.T) {
 	os.Clearenv()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	logMock := mocks.New()
@@ -31,7 +30,7 @@ func TestIdentify(t *testing.T) {
 }
 
 func TestGit_Identify(t *testing.T) {
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
@@ -48,7 +47,7 @@ func TestGit_Identify(t *testing.T) {
 }
 
 func TestGit_Identify_Subdirectory(t *testing.T) {
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
@@ -68,7 +67,7 @@ func TestGit_Identify_Subdirectory(t *testing.T) {
 }
 
 func TestGit_MissingRepo(t *testing.T) {
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	_ = os.Mkdir(filepath.Join(dir, ".git"), 0777)
@@ -84,7 +83,7 @@ func TestGit_MissingRepo(t *testing.T) {
 }
 
 func TestGit_NoCommit(t *testing.T) {
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepo(dir)

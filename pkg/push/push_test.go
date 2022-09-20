@@ -3,7 +3,6 @@ package push
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +32,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() string {
-	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ = os.MkdirTemp(os.TempDir(), "build-tools")
 
 	return name
 }
@@ -436,5 +435,5 @@ func write(dir, file, content string) error {
 	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
 }

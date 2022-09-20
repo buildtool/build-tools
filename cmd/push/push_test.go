@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -20,7 +19,7 @@ func TestPush(t *testing.T) {
 	}
 
 	oldPwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	err := os.Chdir(name)

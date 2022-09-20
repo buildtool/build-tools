@@ -2,7 +2,6 @@ package config
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -46,7 +45,7 @@ func TestName_Azure(t *testing.T) {
 func TestBuildName_Fallback_Azure(t *testing.T) {
 	defer pkg.SetEnv("CI", "azure")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer os.RemoveAll(dir)
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
@@ -64,7 +63,7 @@ func TestBuildName_Fallback_Azure(t *testing.T) {
 func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 	defer pkg.SetEnv("CI", "azure")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer os.RemoveAll(dir)
 
 	InitRepoWithCommit(dir)
@@ -81,7 +80,7 @@ func TestBranch_VCS_Fallback_Azure(t *testing.T) {
 func TestCommit_VCS_Fallback_Azure(t *testing.T) {
 	defer pkg.SetEnv("CI", "azure")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer os.RemoveAll(dir)
 
 	hash, _ := InitRepoWithCommit(dir)
@@ -116,7 +115,7 @@ func TestBuildName_Fallback_Buildkite(t *testing.T) {
 	defer pkg.SetEnv("CI", "buildkite")()
 	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
@@ -135,7 +134,7 @@ func TestBranch_VCS_Fallback_Buildkite(t *testing.T) {
 	defer pkg.SetEnv("CI", "buildkite")()
 	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepoWithCommit(dir)
@@ -153,7 +152,7 @@ func TestCommit_VCS_Fallback_Buildkite(t *testing.T) {
 	defer pkg.SetEnv("CI", "buildkite")()
 	defer pkg.SetEnv("BUILDKITE_TOKEN", "abc123")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
@@ -200,7 +199,7 @@ func TestName_Gitlab(t *testing.T) {
 func TestBuildName_Fallback_Gitlab(t *testing.T) {
 	defer pkg.SetEnv("CI", "gitlab")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
@@ -218,7 +217,7 @@ func TestBuildName_Fallback_Gitlab(t *testing.T) {
 func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 	defer pkg.SetEnv("CI", "gitlab")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepoWithCommit(dir)
@@ -235,7 +234,7 @@ func TestBranch_VCS_Fallback_Gitlab(t *testing.T) {
 func TestCommit_VCS_Fallback_Gitlab(t *testing.T) {
 	defer pkg.SetEnv("CI", "gitlab")()
 
-	dir, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)
@@ -282,7 +281,7 @@ func TestName_NoOp(t *testing.T) {
 func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 	defer pkg.SetEnv("CI", "")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	InitRepoWithCommit(dir)
@@ -299,7 +298,7 @@ func TestBranch_VCS_Fallback_NoOp(t *testing.T) {
 func TestCommit_VCS_Fallback_NoOp(t *testing.T) {
 	defer pkg.SetEnv("CI", "")()
 
-	dir, _ := ioutil.TempDir("", "build-tools")
+	dir, _ := os.MkdirTemp("", "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
 	hash, _ := InitRepoWithCommit(dir)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,7 +31,7 @@ func TestKubecmd_MissingArguments(t *testing.T) {
 func TestKubecmd_NoOptions(t *testing.T) {
 	out = &bytes.Buffer{}
 	oldPwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	yaml := `
 targets:
@@ -40,7 +39,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -55,7 +54,7 @@ targets:
 func TestKubecmd_Output(t *testing.T) {
 	out = &bytes.Buffer{}
 	oldPwd, _ := os.Getwd()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer os.RemoveAll(name)
 	yaml := `
 targets:
@@ -63,7 +62,7 @@ targets:
     context: local
     namespace: default
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)

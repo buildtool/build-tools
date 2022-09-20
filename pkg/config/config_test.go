@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,7 +27,7 @@ func TestMain(m *testing.M) {
 }
 
 func setup() string {
-	name, _ = ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ = os.MkdirTemp(os.TempDir(), "build-tools")
 
 	return name
 }
@@ -55,7 +54,7 @@ func TestLoad_AbsFail(t *testing.T) {
 
 func TestLoad_Empty(t *testing.T) {
 	os.Clearenv()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 
 	logMock := mocks.New()
@@ -71,11 +70,11 @@ func TestLoad_Empty(t *testing.T) {
 }
 
 func TestLoad_BrokenYAML(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -90,7 +89,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 }
 
 func TestLoad_UnreadableFile(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".buildtools.yaml")
 	_ = os.Mkdir(filename, 0777)
@@ -108,7 +107,7 @@ func TestLoad_UnreadableFile(t *testing.T) {
 }
 
 func TestLoad_YAML(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 registry:
@@ -122,7 +121,7 @@ targets:
     context: docker-desktop
     namespace: dev
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -150,7 +149,7 @@ targets:
 }
 
 func TestLoad_BrokenYAML_From_Env(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
@@ -169,7 +168,7 @@ func TestLoad_BrokenYAML_From_Env(t *testing.T) {
 }
 
 func TestLoad_YAML_From_Env_Plain(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 targets:
@@ -190,7 +189,7 @@ targets:
 }
 
 func TestLoad_Broken_YAML_From_Env_Plain(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 target:
@@ -205,7 +204,7 @@ target:
 }
 
 func TestLoad_YAML_From_Env(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 targets:
@@ -238,7 +237,7 @@ targets:
 
 func TestLoad_YAML_DirStructure(t *testing.T) {
 	os.Clearenv()
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 registry:
@@ -250,7 +249,7 @@ targets:
   local:
     context: def
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 	subdir := "sub"
 	_ = os.Mkdir(filepath.Join(name, subdir), 0777)
 	yaml2 := `
@@ -258,7 +257,7 @@ targets:
   test:
     context: ghi
 `
-	_ = ioutil.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
+	_ = os.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -279,7 +278,7 @@ targets:
 }
 
 func TestLoad_YAML_Multiple_Registry(t *testing.T) {
-	name, _ := ioutil.TempDir(os.TempDir(), "build-tools")
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `
 registry:
@@ -295,7 +294,7 @@ targets:
     context: docker-desktop
     namespace: dev
 `
-	_ = ioutil.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)

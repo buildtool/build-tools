@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -55,7 +54,7 @@ func ParseDockerignore(dir, dockerfile string) ([]string, error) {
 		return defaultIgnore, nil
 	}
 
-	if file, err := ioutil.ReadFile(filePath); err != nil {
+	if file, err := os.ReadFile(filePath); err != nil {
 		return defaultIgnore, err
 	} else {
 		var result = defaultIgnore
