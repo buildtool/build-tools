@@ -155,7 +155,7 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 	}
 
 	hash, err := worktree.Commit(
-		fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
+		fmt.Sprintf("ci: promoting %s to %s, commit %s", normalized, args.Target, args.Tag),
 		&git.CommitOptions{
 			Author: &object.Signature{
 				Name:  defaultIfEmpty(gitConfig.Name, "Buildtools"),

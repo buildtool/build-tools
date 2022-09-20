@@ -27,14 +27,14 @@ import (
 
 func TestDoPromote(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      string
-		descriptor  string
-		args        []string
-		env         map[string]string
-		want        int
-		wantLogged  []string
-		wantCommits int
+		name              string
+		config            string
+		descriptor        string
+		args              []string
+		env               map[string]string
+		want              int
+		wantLogged        []string
+		wantCommitMessage *string
 	}{
 		{
 			name:       "invalid argument",
@@ -143,7 +143,7 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc123"),
 		},
 		{
 			name: "build name is normalized",
@@ -174,13 +174,13 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy-repo\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy-repo to target, commit abc123"),
 		},
 		{
 			name: "other repo, path and tag",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -345,8 +345,12 @@ data:
 			}
 			CheckLogged(t, tt.wantLogged, logMock.Logged)
 
-			gotCommits := CountCommits(t, repo)
-			assert.Equal(t, tt.wantCommits, gotCommits)
+			commits := GetCommits(t, repo)
+			if tt.wantCommitMessage != nil {
+				assert.Equal(t, *tt.wantCommitMessage, commits[0].Message)
+			} else {
+				assert.Equal(t, 1, len(commits))
+			}
 		})
 	}
 }
@@ -443,6 +447,25 @@ func InitRepo(t *testing.T, prefix string) (string, plumbing.Hash) {
 	return repo, hash
 }
 
+func GetCommits(t *testing.T, repo string) []*object.Commit {
+	gitrepo, err := git.PlainOpen(repo)
+	assert.NoError(t, err)
+	iter, err := gitrepo.Log(&git.LogOptions{})
+	assert.NoError(t, err)
+	var result []*object.Commit
+	for {
+		commit, err := iter.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			assert.NoError(t, err)
+		}
+		result = append(result, commit)
+	}
+	return result
+}
+
 func CountCommits(t *testing.T, repo string) int {
 	gitrepo, err := git.PlainOpen(repo)
 	assert.NoError(t, err)
@@ -472,4 +495,8 @@ func Template(t *testing.T, text, repo, otherrepo string) *bytes.Buffer {
 	})
 	assert.NoError(t, err)
 	return buff
+}
+
+func strPointer(s string) *string {
+	return &s
 }
