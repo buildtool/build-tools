@@ -102,10 +102,10 @@ gitops:
 			name: "no deployment descriptors",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -121,7 +121,7 @@ git:
   name: Some User
   email: some.user@example.org
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -132,7 +132,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -152,7 +152,7 @@ git:
   name: Some User
   email: some.user@example.org
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -163,7 +163,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy_repo",
@@ -191,7 +191,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--url", "{{.other}}", "--path", "test/path", "--tag", "testing"},
+			args: []string{"target", "--url", "{{.other}}", "--path", "test/path", "--tag", "testing"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -203,13 +203,12 @@ data:
 				"info: generating...\n",
 				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path/dummy\n$",
 			},
-			wantCommits: 0,
 		},
 		{
 			name: "other ssh key from config",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 git:
   key: ~/other/id_rsa
@@ -222,7 +221,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -233,13 +232,13 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc123"),
 		},
 		{
 			name: "clone error",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -250,7 +249,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--url", "/missing/repo"},
+			args: []string{"target", "--url", "/missing/repo"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -261,13 +260,12 @@ data:
 				"info: generating...",
 				"error: repository not found",
 			},
-			wantCommits: 0,
 		},
 		{
 			name: "missing SSH key",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -278,7 +276,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--key", "/missing/key"},
+			args: []string{"target", "--key", "/missing/key"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -289,7 +287,6 @@ data:
 				"info: generating...",
 				"error: ssh key: open /missing/key: no such file or directory",
 			},
-			wantCommits: 0,
 		},
 	}
 	for _, tt := range tests {
