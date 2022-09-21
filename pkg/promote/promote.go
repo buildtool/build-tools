@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/ssh"
+	"golang.org/x/exp/utf8string"
 
 	"github.com/buildtool/build-tools/pkg/file"
 
@@ -32,6 +33,7 @@ type Args struct {
 	PrivateKey string `name:"key" help:"private key for Git access (defaults to ~/.ssh/id_rsa)" default:""`
 	Password   string `name:"password" help:"password for private key" default:""`
 	Out        string `name:"out" short:"o" help:"write output to specified file instead of committing and pushing to Git" default:""`
+	shortSha   string
 }
 
 func DoPromote(dir string, info version.Info, osArgs ...string) int {
@@ -63,12 +65,19 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 			target.Path = "/"
 		}
 		currentCI := cfg.CurrentCI()
+		promoteArgs.shortSha = promoteArgs.Tag
 		if promoteArgs.Tag == "" {
 			if !ci.IsValid(currentCI) {
 				log.Errorf("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?\n")
 				return -3
 			}
 			promoteArgs.Tag = currentCI.Commit()
+			shortSha := utf8string.NewString(promoteArgs.Tag)
+			if shortSha.RuneCount() > 7 {
+				promoteArgs.shortSha = shortSha.Slice(0, 7)
+			} else {
+				promoteArgs.shortSha = shortSha.String()
+			}
 		} else {
 			log.Infof("Using passed tag <green>%s</green> to promote\n", promoteArgs.Tag)
 		}
@@ -153,9 +162,8 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 	if err != nil {
 		return err
 	}
-
 	hash, err := worktree.Commit(
-		fmt.Sprintf("ci: promoting %s commit %s to %s", normalized, args.Tag, args.Target),
+		fmt.Sprintf("ci: promoting %s to %s, commit %s", normalized, args.Target, args.shortSha),
 		&git.CommitOptions{
 			Author: &object.Signature{
 				Name:  defaultIfEmpty(gitConfig.Name, "Buildtools"),

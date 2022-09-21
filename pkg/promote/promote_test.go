@@ -27,14 +27,14 @@ import (
 
 func TestDoPromote(t *testing.T) {
 	tests := []struct {
-		name        string
-		config      string
-		descriptor  string
-		args        []string
-		env         map[string]string
-		want        int
-		wantLogged  []string
-		wantCommits int
+		name              string
+		config            string
+		descriptor        string
+		args              []string
+		env               map[string]string
+		want              int
+		wantLogged        []string
+		wantCommitMessage *string
 	}{
 		{
 			name:       "invalid argument",
@@ -102,10 +102,10 @@ gitops:
 			name: "no deployment descriptors",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -121,7 +121,7 @@ git:
   name: Some User
   email: some.user@example.org
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -132,9 +132,9 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
-				"CI_COMMIT_SHA":      "abc123",
+				"CI_COMMIT_SHA":      "abc12345678",
 				"CI_PROJECT_NAME":    "dummy",
 				"CI_COMMIT_REF_NAME": "master",
 			},
@@ -143,7 +143,7 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc1234"),
 		},
 		{
 			name: "build name is normalized",
@@ -152,7 +152,7 @@ git:
   name: Some User
   email: some.user@example.org
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -163,7 +163,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy_repo",
@@ -174,13 +174,13 @@ data:
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy-repo\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy-repo to target, commit abc123"),
 		},
 		{
 			name: "other repo, path and tag",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -191,7 +191,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--url", "{{.other}}", "--path", "test/path", "--tag", "testing"},
+			args: []string{"target", "--url", "{{.other}}", "--path", "test/path", "--tag", "testing"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -203,13 +203,12 @@ data:
 				"info: generating...\n",
 				"^info: pushing commit [0-9a-f]+ to .*other-repo.*\\/test\\/path/dummy\n$",
 			},
-			wantCommits: 0,
 		},
 		{
 			name: "other ssh key from config",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 git:
   key: ~/other/id_rsa
@@ -222,7 +221,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy"},
+			args: []string{"target", "--tag", "providedlongtag"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -230,16 +229,17 @@ data:
 			},
 			want: 0,
 			wantLogged: []string{
+				"info: Using passed tag <green>providedlongtag</green> to promote\n",
 				"info: generating...",
 				"^info: pushing commit [0-9a-f]+ to .*git-repo.*\\/dummy\n$",
 			},
-			wantCommits: 1,
+			wantCommitMessage: strPointer("ci: promoting dummy to target, commit providedlongtag"),
 		},
 		{
 			name: "clone error",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -250,7 +250,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--url", "/missing/repo"},
+			args: []string{"target", "--url", "/missing/repo"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -261,13 +261,12 @@ data:
 				"info: generating...",
 				"error: repository not found",
 			},
-			wantCommits: 0,
 		},
 		{
 			name: "missing SSH key",
 			config: `
 gitops:
-  dummy:
+  target:
     url: "{{.repo}}"
 `,
 			descriptor: `
@@ -278,7 +277,7 @@ metadata:
 data:
   BASE_URL: https://example.org
 `,
-			args: []string{"dummy", "--key", "/missing/key"},
+			args: []string{"target", "--key", "/missing/key"},
 			env: map[string]string{
 				"CI_COMMIT_SHA":      "abc123",
 				"CI_PROJECT_NAME":    "dummy",
@@ -289,7 +288,6 @@ data:
 				"info: generating...",
 				"error: ssh key: open /missing/key: no such file or directory",
 			},
-			wantCommits: 0,
 		},
 	}
 	for _, tt := range tests {
@@ -348,8 +346,12 @@ data:
 			}
 			CheckLogged(t, tt.wantLogged, logMock.Logged)
 
-			gotCommits := CountCommits(t, repo)
-			assert.Equal(t, tt.wantCommits, gotCommits)
+			commits := GetCommits(t, repo)
+			if tt.wantCommitMessage != nil {
+				assert.Equal(t, *tt.wantCommitMessage, commits[0].Message)
+			} else {
+				assert.Equal(t, 1, len(commits))
+			}
 		})
 	}
 }
@@ -446,6 +448,25 @@ func InitRepo(t *testing.T, prefix string) (string, plumbing.Hash) {
 	return repo, hash
 }
 
+func GetCommits(t *testing.T, repo string) []*object.Commit {
+	gitrepo, err := git.PlainOpen(repo)
+	assert.NoError(t, err)
+	iter, err := gitrepo.Log(&git.LogOptions{})
+	assert.NoError(t, err)
+	var result []*object.Commit
+	for {
+		commit, err := iter.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			assert.NoError(t, err)
+		}
+		result = append(result, commit)
+	}
+	return result
+}
+
 func CountCommits(t *testing.T, repo string) int {
 	gitrepo, err := git.PlainOpen(repo)
 	assert.NoError(t, err)
@@ -475,4 +496,8 @@ func Template(t *testing.T, text, repo, otherrepo string) *bytes.Buffer {
 	})
 	assert.NoError(t, err)
 	return buff
+}
+
+func strPointer(s string) *string {
+	return &s
 }
