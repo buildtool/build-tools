@@ -12,7 +12,7 @@ require (
 	github.com/caarlos0/env/v6 v6.9.1
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/containerd/console v1.0.3
-	github.com/containerd/containerd v1.6.2
+	github.com/containerd/containerd v1.6.8
 	github.com/containerd/continuity v0.2.2 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/docker/docker v20.10.14+incompatible
@@ -36,7 +36,7 @@ require (
 	github.com/moby/buildkit v0.9.3
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.0.2 // indirect
+	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799 // indirect
 	github.com/russross/blackfriday v1.6.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/cobra v1.4.0
