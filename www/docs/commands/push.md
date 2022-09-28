@@ -11,4 +11,3 @@ By following the conventions no additional flags are needed, but the following f
 ```sh
 $ push --file docker/Dockerfile.build
 ```
-

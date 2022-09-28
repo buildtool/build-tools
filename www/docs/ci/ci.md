@@ -17,4 +17,3 @@ The following variables are checked to determine which CI/CD tool that we run un
 [Github Actions]: https://github.com/features/actions
 [teamcity]: https://www.jetbrains.com/teamcity
 [azure devops]: https://azure.microsoft.com/en-us/services/devops/pipelines/
-
