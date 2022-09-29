@@ -1,0 +1,21 @@
+name: Check copyright headers
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - "*"
+jobs:
+  copyright-check:
+    runs-on: ubuntu-latest
+    name: Check copyright headers
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+      - name: check license and headers
+        run: |
+          go install github.com/google/addlicense@v1.0.0
+          addlicense -f LICENSE -c "buildtool" -ignore "**/*.yaml" -ignore "**/*.yml" -ignore ".github/*" -ignore "www/site/**" -y "2018" --check .
