@@ -63,7 +63,7 @@ func TestNew_NoNamespace(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
-	k := &kubectl{args: map[string]string{"context": "missing"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
+	k := &kubectl{args: map[string]string{"context": "missing"}, tempDir: tempDir, out: cli.NewWriter(logMock)}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -79,7 +79,7 @@ func TestNew_NoContext(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
-	k := &kubectl{args: map[string]string{"namespace": "namespace"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
+	k := &kubectl{args: map[string]string{"namespace": "namespace"}, tempDir: tempDir, out: cli.NewWriter(logMock)}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -96,7 +96,7 @@ func TestKubectl_Apply(t *testing.T) {
 	newKubectlCmd = mockCmd
 	tempDir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 
-	k := &kubectl{args: map[string]string{"context": "missing", "namespace": "default"}, tempDir: tempDir, out: cli.NewWriter(logMock.Logger)}
+	k := &kubectl{args: map[string]string{"context": "missing", "namespace": "default"}, tempDir: tempDir, out: cli.NewWriter(logMock)}
 
 	err := k.Apply("")
 	assert.NoError(t, err)
@@ -111,7 +111,7 @@ func TestKubectl_UnableToCreateTempDir(t *testing.T) {
 	log.SetLevel(log.InfoLevel)
 	newKubectlCmd = mockCmd
 
-	k := &kubectl{args: nil, tempDir: "/missing", out: cli.NewWriter(logMock.Logger)}
+	k := &kubectl{args: nil, tempDir: "/missing", out: cli.NewWriter(logMock)}
 
 	err := k.Apply("")
 	assert.EqualError(t, err, "open /missing/content.yaml: no such file or directory")
