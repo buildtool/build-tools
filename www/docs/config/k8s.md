@@ -63,4 +63,3 @@ deploy prod
 ````
 
 Will apply `deploy.yaml`, `ingress-prod.yaml` and `service.yaml`.
-

@@ -16,4 +16,3 @@
 - [`.buildtools.yaml` file(s)](config/config.md) will be merged together hierarchically and can be used for multiple
   projects
 - Use [Target](config/targets.md) names to use specific `k8s` files for different deployment targets
-
