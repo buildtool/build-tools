@@ -14,9 +14,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18.x"
+          go-version-file: 'go.mod'
           check-latest: true
       - name: check license and headers
         run: |
           go install github.com/google/addlicense@v1.0.0
-          addlicense -f LICENSE -c "buildtool" -ignore "**/*.yaml" -ignore "**/*.yml" -ignore ".github/*" -ignore "www/site/**" -y "2021" --check .
+          addlicense -f LICENSE -c "buildtool" -ignore "**/*.yaml" -ignore "**/*.yml" -ignore ".github/*" -ignore "www/site/**" -y "2018" --check .
