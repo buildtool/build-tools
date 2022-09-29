@@ -1,0 +1,24 @@
+name: Check dependencies licenses
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ main ]
+
+jobs:
+  license-check:
+    runs-on: ubuntu-latest
+    name: License and Copyright Check
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Get google/go-licenses package
+        run: go install github.com/google/go-licenses@latest
+        shell: bash
+
+      - name: Check license
+        run: go-licenses check ./...
