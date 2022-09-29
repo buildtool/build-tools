@@ -11,4 +11,3 @@ RUN apt-get update && \
 
 COPY build push deploy kubecmd /usr/local/bin/
 COPY --from=go-build /go/bin/aws-iam-authenticator /usr/local/bin/
-

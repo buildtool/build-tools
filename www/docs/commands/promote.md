@@ -24,4 +24,3 @@ $ promote local
 ```sh
 $ promote --out out.yaml local
 ```
-

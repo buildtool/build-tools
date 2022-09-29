@@ -33,5 +33,3 @@ jobs:
           publish_dir: ./www/site
           publish_branch: main
           external_repository: buildtool/buildtool.github.io
-
-
