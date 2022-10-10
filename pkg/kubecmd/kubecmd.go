@@ -49,7 +49,7 @@ func Kubecmd(dir string, info version.Info, osArgs ...string) *string {
 		log.Error(err.Error())
 	} else {
 		if env, err := cfg.CurrentTarget(kubeCmdArgs.Target); err != nil {
-			log.Error(err.Error())
+			log.Warnf("%v\n", err)
 		} else {
 			if kubeCmdArgs.Context != "" {
 				env.Context = kubeCmdArgs.Context
