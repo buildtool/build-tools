@@ -221,12 +221,15 @@ func parseConfigFiles(dir string, fn func(string) error) error {
 		return err
 	}
 	var files []string
-	for !strings.HasSuffix(filepath.Clean(parent), string(os.PathSeparator)) {
+	for {
 		filename := filepath.Join(parent, ".buildtools.yaml")
 		if _, err := os.Stat(filename); !os.IsNotExist(err) {
 			files = append(files, filename)
 		}
 
+		if strings.HasSuffix(filepath.Clean(parent), string(os.PathSeparator)) {
+			break
+		}
 		parent = filepath.Dir(parent)
 	}
 	for i, file := range files {
