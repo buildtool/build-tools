@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version-file: 'go.mod'
+          check-latest: 'true'
       - name: check license and headers
         run: |
           go install github.com/google/addlicense@v1.0.0
