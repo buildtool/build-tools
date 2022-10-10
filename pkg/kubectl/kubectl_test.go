@@ -68,7 +68,7 @@ func TestNew_NoNamespace(t *testing.T) {
 	err := k.Apply("")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"apply", "--context", "missing", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--v=6"}, calls[0])
+	assert.Equal(t, []string{"apply", "--context", "missing", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--v=6", "--server-side"}, calls[0])
 	logMock.Check(t, []string{})
 }
 func TestNew_NoContext(t *testing.T) {
@@ -84,7 +84,7 @@ func TestNew_NoContext(t *testing.T) {
 	err := k.Apply("")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"apply", "--namespace", "namespace", "--file", fmt.Sprintf("%s/content.yaml", tempDir)}, calls[0])
+	assert.Equal(t, []string{"apply", "--namespace", "namespace", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--server-side"}, calls[0])
 	logMock.Check(t, []string{})
 }
 
@@ -101,7 +101,7 @@ func TestKubectl_Apply(t *testing.T) {
 	err := k.Apply("")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(calls))
-	assert.Equal(t, []string{"apply", "--context", "missing", "--namespace", "default", "--file", fmt.Sprintf("%s/content.yaml", tempDir)}, calls[0])
+	assert.Equal(t, []string{"apply", "--context", "missing", "--namespace", "default", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--server-side"}, calls[0])
 	logMock.Check(t, []string{})
 }
 
@@ -432,6 +432,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 	var selector *string
 	var kubeconfig *string
 	var verbose *string
+	var serverSide *bool
 
 	cmd := cobra.Command{
 		Use: "kubectl",
@@ -464,6 +465,9 @@ func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 			if *selector != "" {
 				call = append(call, "--selector", fmt.Sprintf("%v", *selector))
 			}
+			if *serverSide {
+				call = append(call, "--server-side")
+			}
 			calls = append(calls, call)
 			return nil
 		},
@@ -490,6 +494,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 	selector = cmd.Flags().StringP("selector", "l", "", "")
 	kubeconfig = cmd.Flags().StringP("kubeconfig", "", "", "")
 	verbose = cmd.Flags().StringP("v", "v", "0", "")
+	serverSide = cmd.Flags().BoolP("server-side", "", false, "")
 	cmd.SetArgs(args)
 	return &cmd
 }
