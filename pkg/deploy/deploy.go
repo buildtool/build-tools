@@ -69,7 +69,7 @@ func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 	} else {
 		var env *config.Target
 		if env, err = cfg.CurrentTarget(deployArgs.Target); err != nil {
-			log.Error(err.Error())
+			log.Warnf("%v\n", err)
 			env = &config.Target{}
 		}
 		if deployArgs.Context != "" {
