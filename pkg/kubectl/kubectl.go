@@ -144,7 +144,7 @@ func (k kubectl) Apply(input string) error {
 		return err
 	}
 
-	args := append(k.defaultArgs(), "apply", "--server-side", "-f", file)
+	args := append(k.defaultArgs(), "apply", "--server-side", "--force-conflicts", "-f", file)
 	c := newKubectlCmd(os.Stdin, k.out, k.out, args)
 	return c.Execute()
 }
