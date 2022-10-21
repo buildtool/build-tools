@@ -15,7 +15,7 @@ require (
 	github.com/containerd/containerd v1.6.8
 	github.com/containerd/continuity v0.2.3-0.20220330195504-d132b287edc8 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
-	github.com/docker/docker v20.10.19+incompatible
+	github.com/docker/docker v20.10.20+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fvbommel/sortorder v1.0.2 // indirect
