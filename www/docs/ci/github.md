@@ -12,23 +12,10 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_USERNAME: dummy
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-    name: build
     steps:
-    - name: Checkout
-        uses: actions/checkout@v1
-      - name: build
-        uses: buildtool/setup-buildtools-action@v0
-        with:
-          # use a specific version of buildtools
-          buildtools-version: 0.2.0-beta.1
-    - run: build
-    - name: promote
-      uses: buildtool/setup-buildtools-action@v0
-        # use latest released version of buildtools
-      - run: push
+      - uses: actions/checkout@v1
+      - uses: buildtool/setup-buildtools-action@v1
+      - run: builds
 ```
 
 Read more about available [commands](/commands/build):
