@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: buildtool/setup-buildtools-action@v1
-      - run: builds
+      - run: build
 ```
 
 Read more about available [commands](/commands/build):
