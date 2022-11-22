@@ -1,0 +1,22 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Breaking Changes
+      labels:
+        - breaking
+    - title: Enhancements
+        - enhancement
+    - title: Bugfixes
+      labels:
+        - bug
+    - title: Other Changes
+      exclude:
+        author:
+        - dependabot
+      labels:
+        - "*"
+    - title: Dependency changes
+      labels:
+        - dependencies
