@@ -25,6 +25,9 @@ The `KUBECONFIG_CONTENT` environment variable (probably most useful in CI/CD pip
 content of a "kubeconfig" file. If set, buildtools will create a temporary file with that content to use as the `kubeconfig` value.
 `KUBECONFIG_CONTENT` can be either a base64 encoded string or plain text.
 
+When deploying from inside a cluster, set `context: in-cluster` and make sure that the Pod has the appropriate
+permissions.
+
 **Note:** the `kubeconfig` parameter in config file overrides both the `KUBECONFIG` and `KUBECONFIG_CONTENT` environment
 variables if set.
 
