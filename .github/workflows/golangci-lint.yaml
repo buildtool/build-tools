@@ -3,8 +3,20 @@ name: "golang-ci-lint"
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
 jobs:
   golangci:
     name: lint

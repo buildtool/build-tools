@@ -1,11 +1,23 @@
 name: Check copyright headers
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
   pull_request:
-    branches:
-      - "*"
+    branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
+
 jobs:
   copyright-check:
     runs-on: ubuntu-latest
