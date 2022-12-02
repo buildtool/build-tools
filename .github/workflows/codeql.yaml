@@ -2,9 +2,21 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
 
 jobs:
   analyze:

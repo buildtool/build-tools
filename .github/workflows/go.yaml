@@ -2,6 +2,15 @@ name: Go
 
 on:
   push:
+    branches: [ main ]
+    paths-ignore:
+    - 'www/**'
+    - '*.md'
+    - '.editorconfig'
+    - 'LICENSE'
+    - 'install.sh'
+  pull_request:
+    branches: [ main ]
     paths-ignore:
     - 'www/**'
     - '*.md'

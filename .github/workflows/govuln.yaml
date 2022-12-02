@@ -3,9 +3,21 @@ name: "golang-vulnerabilities"
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
+    paths-ignore:
+      - 'www/**'
+      - '*.md'
+      - '.editorconfig'
+      - 'LICENSE'
+      - 'install.sh'
+
 jobs:
   golangci:
     name: golang-vulnerabilities
