@@ -7,7 +7,9 @@ changelog:
       labels:
         - breaking
     - title: Enhancements
+      labels:
         - enhancement
+        - feature
     - title: Bugfixes
       labels:
         - bug
