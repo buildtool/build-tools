@@ -79,6 +79,10 @@ func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 			log.Errorf("context is mandatory, not found in configuration for %s and not passed as parameter\n", deployArgs.Target)
 			return -5
 		}
+		if env.Context == "in-cluster" {
+			log.Info("Using empty context for in-cluster deploy\n")
+			env.Context = ""
+		}
 		if deployArgs.Namespace != "" {
 			env.Namespace = deployArgs.Namespace
 		}
