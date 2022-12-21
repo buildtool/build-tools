@@ -27,6 +27,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 
 	git2 "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -44,7 +45,10 @@ func InitRepoWithCommit(dir string) (plumbing.Hash, *git2.Repository) {
 	file, _ := os.CreateTemp(dir, "file")
 	_, _ = file.WriteString("test")
 	_ = file.Close()
-	_, _ = tree.Add(file.Name())
+	_ = tree.AddWithOptions(&git2.AddOptions{
+		All:  false,
+		Path: filepath.Base(file.Name()),
+	})
 	hash, _ := tree.Commit("Test", &git2.CommitOptions{Author: &object.Signature{Email: "test@example.com"}})
 
 	return hash, repo
