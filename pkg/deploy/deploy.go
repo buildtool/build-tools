@@ -50,6 +50,7 @@ type Args struct {
 	Namespace string `name:"namespace" short:"n" help:"override the namespace for default deployment target" default:""`
 	Tag       string `name:"tag" help:"override the tag to deploy, not using the CI or VCS evaluated value" default:""`
 	Timeout   string `name:"timeout" short:"t" help:"override the default deployment timeout (2 minutes). 0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)" default:"2m"`
+	NoWait    bool   `name:"no-wait" help:"don't wait for deployment to become ready"`
 }
 
 func DoDeploy(dir string, info version.Info, osArgs ...string) int {
@@ -115,6 +116,11 @@ func Deploy(dir, registryUrl, buildName, timestamp string, client kubectl.Kubect
 	deploymentFiles := filepath.Join(dir, "k8s")
 	if err := processDir(deploymentFiles, deployArgs.Tag, timestamp, deployArgs.Target, imageName, client); err != nil {
 		return err
+	}
+
+	if deployArgs.NoWait {
+		log.Info("Not waiting for deployment to succeed\n")
+		return nil
 	}
 
 	if client.DeploymentExists(buildName) {

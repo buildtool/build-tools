@@ -563,3 +563,42 @@ metadata:
 		"error: Pod events",
 	})
 }
+
+func TestDeploy_NoWait(t *testing.T) {
+	client := &kubectl.MockKubectl{
+		Responses:  []error{nil},
+		Deployment: true,
+	}
+
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	yaml := `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dummy
+`
+	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
+	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
+		Globals:   args.Globals{},
+		Target:    "",
+		Context:   "",
+		Namespace: "",
+		Tag:       "abc123",
+		NoWait:    true,
+	})
+
+	assert.NoError(t, err)
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
+		"info: Not waiting for deployment to succeed\n",
+	})
+}
