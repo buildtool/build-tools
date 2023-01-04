@@ -8,6 +8,7 @@ Deploys the built application to a Kubernetes cluster. Normal usage `deploy <tar
 | `--namespace`, `-n`         | Use a different namespace than the one found in configuration                   |
 | `--timeout`, `-t`           | Override the default deployment waiting time for completion (default 2 minutes). <br>0 means forever, all other values should contain a corresponding time unit (e.g. 1s, 2m, 3h)|
 | `--tag`                    | Override the default tag to use (instead of the current commit tag or the value from CI) |
+ | `--no-wait`                | Don't wait for deployment to become ready |
 
 ## Default usage, with `.buildtools.yaml` file
 Only the `target` name has to be specified
