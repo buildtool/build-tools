@@ -8,7 +8,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4 // indirect
 	github.com/alecthomas/kong v0.7.1
 	github.com/apex/log v1.9.0
-	github.com/aws/aws-sdk-go v1.44.185
+	github.com/aws/aws-sdk-go v1.44.186
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/containerd/console v1.0.3
