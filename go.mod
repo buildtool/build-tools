@@ -66,7 +66,7 @@ require (
 
 require (
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
-	k8s.io/cli-runtime v0.26.0
+	k8s.io/cli-runtime v0.26.1
 )
 
 require (
