@@ -47,7 +47,6 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
-	fsutiltypes "github.com/tonistiigi/fsutil/types"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 
@@ -89,15 +88,13 @@ func provideSession(dir string) Session {
 		panic("session.NewSession changed behaviour and did not return a session. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
 
-	s.Allow(filesync.NewFSSyncProvider([]filesync.SyncedDir{
-		{
-			Name: "context",
-			Dir:  dir,
-			Map:  resetUIDAndGID,
+	s.Allow(filesync.NewFSSyncProvider(filesync.StaticDirSource{
+		"context": {
+			Dir: dir,
+			//Map: resetUIDAndGID,
 		},
-		{
-			Name: "dockerfile",
-			Dir:  dir,
+		"dockerfile": {
+			Dir: dir,
 		},
 	}))
 
@@ -343,12 +340,6 @@ func tryNodeIdentifier() string {
 		}
 	}
 	return out
-}
-
-func resetUIDAndGID(_ string, s *fsutiltypes.Stat) bool {
-	s.Uid = 0
-	s.Gid = 0
-	return true
 }
 
 type tracer struct {

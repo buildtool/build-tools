@@ -103,6 +103,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
+	github.com/moby/patternmatcher v0.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/sys/signal v0.7.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -150,7 +151,7 @@ replace (
 	github.com/hashicorp/go-immutable-radix => github.com/tonistiigi/go-immutable-radix v0.0.0-20170803185627-826af9ccf0fe
 	github.com/jaguilar/vt100 => github.com/tonistiigi/vt100 v0.0.0-20190402012908-ad4c4a574305
 	// Workaround for dependency bug. https://devscope.io/code/moby/buildkit/issues/3055
-	github.com/tonistiigi/fsutil => github.com/jetpack-io/fsutil v0.1.2
+	//github.com/tonistiigi/fsutil => github.com/jetpack-io/fsutil v0.1.2
 	// genproto: corresponds to containerd
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
 	// grpc: corresponds to protobuf
