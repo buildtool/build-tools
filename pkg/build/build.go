@@ -74,7 +74,11 @@ func DoBuild(dir string, buildArgs Args) error {
 }
 
 var dockerClient = func() (docker.Client, error) {
-	return dkr.NewClientWithOpts(dkr.FromEnv)
+	return dkr.NewClientWithOpts(
+		dkr.WithTLSClientConfigFromEnv(),
+		dkr.WithHostFromEnv(),
+		dkr.WithAPIVersionNegotiation(),
+		dkr.WithVersionFromEnv())
 }
 
 var setupSession = provideSession
