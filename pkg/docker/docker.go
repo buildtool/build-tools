@@ -105,3 +105,11 @@ func FindStages(content string) []string {
 	}
 	return stages
 }
+
+func DefaultClient() (Client, error) {
+	return client.NewClientWithOpts(
+		client.WithTLSClientConfigFromEnv(),
+		client.WithHostFromEnv(),
+		client.WithAPIVersionNegotiation(),
+		client.WithVersionFromEnv())
+}

@@ -39,7 +39,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
-	dkr "github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	controlapi "github.com/moby/buildkit/api/services/control"
@@ -73,13 +72,7 @@ func DoBuild(dir string, buildArgs Args) error {
 	return build(dkrClient, dir, buildArgs)
 }
 
-var dockerClient = func() (docker.Client, error) {
-	return dkr.NewClientWithOpts(
-		dkr.WithTLSClientConfigFromEnv(),
-		dkr.WithHostFromEnv(),
-		dkr.WithAPIVersionNegotiation(),
-		dkr.WithVersionFromEnv())
-}
+var dockerClient = docker.DefaultClient
 
 var setupSession = provideSession
 

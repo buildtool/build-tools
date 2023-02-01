@@ -32,8 +32,6 @@ import (
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/version"
 
-	docker2 "github.com/docker/docker/client"
-
 	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -43,6 +41,8 @@ type Args struct {
 	args.Globals
 	Dockerfile string `name:"file" short:"f" help:"name of the Dockerfile to use." default:"Dockerfile"`
 }
+
+var dockerClient = docker.DefaultClient
 
 func Push(dir string, info version.Info, osArgs ...string) int {
 	var pushArgs Args
@@ -55,7 +55,7 @@ func Push(dir string, info version.Info, osArgs ...string) int {
 		}
 	}
 
-	client, err := docker2.NewClientWithOpts(docker2.FromEnv)
+	client, err := dockerClient()
 	if err != nil {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return -1
