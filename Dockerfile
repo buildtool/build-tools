@@ -24,7 +24,7 @@ FROM golang:1.20 as go-build
 
 RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@v0.5.10
 
-FROM debian:bullseye-20230109-slim
+FROM debian:bullseye-20230227-slim
 
 RUN apt-get update && \
     apt-get install -y ca-certificates curl unzip && \
