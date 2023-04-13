@@ -19,7 +19,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fvbommel/sortorder v1.0.2 // indirect
-	github.com/go-errors/errors v1.4.1 // indirect
+	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/go-git/v5 v5.6.1
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
@@ -66,7 +66,7 @@ require (
 
 require (
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6
-	k8s.io/cli-runtime v0.26.1
+	k8s.io/cli-runtime v0.27.0
 )
 
 require (
@@ -144,8 +144,8 @@ require (
 	k8s.io/component-helpers v0.26.1 // indirect
 	k8s.io/metrics v0.26.1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
-	sigs.k8s.io/kustomize/api v0.12.1 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
+	sigs.k8s.io/kustomize/api v0.13.2 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
