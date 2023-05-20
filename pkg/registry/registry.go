@@ -30,6 +30,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -38,7 +39,7 @@ type Registry interface {
 	Configured() bool
 	Name() string
 	Login(client docker.Client) error
-	GetAuthConfig() types.AuthConfig
+	GetAuthConfig() registry.AuthConfig
 	GetAuthInfo() string
 	RegistryUrl() string
 	Create(repository string) error

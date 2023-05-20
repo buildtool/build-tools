@@ -29,7 +29,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -53,7 +53,7 @@ func (r Github) Configured() bool {
 }
 
 func (r Github) Login(client docker.Client) error {
-	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), registry.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}); err == nil {
 		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
@@ -67,8 +67,8 @@ func (r Github) password() string {
 	}
 	return r.Password
 }
-func (r Github) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}
+func (r Github) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}
 }
 
 func (r Github) GetAuthInfo() string {

@@ -29,7 +29,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -60,8 +60,8 @@ func (r *Quay) Login(client docker.Client) error {
 	}
 }
 
-func (r Quay) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "quay.io"}
+func (r Quay) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{Username: r.Username, Password: r.Password, ServerAddress: "quay.io"}
 }
 
 func (r Quay) GetAuthInfo() string {

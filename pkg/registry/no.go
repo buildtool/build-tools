@@ -26,7 +26,7 @@ import (
 	"fmt"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -46,8 +46,8 @@ func (n NoDockerRegistry) Login(client docker.Client) error {
 	return nil
 }
 
-func (n NoDockerRegistry) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{}
+func (n NoDockerRegistry) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{}
 }
 
 func (n NoDockerRegistry) GetAuthInfo() string {
