@@ -37,7 +37,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/aws/aws-sdk-go/service/sts/stsiface"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -111,7 +111,7 @@ func (r *ECR) Login(client docker.Client) error {
 	r.username = parts[0]
 	r.password = parts[1]
 
-	if ok, err := client.RegistryLogin(context.Background(), types.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}); err == nil {
+	if ok, err := client.RegistryLogin(context.Background(), registry.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}); err == nil {
 		log.Debugf("%s\n", ok.Status)
 		return nil
 	} else {
@@ -119,8 +119,8 @@ func (r *ECR) Login(client docker.Client) error {
 	}
 }
 
-func (r *ECR) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.username, Password: r.password}
+func (r *ECR) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{Username: r.username, Password: r.password}
 }
 
 func (r *ECR) GetAuthInfo() string {

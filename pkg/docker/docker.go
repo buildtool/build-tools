@@ -41,7 +41,7 @@ import (
 )
 
 type Client interface {
-	RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error)
+	RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error)
 	ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error)
 	ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error)
 	DialHijack(ctx context.Context, url, proto string, meta map[string][]string) (net.Conn, error)

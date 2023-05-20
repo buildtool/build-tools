@@ -28,7 +28,7 @@ import (
 	"encoding/json"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -60,8 +60,8 @@ func (r Dockerhub) Login(client docker.Client) error {
 	}
 }
 
-func (r Dockerhub) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.Username, Password: r.Password}
+func (r Dockerhub) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{Username: r.Username, Password: r.Password}
 }
 
 func (r Dockerhub) GetAuthInfo() string {

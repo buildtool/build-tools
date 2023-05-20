@@ -84,7 +84,7 @@ func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.
 	return io.NopCloser(strings.NewReader(*m.PushOutput)), nil
 }
 
-func (m *MockDocker) RegistryLogin(ctx context.Context, auth types.AuthConfig) (registry.AuthenticateOKBody, error) {
+func (m *MockDocker) RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error) {
 	m.Username = auth.Username
 	m.Password = auth.Password
 	m.ServerAddress = auth.ServerAddress

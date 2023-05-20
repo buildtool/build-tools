@@ -26,13 +26,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	auth2 "github.com/moby/buildkit/session/auth"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_Credentials(t *testing.T) {
-	auth := NewAuthenticator("use-auth.com", types.AuthConfig{
+	auth := NewAuthenticator("use-auth.com", registry.AuthConfig{
 		Username: "user",
 		Password: "password",
 	})

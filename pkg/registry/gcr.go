@@ -28,7 +28,7 @@ import (
 	"encoding/json"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -49,7 +49,7 @@ func (r *GCR) Configured() bool {
 	if len(r.Url) <= 0 || len(r.KeyFileContent) <= 0 {
 		return false
 	}
-	return r.GetAuthConfig() != types.AuthConfig{}
+	return r.GetAuthConfig() != registry.AuthConfig{}
 }
 
 func (r *GCR) Login(client docker.Client) error {
@@ -63,12 +63,12 @@ func (r *GCR) Login(client docker.Client) error {
 	}
 }
 
-func (r *GCR) GetAuthConfig() types.AuthConfig {
+func (r *GCR) GetAuthConfig() registry.AuthConfig {
 	decoded, err := base64.StdEncoding.DecodeString(r.KeyFileContent)
 	if err != nil {
-		return types.AuthConfig{}
+		return registry.AuthConfig{}
 	}
-	return types.AuthConfig{Username: "_json_key", Password: string(decoded)}
+	return registry.AuthConfig{Username: "_json_key", Password: string(decoded)}
 }
 
 func (r *GCR) GetAuthInfo() string {

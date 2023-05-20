@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -61,8 +61,8 @@ func (r Gitlab) Login(client docker.Client) error {
 	}
 }
 
-func (r Gitlab) GetAuthConfig() types.AuthConfig {
-	return types.AuthConfig{Username: r.User, Password: r.Token, ServerAddress: r.Registry}
+func (r Gitlab) GetAuthConfig() registry.AuthConfig {
+	return registry.AuthConfig{Username: r.User, Password: r.Token, ServerAddress: r.Registry}
 }
 
 func (r Gitlab) GetAuthInfo() string {

@@ -33,7 +33,7 @@ import (
 
 	authutil "github.com/containerd/containerd/remotes/docker/auth"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth"
 	"golang.org/x/crypto/nacl/sign"
@@ -41,11 +41,11 @@ import (
 )
 
 type authenticator struct {
-	authConfig   types.AuthConfig
+	authConfig   registry.AuthConfig
 	registryHost string
 }
 
-func NewAuthenticator(registryHost string, authConfig types.AuthConfig) Authenticator {
+func NewAuthenticator(registryHost string, authConfig registry.AuthConfig) Authenticator {
 	return &authenticator{
 		authConfig:   authConfig,
 		registryHost: registryHost,
