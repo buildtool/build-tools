@@ -12,8 +12,8 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/containerd/console v1.0.3
-	github.com/containerd/containerd v1.7.1
-	github.com/containerd/continuity v0.3.1-0.20230206214859-2a963a2f56e8 // indirect
+	github.com/containerd/containerd v1.7.2
+	github.com/containerd/continuity v0.4.1 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/docker/docker v24.0.2+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
