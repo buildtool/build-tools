@@ -58,14 +58,14 @@ require (
 	k8s.io/client-go v0.27.3
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
-	k8s.io/kubectl v0.27.2
+	k8s.io/kubectl v0.27.3
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 require (
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
-	k8s.io/cli-runtime v0.27.2
+	k8s.io/cli-runtime v0.27.3
 )
 
 require (
@@ -142,9 +142,9 @@ require (
 	gotest.tools/v3 v3.4.0 // indirect
 	k8s.io/api v0.27.3 // indirect
 	k8s.io/apimachinery v0.27.3 // indirect
-	k8s.io/component-base v0.27.2 // indirect
-	k8s.io/component-helpers v0.27.2 // indirect
-	k8s.io/metrics v0.27.2 // indirect
+	k8s.io/component-base v0.27.3 // indirect
+	k8s.io/component-helpers v0.27.3 // indirect
+	k8s.io/metrics v0.27.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.2 // indirect
 	sigs.k8s.io/kustomize/kustomize/v5 v5.0.1 // indirect
