@@ -32,9 +32,9 @@ import (
 	"reflect"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/apex/log"
 	"github.com/caarlos0/env/v6"
-	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v3"
 
 	"github.com/buildtool/build-tools/pkg/ci"
