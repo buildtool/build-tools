@@ -26,21 +26,32 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	awsecr "github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
-	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
+
+type ECRClient interface {
+	GetAuthorizationToken(ctx context.Context, params *ecr.GetAuthorizationTokenInput, optFns ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error)
+	DescribeRepositories(ctx context.Context, params *ecr.DescribeRepositoriesInput, optFns ...func(*ecr.Options)) (*ecr.DescribeRepositoriesOutput, error)
+	CreateRepository(ctx context.Context, params *ecr.CreateRepositoryInput, optFns ...func(*ecr.Options)) (*ecr.CreateRepositoryOutput, error)
+	PutLifecyclePolicy(ctx context.Context, params *ecr.PutLifecyclePolicyInput, optFns ...func(*ecr.Options)) (*ecr.PutLifecyclePolicyOutput, error)
+}
+
+type STSClient interface {
+	GetCallerIdentity(ctx context.Context, params *sts.GetCallerIdentityInput, optFns ...func(*sts.Options)) (*sts.GetCallerIdentityOutput, error)
+}
 
 type ECR struct {
 	dockerRegistry `yaml:"-"`
@@ -48,8 +59,8 @@ type ECR struct {
 	Region         string `yaml:"region,omitempty" env:"ECR_REGION"`
 	username       string
 	password       string
-	ecrSvc         ecriface.ECRAPI
-	stsSvc         stsiface.STSAPI
+	ecrSvc         ECRClient
+	stsSvc         STSClient
 	registryId     *string
 }
 
@@ -61,12 +72,12 @@ func (r *ECR) Name() string {
 
 func (r *ECR) Configured() bool {
 	if len(r.Url) > 0 {
-		sess, err := session.NewSession(&aws.Config{Region: r.region()})
+		sess, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(r.Region))
 		if err != nil {
 			return false
 		}
-		r.ecrSvc = awsecr.New(sess)
-		r.stsSvc = sts.New(sess)
+		r.ecrSvc = ecr.NewFromConfig(sess)
+		r.stsSvc = sts.NewFromConfig(sess)
 		registryId, err := r.registry()
 		if err != nil {
 			return false
@@ -96,9 +107,9 @@ func (r *ECR) registry() (*string, error) {
 }
 
 func (r *ECR) Login(client docker.Client) error {
-	input := &awsecr.GetAuthorizationTokenInput{}
+	input := &ecr.GetAuthorizationTokenInput{}
 
-	result, err := r.ecrSvc.GetAuthorizationToken(input)
+	result, err := r.ecrSvc.GetAuthorizationToken(context.Background(), input)
 	if err != nil {
 		return err
 	}
@@ -133,32 +144,30 @@ func (r ECR) RegistryUrl() string {
 }
 
 func (r ECR) Create(repository string) error {
-	identity, err := r.stsSvc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	identity, err := r.stsSvc.GetCallerIdentity(context.Background(), &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return err
 	}
 	if *identity.Account != *r.registryId {
 		return fmt.Errorf("account mismatch, logged in at '%s' got '%s' from repository url %s", *identity.Account, *r.registryId, r.Url)
 	}
-	if _, err := r.ecrSvc.DescribeRepositories(&awsecr.DescribeRepositoriesInput{
+	if _, err := r.ecrSvc.DescribeRepositories(context.Background(), &ecr.DescribeRepositoriesInput{
 		RegistryId:      r.registryId,
-		RepositoryNames: []*string{&repository},
+		RepositoryNames: []string{repository},
 	}); err != nil {
-		switch err.(type) {
-		case *awsecr.RepositoryNotFoundException:
-			break
-		default:
+		var aerr *types.RepositoryNotFoundException
+		if !errors.As(err, &aerr) {
 			return err
 		}
-		input := &awsecr.CreateRepositoryInput{
+		input := &ecr.CreateRepositoryInput{
 			RepositoryName: aws.String(repository),
 		}
 
-		if _, err := r.ecrSvc.CreateRepository(input); err != nil {
+		if _, err := r.ecrSvc.CreateRepository(context.Background(), input); err != nil {
 			return err
 		} else {
 			policyText := `{"rules":[{"rulePriority":10,"description":"Only keep 20 images","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":20},"action":{"type":"expire"}}]}`
-			if _, err := r.ecrSvc.PutLifecyclePolicy(&awsecr.PutLifecyclePolicyInput{LifecyclePolicyText: &policyText, RepositoryName: &repository}); err != nil {
+			if _, err := r.ecrSvc.PutLifecyclePolicy(context.Background(), &ecr.PutLifecyclePolicyInput{LifecyclePolicyText: &policyText, RepositoryName: &repository}); err != nil {
 				return err
 			}
 			return nil

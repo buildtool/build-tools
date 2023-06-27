@@ -23,15 +23,15 @@
 package registry
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/aws/aws-sdk-go/aws"
-	awsecr "github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
-	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/aws/aws-sdk-go/service/sts/stsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/stretchr/testify/assert"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
@@ -123,7 +123,7 @@ func TestEcr_ExistingRepository(t *testing.T) {
 	repo := "repo"
 	err := registry.Create(repo)
 	assert.Nil(t, err)
-	assert.Equal(t, []*string{&repo}, mockECR.describeRepositoriesInput.RepositoryNames)
+	assert.Equal(t, []string{repo}, mockECR.describeRepositoriesInput.RepositoryNames)
 	assert.Equal(t, &registryId, mockECR.describeRepositoriesInput.RegistryId)
 }
 
@@ -190,53 +190,53 @@ func TestEcr_ParseInvalidECRUrlRepositoryId(t *testing.T) {
 }
 
 type MockSTS struct {
-	stsiface.STSAPI
+	STSClient
 	userAccountId *string
 }
 
 type MockECR struct {
-	ecriface.ECRAPI
+	ECRClient
 	loginError                error
 	authData                  string
-	describeRepositoriesInput *awsecr.DescribeRepositoriesInput
+	describeRepositoriesInput *ecr.DescribeRepositoriesInput
 	repoExists                bool
 	createError               error
-	createRepositoryInput     *awsecr.CreateRepositoryInput
-	putLifecyclePolicyInput   *awsecr.PutLifecyclePolicyInput
+	createRepositoryInput     *ecr.CreateRepositoryInput
+	putLifecyclePolicyInput   *ecr.PutLifecyclePolicyInput
 	putError                  error
 	repoAccessNotAllowed      bool
 }
 
-func (r MockECR) GetAuthorizationToken(input *awsecr.GetAuthorizationTokenInput) (*awsecr.GetAuthorizationTokenOutput, error) {
+func (r *MockECR) GetAuthorizationToken(_ context.Context, input *ecr.GetAuthorizationTokenInput, optFns ...func(*ecr.Options)) (*ecr.GetAuthorizationTokenOutput, error) {
 	if r.loginError != nil {
-		return &awsecr.GetAuthorizationTokenOutput{AuthorizationData: []*awsecr.AuthorizationData{}}, r.loginError
+		return &ecr.GetAuthorizationTokenOutput{AuthorizationData: []types.AuthorizationData{}}, r.loginError
 	}
-	return &awsecr.GetAuthorizationTokenOutput{AuthorizationData: []*awsecr.AuthorizationData{{AuthorizationToken: &r.authData}}}, nil
+	return &ecr.GetAuthorizationTokenOutput{AuthorizationData: []types.AuthorizationData{{AuthorizationToken: &r.authData}}}, nil
 }
 
-func (r *MockECR) DescribeRepositories(input *awsecr.DescribeRepositoriesInput) (*awsecr.DescribeRepositoriesOutput, error) {
+func (r *MockECR) DescribeRepositories(_ context.Context, input *ecr.DescribeRepositoriesInput, optFns ...func(*ecr.Options)) (*ecr.DescribeRepositoriesOutput, error) {
 	r.describeRepositoriesInput = input
 	if r.repoAccessNotAllowed {
-		return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}}, fmt.Errorf("not allowed")
+		return &ecr.DescribeRepositoriesOutput{Repositories: []types.Repository{}}, fmt.Errorf("not allowed")
 	}
 	if r.repoExists {
-		return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}}, nil
+		return &ecr.DescribeRepositoriesOutput{Repositories: []types.Repository{}}, nil
 	}
-	return &awsecr.DescribeRepositoriesOutput{Repositories: []*awsecr.Repository{}},
-		&awsecr.RepositoryNotFoundException{}
+	return &ecr.DescribeRepositoriesOutput{Repositories: []types.Repository{}},
+		&types.RepositoryNotFoundException{}
 }
 
-func (r *MockECR) CreateRepository(input *awsecr.CreateRepositoryInput) (*awsecr.CreateRepositoryOutput, error) {
+func (r *MockECR) CreateRepository(_ context.Context, input *ecr.CreateRepositoryInput, optFns ...func(*ecr.Options)) (*ecr.CreateRepositoryOutput, error) {
 	r.createRepositoryInput = input
-	return &awsecr.CreateRepositoryOutput{}, r.createError
+	return &ecr.CreateRepositoryOutput{}, r.createError
 }
 
-func (r *MockECR) PutLifecyclePolicy(input *awsecr.PutLifecyclePolicyInput) (*awsecr.PutLifecyclePolicyOutput, error) {
+func (r *MockECR) PutLifecyclePolicy(_ context.Context, input *ecr.PutLifecyclePolicyInput, optFns ...func(*ecr.Options)) (*ecr.PutLifecyclePolicyOutput, error) {
 	r.putLifecyclePolicyInput = input
-	return &awsecr.PutLifecyclePolicyOutput{}, r.putError
+	return &ecr.PutLifecyclePolicyOutput{}, r.putError
 }
 
-func (r *MockSTS) GetCallerIdentity(*sts.GetCallerIdentityInput) (*sts.GetCallerIdentityOutput, error) {
+func (r *MockSTS) GetCallerIdentity(context.Context, *sts.GetCallerIdentityInput, ...func(*sts.Options)) (*sts.GetCallerIdentityOutput, error) {
 	if r.userAccountId != nil {
 		return &sts.GetCallerIdentityOutput{Account: r.userAccountId}, nil
 	}
