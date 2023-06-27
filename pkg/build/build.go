@@ -36,7 +36,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
