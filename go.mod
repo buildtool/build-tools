@@ -1,6 +1,6 @@
 module github.com/buildtool/build-tools
 
-go 1.19
+go 1.20
 
 require (
 	cloud.google.com/go v0.99.0 // indirect
