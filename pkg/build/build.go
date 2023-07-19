@@ -295,7 +295,7 @@ func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgrou
 	}
 	// not using shared context to not disrupt display but let it finish reporting errors
 	eg.Go(func() error {
-		_, err := progressui.DisplaySolveStatus(context.TODO(), "", c, out, displayCh)
+		_, err := progressui.DisplaySolveStatus(context.TODO(), c, out, displayCh)
 		return err
 	})
 }
