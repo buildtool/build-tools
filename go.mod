@@ -32,14 +32,14 @@ require (
 	github.com/liamg/tml v0.6.1
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
-	github.com/moby/buildkit v0.11.6
+	github.com/moby/buildkit v0.12.0
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
+	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
-	github.com/tonistiigi/fsutil v0.0.0-20230407161946-9e7a6df48576 // indirect
+	github.com/tonistiigi/fsutil v0.0.0-20230629203738-36ef4d8c0dbb // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
@@ -85,8 +85,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.13 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
-	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
@@ -136,7 +134,7 @@ require (
 	github.com/skeema/knownhosts v1.1.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
-	github.com/tonistiigi/vt100 v0.0.0-20210615222946-8066bb97264f // indirect
+	github.com/tonistiigi/vt100 v0.0.0-20230623042737-f9a4f7ef6531 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0 // indirect
@@ -170,8 +168,6 @@ replace (
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-immutable-radix => github.com/tonistiigi/go-immutable-radix v0.0.0-20170803185627-826af9ccf0fe
 	github.com/jaguilar/vt100 => github.com/tonistiigi/vt100 v0.0.0-20190402012908-ad4c4a574305
-	// Workaround for dependency bug. https://devscope.io/code/moby/buildkit/issues/3055
-	//github.com/tonistiigi/fsutil => github.com/jetpack-io/fsutil v0.1.2
 	// genproto: corresponds to containerd
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
 	// grpc: corresponds to protobuf
