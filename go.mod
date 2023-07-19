@@ -168,8 +168,6 @@ replace (
 	github.com/golang/protobuf => github.com/golang/protobuf v1.5.2
 	github.com/hashicorp/go-immutable-radix => github.com/tonistiigi/go-immutable-radix v0.0.0-20170803185627-826af9ccf0fe
 	github.com/jaguilar/vt100 => github.com/tonistiigi/vt100 v0.0.0-20190402012908-ad4c4a574305
-	// Workaround for dependency bug. https://devscope.io/code/moby/buildkit/issues/3055
-	//github.com/tonistiigi/fsutil => github.com/jetpack-io/fsutil v0.1.2
 	// genproto: corresponds to containerd
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20211005153810-c76a74d43a8e
 	// grpc: corresponds to protobuf
