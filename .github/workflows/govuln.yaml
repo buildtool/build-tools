@@ -23,7 +23,7 @@ jobs:
     name: golang-vulnerabilities
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: opzkit/govulncheck-action@v1
         with:
           go-version-file: 'go.mod'
