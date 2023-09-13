@@ -12,8 +12,8 @@ require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/containerd/console v1.0.3
-	github.com/containerd/containerd v1.7.3
-	github.com/containerd/continuity v0.4.1 // indirect
+	github.com/containerd/containerd v1.7.6
+	github.com/containerd/continuity v0.4.2 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
 	github.com/docker/docker v24.0.6+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -74,6 +74,7 @@ require (
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
+	github.com/Microsoft/hcsshim v0.11.0 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.37 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.11 // indirect
