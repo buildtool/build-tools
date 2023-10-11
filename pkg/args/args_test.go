@@ -69,10 +69,10 @@ func Test_Help(t *testing.T) {
 		"info: desc\n",
 		"info: \n",
 		"info: Flags:\n",
-		"info:   -h, --help                    Show context-sensitive help.\n",
-		"info:       --version=VERSION-FLAG    Print args information and exit\n",
-		"info:   -v, --verbose=VERBOSE-FLAG    Enable verbose mode\n",
-		"info:       --config=CONFIG-FLAG      Print parsed config and exit\n",
+		"info:   -h, --help           Show context-sensitive help.\n",
+		"info:       --version        Print args information and exit\n",
+		"info:   -v, --verbose        Enable verbose mode\n",
+		"info:       --config         Print parsed config and exit\n",
 		"info:       --name=STRING\n",
 	})
 }
@@ -147,7 +147,7 @@ func Test_Config_Error(t *testing.T) {
 	require.Error(t, err)
 	logMock.Check(t, []string{
 		"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
-		"info: name: error: args.ConfigFlag.BeforeApply(): yaml: unmarshal errors:\n",
+		"info: name: error: yaml: unmarshal errors:\n",
 		"info:                line 1: cannot unmarshal !!str `_` into config.Config\n",
 	})
 }
