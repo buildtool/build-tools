@@ -65,7 +65,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2 v1.21.2
 	github.com/aws/aws-sdk-go-v2/config v1.18.44
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.20.1
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.20.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.23.2
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	k8s.io/cli-runtime v0.28.2
