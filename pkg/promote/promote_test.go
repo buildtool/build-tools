@@ -29,6 +29,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -36,9 +37,9 @@ import (
 	"text/template"
 
 	"github.com/buildtool/build-tools/pkg/config"
+	"github.com/go-git/go-git/v5"
 
 	"github.com/apex/log"
-	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
@@ -162,7 +163,7 @@ data:
 			},
 			want: 0,
 			wantLogged: []string{
-				"info: generating...",
+				"info: generating...\n",
 				"^info: pushing commit [0-9a-f]+ to .*\n$",
 			},
 			wantCommitMessage: strPointer("ci: promoting dummy to target, commit abc1234"),
@@ -329,9 +330,9 @@ data:
 			generateSSHKey(t, otherSshPath)
 			name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
-			repo, _ := InitRepo(t, "git-repo")
+			repo, _ := InitRepo(t, "git-repo", true)
 			defer func() { _ = os.RemoveAll(repo) }()
-			otherrepo, _ := InitRepo(t, "other-repo")
+			otherrepo, _ := InitRepo(t, "other-repo", true)
 			defer func() { _ = os.RemoveAll(otherrepo) }()
 
 			buff := Template(t, tt.config, repo, otherrepo)
@@ -454,7 +455,7 @@ func CheckLogged(t testing.TB, wantLogged []string, gotLogged []string) {
 	}
 }
 
-func InitRepo(t *testing.T, prefix string) (string, plumbing.Hash) {
+func InitRepo(t *testing.T, prefix string, bare bool) (string, plumbing.Hash) {
 	repo, err := os.MkdirTemp(os.TempDir(), prefix)
 	assert.NoError(t, err)
 	gitrepo, err := git.PlainInit(repo, false)
@@ -467,6 +468,15 @@ func InitRepo(t *testing.T, prefix string) (string, plumbing.Hash) {
 	assert.NoError(t, err)
 	hash, err := tree.Commit("Test", &git.CommitOptions{Author: &object.Signature{Email: "test@example.com"}})
 	assert.NoError(t, err)
+	if bare {
+		repo2, err := os.MkdirTemp(os.TempDir(), prefix)
+		assert.NoError(t, err)
+		_, err = git.PlainClone(repo2, true, &git.CloneOptions{URL: fmt.Sprintf("file://%s", repo)})
+		assert.NoError(t, err)
+		err = os.RemoveAll(repo)
+		assert.NoError(t, err)
+		return repo2, hash
+	}
 	return repo, hash
 }
 
