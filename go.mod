@@ -19,7 +19,7 @@ require (
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fvbommel/sortorder v1.1.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
-	github.com/go-git/go-git/v5 v5.10.1
+	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
@@ -44,7 +44,7 @@ require (
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/crypto v0.16.0
-	golang.org/x/net v0.18.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/oauth2 v0.11.0 // indirect
 	golang.org/x/sync v0.5.0
 	golang.org/x/sys v0.15.0 // indirect
