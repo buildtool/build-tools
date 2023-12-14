@@ -11,6 +11,9 @@ updates:
       aws-sdk:
         patterns:
         - 'github.com/aws/aws-sdk-go-v2*'
+      k8s:
+        patterns:
+        - 'k8s.io/*'
 
   - package-ecosystem: docker
     directory: "/"
