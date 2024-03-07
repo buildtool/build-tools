@@ -37,7 +37,6 @@ import (
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/containerd/console"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
@@ -46,6 +45,7 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/tonistiigi/fsutil"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
 
@@ -84,17 +84,6 @@ func provideSession(dir string) Session {
 	if s == nil {
 		panic("session.NewSession changed behaviour and did not return a session. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
-
-	s.Allow(filesync.NewFSSyncProvider(filesync.StaticDirSource{
-		"context": {
-			Dir: dir,
-			//Map: resetUIDAndGID,
-		},
-		"dockerfile": {
-			Dir: dir,
-		},
-	}))
-
 	return s
 }
 
@@ -186,7 +175,15 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 	if authenticator != nil {
 		s.Allow(authenticator)
 	}
-	s.Allow(filesync.NewFSSyncTargetDir("exported"))
+	fs, err := fsutil.NewFS(dir)
+	if err != nil {
+		return err
+	}
+	s.Allow(filesync.NewFSSyncProvider(filesync.StaticDirSource{
+		"context":    fs,
+		"dockerfile": fs,
+	}))
+	s.Allow(filesync.NewFSSyncTarget(filesync.WithFSSyncDir(0, "exported")))
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
@@ -288,14 +285,15 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 }
 
 func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group) {
-	var c console.Console
-	// TODO: Handle tty output in non-tty environment.
-	if cons, err := console.ConsoleFromFile(out); err == nil {
-		c = cons
-	}
 	// not using shared context to not disrupt display but let it finish reporting errors
+	display, err := progressui.NewDisplay(out, progressui.AutoMode)
+	if err != nil {
+		eg.Go(func() error {
+			return err
+		})
+	}
 	eg.Go(func() error {
-		_, err := progressui.DisplaySolveStatus(context.TODO(), c, out, displayCh)
+		_, err := display.UpdateFrom(context.TODO(), displayCh)
 		return err
 	})
 }
