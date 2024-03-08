@@ -73,7 +73,7 @@ func TestDoPromote(t *testing.T) {
 			args: []string{"--help"},
 			want: 0,
 			wantLogged: []string{
-				"info: Usage:  \\[<target>\\]\n",
+				"info: Usage:  \\[<target>\\] \\[flags\\]\n",
 				"info: \n",
 				"info: Arguments:\n",
 				"info:   \\[<target>\\]    the target in the .buildtools.yaml\n",

@@ -64,7 +64,7 @@ func Test_Help(t *testing.T) {
 	}, arguments)
 	require.Equal(t, err, Done)
 	logMock.Check(t, []string{
-		"info: Usage: command\n",
+		"info: Usage: command [flags]\n",
 		"info: \n",
 		"info: desc\n",
 		"info: \n",
