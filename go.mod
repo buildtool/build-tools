@@ -10,11 +10,11 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/chai2010/gettext-go v1.0.2 // indirect
-	github.com/containerd/console v1.0.4
+	github.com/containerd/console v1.0.4 // indirect
 	github.com/containerd/containerd v1.7.13
 	github.com/containerd/continuity v0.4.3 // indirect
 	github.com/daviddengcn/go-colortext v1.0.0 // indirect
-	github.com/docker/docker v25.0.3+incompatible
+	github.com/docker/docker v25.0.4+incompatible
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fvbommel/sortorder v1.1.0 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
-	github.com/tonistiigi/fsutil v0.0.0-20240301111122-7525a1af2bb5 // indirect
+	github.com/tonistiigi/fsutil v0.0.0-20240301111122-7525a1af2bb5
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
