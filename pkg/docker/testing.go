@@ -33,6 +33,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 )
 
@@ -74,7 +75,7 @@ func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, opt
 	return types.ImageBuildResponse{Body: io.NopCloser(body)}, nil
 }
 
-func (m *MockDocker) ImagePush(ctx context.Context, image string, options types.ImagePushOptions) (io.ReadCloser, error) {
+func (m *MockDocker) ImagePush(ctx context.Context, image string, options image.PushOptions) (io.ReadCloser, error) {
 	m.Images = append(m.Images, image)
 
 	if m.PushError != nil {
