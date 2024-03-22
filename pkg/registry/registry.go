@@ -29,7 +29,7 @@ import (
 	"errors"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	img "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
@@ -68,7 +68,7 @@ type responsetype struct {
 type dockerRegistry struct{}
 
 func (dockerRegistry) PushImage(client docker.Client, auth, image string) error {
-	if out, err := client.ImagePush(context.Background(), image, types.ImagePushOptions{All: true, RegistryAuth: auth}); err != nil {
+	if out, err := client.ImagePush(context.Background(), image, img.PushOptions{All: true, RegistryAuth: auth}); err != nil {
 		return err
 	} else {
 		scanner := bufio.NewScanner(out)
