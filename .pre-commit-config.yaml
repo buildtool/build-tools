@@ -38,7 +38,7 @@ repos:
       - id: commitlint
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
-        args: ['--config', './.github/commitlint.config.js']
+        args: ['--config', './.github/commitlint.config.mjs']
   - repo: https://github.com/dnephin/pre-commit-golang
     rev: v0.5.1
     hooks:
