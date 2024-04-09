@@ -1,6 +1,6 @@
 module github.com/buildtool/build-tools
 
-go 1.21
+go 1.22
 
 require (
 	dario.cat/mergo v1.0.0
@@ -44,7 +44,7 @@ require (
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	golang.org/x/crypto v0.21.0
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0
 	golang.org/x/sys v0.18.0 // indirect
