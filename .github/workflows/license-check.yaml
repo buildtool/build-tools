@@ -29,9 +29,9 @@ jobs:
           go-version-file: 'go.mod'
           check-latest: 'true'
 
-      - name: Get google/go-licenses package
+      - name: Install google/go-licenses package
         run: go install github.com/google/go-licenses@latest
         shell: bash
 
       - name: Check license
-        run: go-licenses check ./...
+        run:  go-licenses check --ignore golang.org/x/sys/unix --ignore github.com/modern-go/reflect2 --ignore golang.org/x/crypto/chacha20 --ignore github.com/klauspost/compress/zstd/internal/xxhash --ignore go.starlark.net/starlark ./...
