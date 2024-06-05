@@ -1,4 +1,8 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
 project_name: build-tools
+
+version: 2
 
 before:
   hooks:
@@ -84,7 +88,7 @@ brews:
     repository:
       owner: buildtool
       name: homebrew-taps
-    folder: Formula
+    directory: Formula
     install: |
       bin.install "build"
       bin.install "push"
