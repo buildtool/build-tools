@@ -52,6 +52,6 @@ func main() {
 		Commit:      commit,
 		Date:        date,
 	}, os.Args[1:]...); cmd != nil {
-		_, _ = fmt.Fprintf(out, *cmd)
+		_, _ = fmt.Fprint(out, *cmd)
 	}
 }
