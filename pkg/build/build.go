@@ -77,7 +77,7 @@ var dockerClient = docker.DefaultClient
 var setupSession = provideSession
 
 func provideSession(dir string) Session {
-	s, err := session.NewSession(context.Background(), filepath.Base(dir), getBuildSharedKey(dir))
+	s, err := session.NewSession(context.Background(), getBuildSharedKey(dir))
 	if err != nil {
 		panic("session.NewSession changed behaviour and returned an error. Create an issue at https://github.com/buildtool/build-tools/issues/new")
 	}
