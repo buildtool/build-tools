@@ -63,7 +63,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2 v1.30.5
 	github.com/aws/aws-sdk-go-v2/config v1.27.33
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.32.4
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.33.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.7
 	github.com/docker/docker v27.2.1+incompatible
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
