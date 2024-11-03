@@ -34,6 +34,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -45,6 +46,7 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/opencontainers/go-digest"
 	"github.com/tonistiigi/fsutil"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
@@ -359,40 +361,64 @@ func (t *tracer) write(msg jsonmessage.JSONMessage) {
 	if err := json.Unmarshal(*msg.Aux, &dt); err != nil {
 		return
 	}
-	if err := (&resp).Unmarshal(dt); err != nil {
+	if err := (&resp).UnmarshalVT(dt); err != nil {
 		return
 	}
 
 	s := client.SolveStatus{}
 	for _, v := range resp.Vertexes {
+		inputs := make([]digest.Digest, len(v.Inputs))
+		for i, input := range v.Inputs {
+			inputs[i] = digest.Digest(input)
+		}
+		var started *time.Time
+		var completed *time.Time
+		if v.Started != nil {
+			t := v.Started.AsTime()
+			started = &t
+		}
+		if v.Completed != nil {
+			t := v.Completed.AsTime()
+			completed = &t
+		}
 		s.Vertexes = append(s.Vertexes, &client.Vertex{
-			Digest:    v.Digest,
-			Inputs:    v.Inputs,
+			Digest:    digest.Digest(v.Digest),
+			Inputs:    inputs,
 			Name:      v.Name,
-			Started:   v.Started,
-			Completed: v.Completed,
+			Started:   started,
+			Completed: completed,
 			Error:     v.Error,
 			Cached:    v.Cached,
 		})
 	}
 	for _, v := range resp.Statuses {
+		var started *time.Time
+		var completed *time.Time
+		if v.Started != nil {
+			t := v.Started.AsTime()
+			started = &t
+		}
+		if v.Completed != nil {
+			t := v.Completed.AsTime()
+			completed = &t
+		}
 		s.Statuses = append(s.Statuses, &client.VertexStatus{
 			ID:        v.ID,
-			Vertex:    v.Vertex,
+			Vertex:    digest.Digest(v.Vertex),
 			Name:      v.Name,
 			Total:     v.Total,
 			Current:   v.Current,
-			Timestamp: v.Timestamp,
-			Started:   v.Started,
-			Completed: v.Completed,
+			Timestamp: v.Timestamp.AsTime(),
+			Started:   started,
+			Completed: completed,
 		})
 	}
 	for _, v := range resp.Logs {
 		s.Logs = append(s.Logs, &client.VertexLog{
-			Vertex:    v.Vertex,
+			Vertex:    digest.Digest(v.Vertex),
 			Stream:    int(v.Stream),
 			Data:      v.Msg,
-			Timestamp: v.Timestamp,
+			Timestamp: v.Timestamp.AsTime(),
 		})
 	}
 
