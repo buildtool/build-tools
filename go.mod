@@ -6,7 +6,7 @@ require (
 	dario.cat/mergo v1.0.1
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
-	github.com/alecthomas/kong v1.6.0
+	github.com/alecthomas/kong v1.6.1
 	github.com/apex/log v1.9.0
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/chai2010/gettext-go v1.0.2 // indirect
