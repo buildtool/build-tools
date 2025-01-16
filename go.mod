@@ -48,10 +48,10 @@ require (
 	google.golang.org/genproto v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/grpc v1.69.4
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/client-go v0.32.0
+	k8s.io/client-go v0.32.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
-	k8s.io/kubectl v0.32.0
+	k8s.io/kubectl v0.32.1
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
@@ -64,7 +64,7 @@ require (
 	github.com/docker/docker v27.5.0+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	k8s.io/cli-runtime v0.32.0
+	k8s.io/cli-runtime v0.32.1
 )
 
 require (
@@ -166,11 +166,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	k8s.io/api v0.32.0 // indirect
-	k8s.io/apimachinery v0.32.0 // indirect
-	k8s.io/component-base v0.32.0 // indirect
-	k8s.io/component-helpers v0.32.0 // indirect
-	k8s.io/metrics v0.32.0 // indirect
+	k8s.io/api v0.32.1 // indirect
+	k8s.io/apimachinery v0.32.1 // indirect
+	k8s.io/component-base v0.32.1 // indirect
+	k8s.io/component-helpers v0.32.1 // indirect
+	k8s.io/metrics v0.32.1 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kustomize/v5 v5.5.0 // indirect
