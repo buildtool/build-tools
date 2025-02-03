@@ -56,10 +56,10 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.35.0
-	github.com/aws/aws-sdk-go-v2/config v1.29.3
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.40.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.11
+	github.com/aws/aws-sdk-go-v2 v1.36.0
+	github.com/aws/aws-sdk-go-v2/config v1.29.4
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.40.1
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.12
 	github.com/docker/docker v27.5.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
@@ -70,15 +70,15 @@ require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.56 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.26 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.30 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.30 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.57 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.31 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.31 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.11 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.24.13 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.24.14 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.13 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
@@ -119,7 +119,6 @@ require (
 	github.com/in-toto/in-toto-golang v0.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
