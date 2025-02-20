@@ -60,7 +60,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.7
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.41.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.15
-	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/docker v28.0.0+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
 	k8s.io/cli-runtime v0.32.2
