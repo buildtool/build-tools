@@ -58,7 +58,7 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.9
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.42.1
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.43.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.17
 	github.com/docker/docker v28.0.1+incompatible
 	github.com/opencontainers/go-digest v1.0.0
