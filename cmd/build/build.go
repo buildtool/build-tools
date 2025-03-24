@@ -55,7 +55,7 @@ func main() {
 	}
 	err := args.ParseArgs(dir, os.Args[1:], info, &buildArgs)
 	if err != nil {
-		if err != args.Done {
+		if err != args.ErrDone {
 			exitFunc(-1)
 			return
 		} else {

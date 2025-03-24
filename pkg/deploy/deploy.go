@@ -57,7 +57,7 @@ func DoDeploy(dir string, info version.Info, osArgs ...string) int {
 	var deployArgs Args
 	err := args.ParseArgs(dir, osArgs, info, &deployArgs)
 	if err != nil {
-		if err != args.Done {
+		if err != args.ErrDone {
 			return -1
 		} else {
 			return 0

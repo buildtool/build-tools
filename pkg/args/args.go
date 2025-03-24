@@ -45,7 +45,7 @@ type VersionFlag string
 const done = 1000
 const unset = -1000
 
-var Done = errors.New("version")
+var ErrDone = errors.New("version")
 
 func (v VersionFlag) Decode(ctx *kong.DecodeContext) error { return nil }
 func (v VersionFlag) IsBool() bool                         { return true }
@@ -104,7 +104,7 @@ func ParseArgs(dir string, osArgs []string, info version.Info, variables interfa
 	)
 	_, err := cmd.Parse(osArgs)
 	if exitCode == done {
-		return Done
+		return ErrDone
 	}
 	cmd.FatalIfErrorf(err)
 	return err

@@ -24,7 +24,6 @@ package config
 
 import (
 	"bytes"
-
 	"os"
 	"testing"
 
@@ -141,7 +140,9 @@ func TestGitlab_RegistryFallback(t *testing.T) {
 	defer pkg.SetEnv("CI_JOB_TOKEN", "token")()
 
 	dir, _ := os.MkdirTemp("", "build-tools")
-	defer os.RemoveAll(dir)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(dir))
+	}()
 	oldPwd, _ := os.Getwd()
 	_ = os.Chdir(dir)
 	defer func() { _ = os.Chdir(oldPwd) }()

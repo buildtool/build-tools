@@ -62,7 +62,7 @@ func DoPromote(dir string, info version.Info, osArgs ...string) int {
 	var promoteArgs Args
 	err := args.ParseArgs(dir, osArgs, info, &promoteArgs)
 	if err != nil {
-		if err != args.Done {
+		if err != args.ErrDone {
 			return -1
 		} else {
 			return 0

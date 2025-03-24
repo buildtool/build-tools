@@ -54,7 +54,9 @@ func TestKubecmd_NoOptions(t *testing.T) {
 	out = &bytes.Buffer{}
 	oldPwd, _ := os.Getwd()
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(name))
+	}()
 	yaml := `
 targets:
   dummy:
@@ -77,7 +79,9 @@ func TestKubecmd_Output(t *testing.T) {
 	out = &bytes.Buffer{}
 	oldPwd, _ := os.Getwd()
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
-	defer os.RemoveAll(name)
+	defer func() {
+		assert.NoError(t, os.RemoveAll(name))
+	}()
 	yaml := `
 targets:
   dummy:
