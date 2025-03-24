@@ -62,7 +62,7 @@ func Test_Help(t *testing.T) {
 		Name:        "command",
 		Description: "desc",
 	}, arguments)
-	require.Equal(t, err, Done)
+	require.Equal(t, err, ErrDone)
 	logMock.Check(t, []string{
 		"info: Usage: command [flags]\n",
 		"info: \n",
@@ -93,7 +93,7 @@ func Test_Version(t *testing.T) {
 		Commit:      "commit",
 		Date:        "date",
 	}, arguments)
-	require.Equal(t, err, Done)
+	require.Equal(t, err, ErrDone)
 	logMock.Check(t, []string{"info: Version: version, commit commit, built at date\n"})
 }
 
@@ -120,7 +120,7 @@ targets:
 		Commit:      "commit",
 		Date:        "date",
 	}, arguments)
-	require.Equal(t, err, Done)
+	require.Equal(t, err, ErrDone)
 	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
 		"info: Current config\nci: none\nvcs: Git\nregistry: {}" + yaml})
 }
