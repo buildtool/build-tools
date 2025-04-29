@@ -28,7 +28,6 @@ jobs:
           ./bin/htmltest -c htmltest.yaml
 
       - name: Deploy site
-        if: startsWith(github.ref, 'refs/heads/main')
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}
