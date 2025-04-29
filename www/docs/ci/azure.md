@@ -25,4 +25,4 @@ jobs:
     condition: succeeded()
 ````
 
-[azure devops]: https://azure.microsoft.com/en-us/services/devops/pipelines/
+[azure devops]: https://azure.microsoft.com/en-us/products/devops
