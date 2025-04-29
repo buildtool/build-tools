@@ -17,14 +17,15 @@ registry:
 ## Supported registries
 The following registries are supported:
 
-| Config key| Container registry    |
-| :------------- | :--------------------- |
-| [`dockerhub`](#dockerhub) | [Docker hub](https://hub.docker.com/) |
-| [`ecr`](#ecr) | [AWS Elastic Container Registry](https://docs.aws.amazon.com/ecr/index.html)  |
-| [`github`](#github) | [Github package registry](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages) |
-| [`gitlab`](#gitlab) | [Gitlab container registry](https://docs.gitlab.com/ee/user/packages/container_registry/) |
-| [`quay`](#quay) | [Quay docker registry](https://docs.quay.io/) |
-| [`gcr`](#gcr) | [Google Container registry](https://cloud.google.com/container-registry) |
+| Config key                | Container registry                                                                                                   |
+|:--------------------------|:---------------------------------------------------------------------------------------------------------------------|
+| [`dockerhub`](#dockerhub) | [Docker hub](https://hub.docker.com/)                                                                                |
+| [`acr`](#acr)             | [Azure Container Registry](https://azure.microsoft.com/en-us/products/container-registry)                            |
+| [`ecr`](#ecr)             | [AWS Elastic Container Registry](https://docs.aws.amazon.com/ecr/index.html)                                         |
+| [`github`](#github)       | [Github package registry](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages) |
+| [`gitlab`](#gitlab)       | [Gitlab container registry](https://docs.gitlab.com/ee/user/packages/container_registry/)                            |
+| [`quay`](#quay)           | [Quay docker registry](https://docs.quay.io/)                                                                        |
+| [`gcr`](#gcr)             | [Google Container registry](https://cloud.google.com/container-registry)                                             |
 
 ### dockerhub
 
@@ -33,6 +34,15 @@ The following registries are supported:
 | `namespace`       |  The namespace to publish to         | `DOCKERHUB_NAMESPACE`  |
 | `username`        |  User to authenticate                | `DOCKERHUB_USERNAME`   |
 | `password`        |  Password for `user` authentication  | `DOCKERHUB_PASSWORD`   |
+
+### acr
+
+A valid Azure CLI session must be available (via `az login`), read more [here](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli).
+
+| Parameter  | Description                                               | Env variable    |
+|:-----------|:----------------------------------------------------------|:----------------|
+| `url`      | The ACR registry URL                                      | `ACR_URL`       |
+| `tenantId` | The id of the Azure tenant where the registry belongs to) | `ACR_TENANT_ID` |
 
 ### ecr
 
