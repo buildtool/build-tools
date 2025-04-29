@@ -42,4 +42,4 @@ deploy-to-prod:
     - main
 ````
 
-[Gitlab CI]: https://docs.gitlab.com/ce/ci
+[Gitlab CI]: https://docs.gitlab.com/ci
