@@ -5,7 +5,7 @@ conventions no additional flags are needed, but the following flags are availabl
 
 | Flag                                 | Description                                                                                                                                             |
 |:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--file`,`-f` `<path to Dockerfile>` | Used to override the default `Dockerfile` location (which is `$PWD`)                                                                                    |
+| `--file`,`-f` `<path to Dockerfile>` | Used to override the default `Dockerfile` location (which is `$PWD`), or `-` to read from `stdin                                                        |
 | `--no-login`                         | Disables login to docker registry (good for local testing)                                                                                              |
 | `--no-pull`                          | Disables pulling of remote images if they already exist (good for local testing)                                                                        |
 | `--build-arg key=value`              | Additional Docker [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)                         |
@@ -21,8 +21,8 @@ The
 following [build-arg](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg)
 are automatically made available:
 
-|      Arg    |                   Value                                |
-| :---------- | :----------------------------------------------------- |
+| Arg         | Value                                                  |
+|:------------|:-------------------------------------------------------|
 | `CI_COMMIT` | The commit being built as exposed by [CI](../ci/ci.md) |
 | `CI_BRANCH` | The branch being built as exposed by [CI](../ci/ci.md) |
 

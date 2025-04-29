@@ -25,6 +25,8 @@ package args
 import (
 	"bytes"
 	"errors"
+	"io"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/apex/log"
@@ -38,6 +40,7 @@ type Globals struct {
 	Version VersionFlag `name:"version" help:"Print args information and exit"`
 	Verbose VerboseFlag `short:"v" help:"Enable verbose mode"`
 	Config  ConfigFlag  `help:"Print parsed config and exit"`
+	StdIn   io.Reader   `kong:"-"`
 }
 
 type VersionFlag string
@@ -77,6 +80,11 @@ func (v VerboseFlag) Decode(ctx *kong.DecodeContext) error { return nil }
 func (v VerboseFlag) IsBool() bool                         { return true }
 func (v VerboseFlag) BeforeApply(*kong.Kong, kong.Vars) error {
 	log.SetLevel(log.DebugLevel)
+	return nil
+}
+
+func (v *Globals) AfterApply() error {
+	v.StdIn = os.Stdin
 	return nil
 }
 

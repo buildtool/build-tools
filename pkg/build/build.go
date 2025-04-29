@@ -30,6 +30,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -59,11 +60,22 @@ import (
 
 type Args struct {
 	args.Globals
-	Dockerfile string   `name:"file" short:"f" help:"name of the Dockerfile to use." default:"Dockerfile"`
+	Dockerfile string   `name:"file" short:"f" help:"name of the Dockerfile to use, or '-' to read from stdin" default:"Dockerfile"`
 	BuildArgs  []string `name:"build-arg" type:"list" help:"additional docker build-args to use, see https://docs.docker.com/engine/reference/commandline/build/ for more information."`
 	NoLogin    bool     `help:"disable login to docker registry" default:"false" `
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
 	Platform   string   `help:"specify target platform to build" default:""`
+}
+
+func (a Args) isDockerfileFromStdin() bool {
+	return a.Dockerfile == "-"
+}
+
+func (a Args) dockerfileName() string {
+	if a.isDockerfileFromStdin() {
+		return ""
+	}
+	return a.Dockerfile
 }
 
 func DoBuild(dir string, buildArgs Args) error {
@@ -114,10 +126,20 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
 	}
 
-	content, err := os.ReadFile(filepath.Join(dir, buildVars.Dockerfile))
+	var content []byte
+	if buildVars.isDockerfileFromStdin() {
+		log.Infof("<greed>reading Dockerfile content from stdin</green>\n")
+		content, err = io.ReadAll(buildVars.StdIn)
+	} else {
+		content, err = os.ReadFile(filepath.Join(dir, buildVars.Dockerfile))
+	}
 	if err != nil {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return err
+	}
+
+	if len(strings.TrimSpace(string(content))) == 0 {
+		return fmt.Errorf("<red>the Dockerfile cannot be empty</red>")
 	}
 	stages := docker.FindStages(string(content))
 	if !ci.IsValid(currentCI) {
@@ -206,7 +228,7 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 			})
 		}
 		sessionID := s.ID()
-		return doBuild(ctx, client, eg, buildVars.Dockerfile, buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
+		return doBuild(ctx, client, eg, buildVars.dockerfileName(), buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
 	})
 	return eg.Wait()
 }
