@@ -16,4 +16,4 @@ The following variables are checked to determine which CI/CD tool that we run un
 [Gitlab CI]: https://docs.gitlab.com/ci/
 [Github Actions]: https://github.com/features/actions
 [TeamCity]: https://www.jetbrains.com/teamcity
-[azure devops]: https://azure.microsoft.com/en-us/services/devops/pipelines/
+[Azure Devops]: https://azure.microsoft.com/en-us/products/devops
