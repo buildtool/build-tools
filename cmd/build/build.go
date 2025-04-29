@@ -23,6 +23,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/apex/log"
@@ -55,7 +56,7 @@ func main() {
 	}
 	err := args.ParseArgs(dir, os.Args[1:], info, &buildArgs)
 	if err != nil {
-		if err != args.ErrDone {
+		if !errors.Is(err, args.ErrDone) {
 			exitFunc(-1)
 			return
 		} else {
