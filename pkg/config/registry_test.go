@@ -94,6 +94,27 @@ func TestEcr_Identify_MissingDockerRegistry(t *testing.T) {
 	assert.Equal(t, "", out.String())
 }
 
+func TestAcr_Identify(t *testing.T) {
+	defer pkg.SetEnv("ACR_URL", "someregistry.azurecr.io")()
+
+	out := &bytes.Buffer{}
+	cfg, err := Load(name)
+	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
+	assert.NotNil(t, registry)
+	assert.Equal(t, "someregistry.azurecr.io", registry.RegistryUrl())
+	assert.Equal(t, "", out.String())
+}
+
+func TestAcr_Name(t *testing.T) {
+	defer pkg.SetEnv("ACR_URL", "someregistry.azurecr.io")()
+
+	cfg, err := Load(name)
+	assert.NoError(t, err)
+	registry := cfg.CurrentRegistry()
+	assert.Equal(t, "ACR", registry.Name())
+}
+
 func TestGitlab_Identify(t *testing.T) {
 	defer pkg.SetEnv("CI_REGISTRY", "registry.gitlab.com")()
 	defer pkg.SetEnv("CI_REGISTRY_USER", "gitlab-ci-token")()
