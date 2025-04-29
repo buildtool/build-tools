@@ -13,7 +13,7 @@ The following variables are checked to determine which CI/CD tool that we run un
 
 
 [Buildkite]: https://buildkite.com
-[Gitlab CI]: https://docs.gitlab.com/ce/ci
+[Gitlab CI]: https://docs.gitlab.com/ci/
 [Github Actions]: https://github.com/features/actions
-[teamcity]: https://www.jetbrains.com/teamcity
-[azure devops]: https://azure.microsoft.com/en-us/services/devops/pipelines/
+[TeamCity]: https://www.jetbrains.com/teamcity
+[Azure Devops]: https://azure.microsoft.com/en-us/products/devops
