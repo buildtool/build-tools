@@ -24,7 +24,7 @@ FROM golang:1.24 as go-build
 
 RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@v0.7.2
 
-FROM debian:bullseye-20250428-slim
+FROM debian:bookworm-20250428-slim
 
 RUN apt-get update && \
     apt-get install -y ca-certificates curl unzip && \
@@ -36,5 +36,5 @@ RUN cd /tmp &&  \
     ./aws/install && \
     rm -rf aws && rm awscliv2.zip
 
-COPY build push deploy kubecmd /usr/local/bin/
+COPY build push deploy kubecmd promote /usr/local/bin/
 COPY --from=go-build /go/bin/aws-iam-authenticator /usr/local/bin/
