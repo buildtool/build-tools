@@ -22,7 +22,7 @@
 
 FROM golang:1.24 as go-build
 
-RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@v0.5.10
+RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@v0.7.2
 
 FROM debian:bullseye-20250428-slim
 
