@@ -36,5 +36,5 @@ RUN cd /tmp &&  \
     ./aws/install && \
     rm -rf aws && rm awscliv2.zip
 
-COPY build push deploy kubecmd /usr/local/bin/
+COPY build push deploy kubecmd promote /usr/local/bin/
 COPY --from=go-build /go/bin/aws-iam-authenticator /usr/local/bin/
