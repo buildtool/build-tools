@@ -44,7 +44,7 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	google.golang.org/grpc v1.72.1
+	google.golang.org/grpc v1.72.2
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/client-go v0.33.1
 	k8s.io/klog/v2 v2.130.1
