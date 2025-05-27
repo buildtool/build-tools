@@ -18,5 +18,4 @@ jobs:
       - run: go install golang.org/x/tools/cmd/goimports@latest
       - run: go install mvdan.cc/gofumpt@latest
       - run: echo "PATH=$PATH:/home/runner/go/bin" >> $GITHUB_ENV
-      - run:  unset "${!GITHUB_@}" RUNNER_WORKSPACE
       - uses: pre-commit/action@v3.0.1

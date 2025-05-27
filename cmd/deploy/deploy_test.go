@@ -89,6 +89,7 @@ func TestDeploy_NoCI(t *testing.T) {
 	exitFunc = func(code int) {
 		assert.Equal(t, -3, code)
 	}
+	defer pkg.UnsetGithubEnvironment()()
 
 	oldPwd, _ := os.Getwd()
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
