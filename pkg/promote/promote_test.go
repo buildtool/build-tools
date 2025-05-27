@@ -336,14 +336,14 @@ data:
 			defer func() { _ = os.RemoveAll(otherrepo) }()
 
 			buff := Template(t, tt.config, repo, otherrepo)
-			err := os.WriteFile(filepath.Join(name, ".buildtools.yaml"), buff.Bytes(), 0777)
+			err := os.WriteFile(filepath.Join(name, ".buildtools.yaml"), buff.Bytes(), 0o777)
 			assert.NoError(t, err)
 
 			if tt.descriptor != "" {
 				k8s := filepath.Join(name, "k8s")
-				err = os.MkdirAll(k8s, 0777)
+				err = os.MkdirAll(k8s, 0o777)
 				assert.NoError(t, err)
-				err = os.WriteFile(filepath.Join(k8s, "descriptor.yaml"), []byte(tt.descriptor), 0666)
+				err = os.WriteFile(filepath.Join(k8s, "descriptor.yaml"), []byte(tt.descriptor), 0o666)
 				assert.NoError(t, err)
 			}
 			err = os.Chdir(name)
@@ -413,9 +413,9 @@ func TestPromote_OutParam(t *testing.T) {
 			log.SetHandler(logMock)
 			name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 			defer func() { _ = os.RemoveAll(name) }()
-			err := os.MkdirAll(filepath.Join(name, "k8s"), 0777)
+			err := os.MkdirAll(filepath.Join(name, "k8s"), 0o777)
 			assert.NoError(t, err)
-			err = os.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0666)
+			err = os.WriteFile(filepath.Join(name, "k8s", "deploy.yaml"), []byte(`some data`), 0o666)
 			assert.NoError(t, err)
 			cfg := config.InitEmptyConfig()
 
@@ -428,7 +428,7 @@ func TestPromote_OutParam(t *testing.T) {
 }
 
 func generateSSHKey(t *testing.T, dir string) {
-	err := os.MkdirAll(dir, 0777)
+	err := os.MkdirAll(dir, 0o777)
 	assert.NoError(t, err)
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	assert.NoError(t, err)
@@ -462,7 +462,7 @@ func InitRepo(t *testing.T, prefix string, bare bool) (string, plumbing.Hash) {
 	assert.NoError(t, err)
 	tree, err := gitrepo.Worktree()
 	assert.NoError(t, err)
-	err = os.WriteFile(filepath.Join(repo, "file"), []byte("test"), 0666)
+	err = os.WriteFile(filepath.Join(repo, "file"), []byte("test"), 0o666)
 	assert.NoError(t, err)
 	_, err = tree.Add("file")
 	assert.NoError(t, err)

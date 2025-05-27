@@ -58,7 +58,7 @@ func TestDeploy_BrokenConfig(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -99,7 +99,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -126,7 +126,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -153,7 +153,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -180,7 +180,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -207,7 +207,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -230,7 +230,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)

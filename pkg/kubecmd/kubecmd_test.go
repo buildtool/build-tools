@@ -49,7 +49,7 @@ func TestKubecmd_MissingArgumentsPrintUsageToOutWriter(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	cmd := Kubecmd(".", info)
 	assert.Nil(t, cmd)
-	//assert.Contains(t, "Usage: kubecmd <target>")
+	// assert.Contains(t, "Usage: kubecmd <target>")
 }
 
 func TestKubecmd_BrokenConfig(t *testing.T) {
@@ -58,7 +58,7 @@ func TestKubecmd_BrokenConfig(t *testing.T) {
 	yaml := `ci: []
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = os.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -67,7 +67,8 @@ func TestKubecmd_BrokenConfig(t *testing.T) {
 	assert.Nil(t, cmd)
 	logMock.Check(t, []string{
 		fmt.Sprintf("debug: Parsing config from file: <green>'%s'</green>\n", filePath),
-		"error: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig"})
+		"error: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!seq into config.CIConfig",
+	})
 }
 
 func TestKubecmd_MissingTarget(t *testing.T) {
@@ -75,16 +76,18 @@ func TestKubecmd_MissingTarget(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := ``
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = os.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	cmd := Kubecmd(name, info, "dummy")
 	assert.Nil(t, cmd)
-	logMock.Check(t, []string{fmt.Sprintf(
-		"debug: Parsing config from file: <green>'%s'</green>\n", filePath),
-		"warn: no target matching dummy found\n"})
+	logMock.Check(t, []string{
+		fmt.Sprintf(
+			"debug: Parsing config from file: <green>'%s'</green>\n", filePath),
+		"warn: no target matching dummy found\n",
+	})
 }
 
 func TestKubecmd_NoOptions(t *testing.T) {
@@ -97,7 +100,7 @@ targets:
     namespace: none
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = os.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -117,7 +120,7 @@ targets:
     namespace: none
 `
 	filePath := filepath.Join(name, ".buildtools.yaml")
-	_ = os.WriteFile(filePath, []byte(yaml), 0777)
+	_ = os.WriteFile(filePath, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)

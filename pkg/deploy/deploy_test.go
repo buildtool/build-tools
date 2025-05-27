@@ -66,7 +66,7 @@ func TestDeploy_NoFiles(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -92,7 +92,7 @@ func TestDeploy_NoEnvSpecificFiles(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -100,7 +100,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -131,7 +131,7 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "deploy.yaml"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "deploy.yaml"), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -148,7 +148,8 @@ func TestDeploy_UnreadableFile(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf("read %s/k8s/deploy.yaml: is a directory", name))
 	logMock.Check(t, []string{
 		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
-		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n"})
+		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
+	})
 }
 
 func TestDeploy_FileBrokenSymlink(t *testing.T) {
@@ -158,9 +159,9 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s"), 0o777)
 	deployFile := filepath.Join(name, "k8s", "ns.yaml")
-	_ = os.WriteFile(deployFile, []byte("test"), 0777)
+	_ = os.WriteFile(deployFile, []byte("test"), 0o777)
 	_ = os.Symlink(deployFile, filepath.Join(name, "k8s", "deploy.yaml"))
 	_ = os.Remove(deployFile)
 
@@ -181,7 +182,6 @@ func TestDeploy_FileBrokenSymlink(t *testing.T) {
 		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
 		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
 	})
-
 }
 
 func TestDeploy_EnvSpecificFilesWithSuffix(t *testing.T) {
@@ -191,7 +191,7 @@ func TestDeploy_EnvSpecificFilesWithSuffix(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -199,7 +199,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -230,11 +230,11 @@ func TestDeploy_EnvSpecificFiles(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0o777)
 	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
-	_ = os.WriteFile(deployFile, []byte("dummy yaml content"), 0777)
-	_ = os.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte("prod content"), 0777)
-	_ = os.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0777)
+	_ = os.WriteFile(deployFile, []byte("dummy yaml content"), 0o777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte("prod content"), 0o777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -268,11 +268,11 @@ func TestDeploy_IgnoreEmptyFiles(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0o777)
 	deployFile := filepath.Join(name, "k8s", "ns-dummy.yaml")
-	_ = os.WriteFile(deployFile, []byte("dummy yaml content"), 0777)
-	_ = os.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte(""), 0777)
-	_ = os.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0777)
+	_ = os.WriteFile(deployFile, []byte("dummy yaml content"), 0o777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "ns-prod.yaml"), []byte(""), 0o777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "other-dummy.sh"), []byte("dummy script content"), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -305,10 +305,10 @@ func TestDeploy_ScriptExecution_NameSuffix(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0o777)
 	script := `#!/usr/bin/env bash
 echo "Prod-script with suffix"`
-	_ = os.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script), 0777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -337,13 +337,13 @@ func TestDeploy_ScriptExecution_No_Execute_Of_Common_If_Specific_Exists(t *testi
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0o777)
 	script := `#!/usr/bin/env bash
 echo "Script without suffix should not execute"`
-	_ = os.WriteFile(filepath.Join(name, "k8s", "setup.sh"), []byte(script), 0777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "setup.sh"), []byte(script), 0o777)
 	script2 := `#!/usr/bin/env bash
 echo "Prod-script with suffix"`
-	_ = os.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script2), 0777)
+	_ = os.WriteFile(filepath.Join(name, "k8s", "setup-prod.sh"), []byte(script2), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -374,11 +374,11 @@ func TestDeploy_ScriptExecution_NotExecutable(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0777)
+	_ = os.MkdirAll(filepath.Join(name, "k8s", "prod"), 0o777)
 	script := `#!/usr/bin/env bash
 echo "Prod-script with suffix"`
 	scriptName := filepath.Join(name, "k8s", "setup-prod.sh")
-	_ = os.WriteFile(scriptName, []byte(script), 0666)
+	_ = os.WriteFile(scriptName, []byte(script), 0o666)
 
 	err := Deploy(name, "image", "registryUrl", "20190513-17:22:36", client, Args{
 		Globals:   args.Globals{},
@@ -398,7 +398,7 @@ func TestDeploy_ErrorFromApply(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -406,7 +406,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -435,7 +435,7 @@ func TestDeploy_ReplacingCommitAndTimestampAndImage(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -446,7 +446,7 @@ metadata:
   timestamp: ${TIMESTAMP}
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -486,7 +486,7 @@ func TestDeploy_DeploymentExists(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -494,7 +494,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -530,7 +530,7 @@ func TestDeploy_RolloutStatusFail(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -538,7 +538,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -555,7 +555,8 @@ metadata:
 	assert.EqualError(t, err, "failed to rollout")
 	assert.Equal(t, 1, len(client.Inputs))
 	assert.Equal(t, yaml, client.Inputs[0])
-	logMock.Check(t, []string{"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
+	logMock.Check(t, []string{
+		"debug: considering file '<yellow>deploy.yaml</yellow>' for target: <green></green>\n",
 		"debug: using file '<green>deploy.yaml</green>' for target: <green></green>\n",
 		"debug: trying to apply: \n---\n\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: dummy\n\n---\n",
 		"error: Rollout failed. Fetching events.\n",
@@ -572,7 +573,7 @@ func TestDeploy_NoWait(t *testing.T) {
 
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
-	_ = os.Mkdir(filepath.Join(name, "k8s"), 0777)
+	_ = os.Mkdir(filepath.Join(name, "k8s"), 0o777)
 	yaml := `
 apiVersion: v1
 kind: Namespace
@@ -580,7 +581,7 @@ metadata:
   name: dummy
 `
 	deployFile := filepath.Join(name, "k8s", "deploy.yaml")
-	_ = os.WriteFile(deployFile, []byte(yaml), 0777)
+	_ = os.WriteFile(deployFile, []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)

@@ -71,6 +71,7 @@ func TestNew_NoNamespace(t *testing.T) {
 	assert.Equal(t, []string{"apply", "--context", "missing", "--file", fmt.Sprintf("%s/content.yaml", tempDir), "--v=6", "--server-side", "--force-conflicts"}, calls[0])
 	logMock.Check(t, []string{})
 }
+
 func TestNew_NoContext(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -269,7 +270,6 @@ func TestKubectl_KubeconfigBase64Set(t *testing.T) {
 }
 
 func TestKubectl_KubeconfigExistingFile(t *testing.T) {
-
 	name, _ := os.CreateTemp(os.TempDir(), "kubecontent")
 	defer func() {
 		_ = os.Remove(name.Name())
@@ -419,10 +419,12 @@ Events:
 	logMock.Check(t, []string{})
 }
 
-var calls [][]string
-var cmdError *string
-var cmdOut *string
-var fatal = false
+var (
+	calls    [][]string
+	cmdError *string
+	cmdOut   *string
+	fatal    = false
+)
 
 func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 	var ctx, ns, file *string
@@ -438,7 +440,7 @@ func mockCmd(_ io.Reader, out, _ io.Writer, args []string) *cobra.Command {
 	cmd := cobra.Command{
 		Use: "kubectl",
 		Args: func(cmd *cobra.Command, args []string) error {
-			var call = args
+			call := args
 			if *ctx != "" {
 				call = append(call, "--context", *ctx)
 			}

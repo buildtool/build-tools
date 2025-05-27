@@ -78,6 +78,7 @@ func TestGithub_Branch_Tag(t *testing.T) {
 
 	assert.Equal(t, "feature1", ci.Branch())
 }
+
 func TestGithub_Branch(t *testing.T) {
 	ci := &Github{CIBranchName: "feature1"}
 

@@ -42,6 +42,7 @@ func NewMockVcsWithBranch(branch string) VCS {
 		commit: "fallback-sha",
 	}
 }
+
 func (m mockVcs) Identify(dir string) bool {
 	panic("implement me")
 }

@@ -28,8 +28,7 @@ import (
 	"github.com/moby/buildkit/session"
 )
 
-type MockSession struct {
-}
+type MockSession struct{}
 
 func (m *MockSession) Allow(a session.Attachable) {
 }

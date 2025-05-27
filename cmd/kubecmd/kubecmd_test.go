@@ -63,7 +63,7 @@ targets:
     context: missing
     namespace: none
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
@@ -72,7 +72,6 @@ targets:
 	os.Args = []string{"kubecmd", "dummy"}
 	main()
 	assert.Equal(t, "kubectl --context missing --namespace none", out.(*bytes.Buffer).String())
-
 }
 
 func TestKubecmd_Output(t *testing.T) {
@@ -88,7 +87,7 @@ targets:
     context: local
     namespace: default
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	err := os.Chdir(name)
 	assert.NoError(t, err)
