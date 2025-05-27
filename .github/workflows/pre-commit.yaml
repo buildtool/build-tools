@@ -19,4 +19,4 @@ jobs:
       - run: go install mvdan.cc/gofumpt@latest
       - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
       - run: echo "PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
-      - uses: pre-commit/action@v3.0.1
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
