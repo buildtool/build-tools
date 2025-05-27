@@ -73,6 +73,8 @@ func TestPush_BadDockerHost(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
+	defer pkg.UnsetGithubEnvironment()()
+
 	code := Push(name, version.Info{})
 	assert.Equal(t, -5, code)
 }

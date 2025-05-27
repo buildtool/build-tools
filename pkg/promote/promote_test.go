@@ -36,8 +36,10 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/go-git/go-git/v5"
+
+	"github.com/buildtool/build-tools/pkg"
+	"github.com/buildtool/build-tools/pkg/config"
 
 	"github.com/apex/log"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -315,6 +317,7 @@ data:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			defer pkg.UnsetGithubEnvironment()()
 			logMock := mocks.New()
 			log.SetHandler(logMock)
 			oldPwd, _ := os.Getwd()

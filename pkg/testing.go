@@ -27,9 +27,28 @@ package pkg
 
 import (
 	"os"
+	"strings"
 )
 
 func SetEnv(key, value string) func() {
 	_ = os.Setenv(key, value)
 	return func() { _ = os.Unsetenv(key) }
+}
+
+func UnsetGithubEnvironment() func() {
+	envs := make(map[string]string)
+	for _, e := range os.Environ() {
+		if strings.HasPrefix(e, "GITHUB_") {
+			parts := strings.Split(e, "=")
+			envs[parts[0]] = os.Getenv(parts[1])
+			_ = os.Unsetenv(parts[0])
+		}
+	}
+	envs["RUNNER_WORKSPACE"] = os.Getenv("RUNNER_WORKSPACE")
+	_ = os.Unsetenv("RUNNER_WORKSPACE")
+	return func() {
+		for k, v := range envs {
+			_ = os.Setenv(k, v)
+		}
+	}
 }

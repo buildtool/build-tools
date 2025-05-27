@@ -1,0 +1,22 @@
+name: Pre-commit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
+        with:
+          go-version-file: 'go.mod'
+          check-latest: 'true'
+      - run: go install golang.org/x/tools/cmd/goimports@latest
+      - run: go install mvdan.cc/gofumpt@latest
+      - run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+      - run: echo "PATH=$PATH:$(go env GOPATH)/bin" >> $GITHUB_ENV
+      - uses: pre-commit/action@v3.0.1

@@ -104,6 +104,7 @@ targets:
         context: docker-desktop
 `
 	defer pkg.SetEnv("BUILDTOOLS_CONTENT", base64.StdEncoding.EncodeToString([]byte(yaml)))()
+	defer pkg.UnsetGithubEnvironment()()
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
