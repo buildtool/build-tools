@@ -9,8 +9,8 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: 3.x
       - name: install mkdocs
@@ -28,7 +28,7 @@ jobs:
           ./bin/htmltest -c htmltest.yaml
 
       - name: Deploy site
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
         with:
           personal_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: ./www/site
