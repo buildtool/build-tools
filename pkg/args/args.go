@@ -45,8 +45,10 @@ type Globals struct {
 
 type VersionFlag string
 
-const done = 1000
-const unset = -1000
+const (
+	done  = 1000
+	unset = -1000
+)
 
 var ErrDone = errors.New("version")
 

@@ -71,7 +71,7 @@ func SlugifyTag(tag string) string {
 }
 
 func ParseDockerignore(dir, dockerfile string) ([]string, error) {
-	var defaultIgnore = []string{"k8s"}
+	defaultIgnore := []string{"k8s"}
 	filePath := filepath.Join(dir, ".dockerignore")
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return defaultIgnore, nil
@@ -80,7 +80,7 @@ func ParseDockerignore(dir, dockerfile string) ([]string, error) {
 	if file, err := os.ReadFile(filePath); err != nil {
 		return defaultIgnore, err
 	} else {
-		var result = defaultIgnore
+		result := defaultIgnore
 		scanner := bufio.NewScanner(bytes.NewReader(file))
 		for scanner.Scan() {
 			text := scanner.Text()

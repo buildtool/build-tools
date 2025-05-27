@@ -110,8 +110,10 @@ func TestPush_NoRegistry(t *testing.T) {
 	assert.Equal(t, -6, exitCode)
 	logMock.Check(t, []string{
 		"debug: Authentication <yellow>not supported</yellow> for registry <green>No docker registry</green>\n",
-		"error: Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?"})
+		"error: Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?",
+	})
 }
+
 func TestPush_PushError(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
@@ -157,7 +159,8 @@ func TestPush_PushFeatureBranch(t *testing.T) {
 	logMock.Check(t, []string{
 		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
-		"info: Pushing tag '<green>repo/reponame:feature1</green>'\n"})
+		"info: Pushing tag '<green>repo/reponame:feature1</green>'\n",
+	})
 }
 
 func TestPush_PushMasterBranch(t *testing.T) {
@@ -178,12 +181,16 @@ func TestPush_PushMasterBranch(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{
-		"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	logMock.Check(t, []string{"debug: Logged in\n",
+		"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest",
+	}, client.Images)
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
-		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n",
+	})
 }
+
 func TestPush_PushMainBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
@@ -202,10 +209,12 @@ func TestPush_PushMainBranch(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.Images)
-	logMock.Check(t, []string{"debug: Logged in\n",
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:main</green>'\n",
-		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n",
+	})
 }
 
 func TestPush_Multistage(t *testing.T) {
@@ -236,12 +245,14 @@ COPY --from=test file2 .
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:test", "repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	logMock.Check(t, []string{"debug: Logged in\n",
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:build</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:test</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
-		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n",
+	})
 }
 
 func TestPush_Output(t *testing.T) {
@@ -301,10 +312,12 @@ func TestPush_Output(t *testing.T) {
 
 	assert.Equal(t, 0, exitCode)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
-	logMock.Check(t, []string{"debug: Logged in\n",
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
 		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
-		"info: Pushing tag '<green>repo/reponame:latest</green>'\n"})
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n",
+	})
 }
 
 func TestPush_BrokenOutput(t *testing.T) {
@@ -328,7 +341,8 @@ func TestPush_BrokenOutput(t *testing.T) {
 		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
 		"error: Unable to parse response: Broken output, Error: invalid character 'B' looking for beginning of value\n",
-		"error: <red>invalid character 'B' looking for beginning of value</red>"})
+		"error: <red>invalid character 'B' looking for beginning of value</red>",
+	})
 }
 
 func TestPush_ErrorDetail(t *testing.T) {
@@ -351,7 +365,8 @@ func TestPush_ErrorDetail(t *testing.T) {
 	logMock.Check(t, []string{
 		"debug: Logged in\n",
 		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
-		"error: <red>error details</red>"})
+		"error: <red>error details</red>",
+	})
 }
 
 func TestPush_Create_Error(t *testing.T) {
@@ -373,13 +388,14 @@ func TestPush_Create_Error(t *testing.T) {
 
 	assert.Equal(t, -4, exitCode)
 	logMock.Check(t, []string{
-		"error: <red>create error</red>"})
+		"error: <red>create error</red>",
+	})
 }
 
 func TestPush_UnreadableDockerfile(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	dockerfile := filepath.Join(name, "Dockerfile")
-	_ = os.MkdirAll(dockerfile, 0777)
+	_ = os.MkdirAll(dockerfile, 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -396,11 +412,11 @@ func TestPush_UnreadableDockerfile(t *testing.T) {
 	assert.Equal(t, -5, exitCode)
 	logMock.Check(t, []string{
 		"debug: Logged in\n",
-		fmt.Sprintf("error: <red>read %s: is a directory</red>", dockerfile)})
+		fmt.Sprintf("error: <red>read %s: is a directory</red>", dockerfile),
+	})
 }
 
-type mockRegistry struct {
-}
+type mockRegistry struct{}
 
 func (m mockRegistry) Configured() bool {
 	return true
@@ -454,8 +470,8 @@ func (v no) Name() string {
 var _ vcs.VCS = &no{}
 
 func write(dir, file, content string) error {
-	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0o777); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0o666)
 }

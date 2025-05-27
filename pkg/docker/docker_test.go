@@ -46,7 +46,7 @@ func TestParseDockerignore_EmptyFile(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 
 	content := ``
-	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0o777)
 
 	defaultIgnores := []string{"k8s"}
 	result, err := ParseDockerignore(name, "Dockerfile")
@@ -58,7 +58,7 @@ func TestParseDockerignore_UnreadableFile(t *testing.T) {
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".dockerignore")
-	_ = os.Mkdir(filename, 0777)
+	_ = os.Mkdir(filename, 0o777)
 
 	_, err := ParseDockerignore(name, "Dockerfile")
 	assert.EqualError(t, err, fmt.Sprintf("read %s: is a directory", filename))
@@ -71,7 +71,7 @@ func TestParseDockerignore(t *testing.T) {
 	content := `
 node_modules
 *.swp`
-	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0o777)
 
 	result, err := ParseDockerignore(name, "Dockerfile")
 	assert.NoError(t, err)
@@ -86,7 +86,7 @@ func TestParseDockerignore_Dockerfile_Ignored(t *testing.T) {
 node_modules
 Dockerfile
 *.swp`
-	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".dockerignore"), []byte(content), 0o777)
 
 	result, err := ParseDockerignore(name, "Dockerfile")
 	assert.NoError(t, err)

@@ -45,5 +45,4 @@ func Test_Credentials(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "user", creds.Username)
 	require.Equal(t, "password", creds.Secret)
-
 }

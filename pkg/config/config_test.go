@@ -96,7 +96,7 @@ func TestLoad_BrokenYAML(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	yaml := `ci: []
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -114,7 +114,7 @@ func TestLoad_UnreadableFile(t *testing.T) {
 	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(name) }()
 	filename := filepath.Join(name, ".buildtools.yaml")
-	_ = os.Mkdir(filename, 0777)
+	_ = os.Mkdir(filename, 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -143,7 +143,7 @@ targets:
     context: docker-desktop
     namespace: dev
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -204,8 +204,10 @@ targets:
 	log.SetLevel(log.DebugLevel)
 	cfg, err := Load(name)
 	assert.NoError(t, err)
-	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
-		"debug: Failed to decode BASE64, falling back to plaintext\n"})
+	logMock.Check(t, []string{
+		"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"debug: Failed to decode BASE64, falling back to plaintext\n",
+	})
 	assert.Equal(t, len(cfg.Targets), 1)
 	assert.Equal(t, cfg.Targets["local"].Context, "docker-desktop")
 }
@@ -271,15 +273,15 @@ targets:
   local:
     context: def
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 	subdir := "sub"
-	_ = os.Mkdir(filepath.Join(name, subdir), 0777)
+	_ = os.Mkdir(filepath.Join(name, subdir), 0o777)
 	yaml2 := `
 targets:
   test:
     context: ghi
 `
-	_ = os.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0777)
+	_ = os.WriteFile(filepath.Join(name, subdir, ".buildtools.yaml"), []byte(yaml2), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -295,8 +297,10 @@ targets:
 	assert.Equal(t, 2, len(cfg.Targets))
 	assert.Equal(t, "ghi", cfg.Targets["test"].Context)
 	assert.Equal(t, "def", cfg.Targets["local"].Context)
-	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/sub/.buildtools.yaml'</green>\n", name),
-		fmt.Sprintf("debug: Merging with config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
+	logMock.Check(t, []string{
+		fmt.Sprintf("debug: Parsing config from file: <green>'%s/sub/.buildtools.yaml'</green>\n", name),
+		fmt.Sprintf("debug: Merging with config from file: <green>'%s/.buildtools.yaml'</green>\n", name),
+	})
 }
 
 func TestLoad_YAML_Multiple_Registry(t *testing.T) {
@@ -316,7 +320,7 @@ targets:
     context: docker-desktop
     namespace: dev
 `
-	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0777)
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)

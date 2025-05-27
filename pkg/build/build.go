@@ -339,7 +339,7 @@ func getBuildSharedKey(dir string) string {
 
 func tryNodeIdentifier() string {
 	out := filepath.Join(os.TempDir(), ".buildtools") // return config dir as default on permission error
-	if err := os.MkdirAll(out, 0700); err == nil {
+	if err := os.MkdirAll(out, 0o700); err == nil {
 		sessionFile := filepath.Join(out, ".buildNodeID")
 		if _, err := os.Lstat(sessionFile); err != nil {
 			if os.IsNotExist(err) { // create a new file with stored randomness
@@ -347,7 +347,7 @@ func tryNodeIdentifier() string {
 				if _, err := rand.Read(b); err != nil {
 					return out
 				}
-				if err := os.WriteFile(sessionFile, []byte(hex.EncodeToString(b)), 0600); err != nil {
+				if err := os.WriteFile(sessionFile, []byte(hex.EncodeToString(b)), 0o600); err != nil {
 					return out
 				}
 			}

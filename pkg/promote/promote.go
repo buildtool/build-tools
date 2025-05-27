@@ -138,7 +138,7 @@ func Promote(dir, name, timestamp string, target *config.Gitops, args Args, cfg 
 			}
 		}
 	} else {
-		err := os.WriteFile(args.Out, buffer.Bytes(), 0666)
+		err := os.WriteFile(args.Out, buffer.Bytes(), 0o666)
 		if err != nil {
 			return err
 		}
@@ -172,11 +172,11 @@ func commitAndPush(target *config.Gitops, keys *ssh.PublicKeys, name string, buf
 	if name != normalized {
 		log.Debugf("Normalized name from %s to %s\n", name, normalized)
 	}
-	err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0777)
+	err = os.MkdirAll(filepath.Join(cloneDir, target.Path, normalized), 0o777)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(cloneDir, target.Path, normalized, "deploy.yaml"), buffer.Bytes(), 0666)
+	err = os.WriteFile(filepath.Join(cloneDir, target.Path, normalized, "deploy.yaml"), buffer.Bytes(), 0o666)
 	if err != nil {
 		return err
 	}

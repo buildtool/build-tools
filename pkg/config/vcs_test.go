@@ -75,7 +75,7 @@ func TestGit_Identify_Subdirectory(t *testing.T) {
 	hash, _ := InitRepoWithCommit(dir)
 
 	subdir := filepath.Join(dir, "subdir")
-	_ = os.Mkdir(subdir, 0777)
+	_ = os.Mkdir(subdir, 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -92,7 +92,7 @@ func TestGit_MissingRepo(t *testing.T) {
 	dir, _ := os.MkdirTemp(os.TempDir(), "build-tools")
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	_ = os.Mkdir(filepath.Join(dir, ".git"), 0777)
+	_ = os.Mkdir(filepath.Join(dir, ".git"), 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)

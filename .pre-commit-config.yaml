@@ -50,4 +50,5 @@ repos:
       - id: go-mod-tidy
       - id: go-imports
       - id: go-test-mod
+      - id: go-fumpt
       - id: golangci-lint-mod

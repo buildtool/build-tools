@@ -67,6 +67,7 @@ func (r Github) password() string {
 	}
 	return r.Password
 }
+
 func (r Github) GetAuthConfig() registry.AuthConfig {
 	return registry.AuthConfig{Username: r.Username, Password: r.password(), ServerAddress: "ghcr.io"}
 }

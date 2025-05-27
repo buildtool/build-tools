@@ -101,8 +101,7 @@ func (c *checkLocker) Unlock() {
 	c.unlockCalled = c.unlockCalled + 1
 }
 
-type invalidLog struct {
-}
+type invalidLog struct{}
 
 func (i invalidLog) WithFields(fielder log.Fielder) *log.Entry {
 	panic("implement me")

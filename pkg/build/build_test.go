@@ -73,7 +73,7 @@ func teardown(buildToolsTempDir, osTempDir string) {
 func TestBuild_BrokenConfig(t *testing.T) {
 	yaml := `ci: [] `
 	file := filepath.Join(name, ".buildtools.yaml")
-	_ = os.WriteFile(file, []byte(yaml), 0777)
+	_ = os.WriteFile(file, []byte(yaml), 0o777)
 	defer func() { _ = os.Remove(file) }()
 
 	logMock := mocks.New()
@@ -114,13 +114,15 @@ func TestBuild_NoRegistry(t *testing.T) {
 
 	err := DoBuild(name, Args{Dockerfile: "Dockerfile"})
 	assert.NoError(t, err)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>No docker registry</green>\n",
 		"debug: Authenticating against registry <green>No docker registry</green>\n",
 		"debug: Authentication <yellow>not supported</yellow> for registry <green>No docker registry</green>\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - noregistry/reponame:abc123\n    - noregistry/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - noregistry/reponame:feature1\n    - noregistry/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_LoginError(t *testing.T) {
@@ -150,7 +152,8 @@ func TestBuild_LoginError(t *testing.T) {
 		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
-		"error: Unable to login\n"})
+		"error: Unable to login\n",
+	})
 }
 
 func TestBuild_NoCI(t *testing.T) {
@@ -408,7 +411,8 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 		"debug: ignoring build-arg buildargs2\n",
 		"debug: ignoring build-arg buildargs3\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: sha\n    buildargs1: 1=1\n    buildargs4: env-value\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_WithPlatform(t *testing.T) {
@@ -440,7 +444,8 @@ func TestBuild_WithPlatform(t *testing.T) {
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: sha\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: linux/amd64\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_WithSkipLogin(t *testing.T) {
@@ -469,7 +474,8 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 		"debug: Login <yellow>disabled</yellow>\n",
 		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: sha\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_FeatureBranch(t *testing.T) {
@@ -509,13 +515,15 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:feature1"}, client.BuildOptions[0].Tags)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_MasterBranch(t *testing.T) {
@@ -547,13 +555,15 @@ func TestBuild_MasterBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>master</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_MainBranch(t *testing.T) {
@@ -585,13 +595,15 @@ func TestBuild_MainBranch(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/reponame:abc123", "repo/reponame:main", "repo/reponame:latest"}, client.BuildOptions[0].Tags)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>main</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:main\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: main\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:main\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_WithImageName(t *testing.T) {
@@ -624,7 +636,8 @@ func TestBuild_WithImageName(t *testing.T) {
 	assert.Equal(t, true, client.BuildOptions[0].Remove)
 	assert.Equal(t, int64(256*1024*1024), client.BuildOptions[0].ShmSize)
 	assert.Equal(t, []string{"repo/other:abc123", "repo/other:main", "repo/other:latest"}, client.BuildOptions[0].Tags)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
@@ -633,7 +646,8 @@ func TestBuild_WithImageName(t *testing.T) {
 		"info: Using other as BuildName\n",
 		"info: Using other as BuildName\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/other:abc123\n    - repo/other:main\n    - repo/other:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: main\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/other:main\n    - repo/other:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_BadDockerHost(t *testing.T) {
@@ -656,7 +670,7 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 
 	defer func() { _ = os.RemoveAll(name) }()
 	dockerfile := filepath.Join(name, "Dockerfile")
-	_ = os.MkdirAll(dockerfile, 0777)
+	_ = os.MkdirAll(dockerfile, 0o777)
 
 	logMock := mocks.New()
 	log.SetHandler(logMock)
@@ -728,7 +742,7 @@ func TestBuild_Dockerfile_FromStdin(t *testing.T) {
 	client := &docker.MockDocker{}
 
 	defer func() { _ = os.RemoveAll(name) }()
-	err := os.MkdirAll(name, 0777)
+	err := os.MkdirAll(name, 0o777)
 	assert.NoError(t, err)
 
 	err = build(client, name, Args{
@@ -798,7 +812,8 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[0].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[2].CacheFrom)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
@@ -808,7 +823,8 @@ COPY --from=test file2 .
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:test\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: test\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
 		"info: Build successful",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_BrokenStage(t *testing.T) {
@@ -909,7 +925,8 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:export", "repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[2].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:export", "repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[3].CacheFrom)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
@@ -921,7 +938,8 @@ COPY --from=test file2 .
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:export\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: export\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs:\n    - type: local\n      attrs: {}\n\n",
 		"info: Build successful",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 func TestBuild_ExportAsLastStage(t *testing.T) {
@@ -975,7 +993,8 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[1].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:export", "repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[2].CacheFrom)
 	assert.Equal(t, []string{"repo/reponame:export", "repo/reponame:test", "repo/reponame:build", "repo/reponame:master", "repo/reponame:latest"}, client.BuildOptions[3].CacheFrom)
-	logMock.Check(t, []string{"debug: Using CI <green>Gitlab</green>\n",
+	logMock.Check(t, []string{
+		"debug: Using CI <green>Gitlab</green>\n",
 		"debug: Using registry <green>Dockerhub</green>\n",
 		"debug: Authenticating against registry <green>Dockerhub</green>\n",
 		"debug: Logged in\n",
@@ -987,7 +1006,8 @@ COPY --from=test file2 .
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:export\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: export\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs:\n    - type: local\n      attrs: {}\n\n",
 		"info: Build successful",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:export\n    - repo/reponame:test\n    - repo/reponame:build\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"info: Build successful"})
+		"info: Build successful",
+	})
 }
 
 type brokenReader struct{}
@@ -999,8 +1019,8 @@ func (b brokenReader) Read([]byte) (n int, err error) {
 var _ io.Reader = &brokenReader{}
 
 func write(dir, file, content string) error {
-	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, file)), 0o777); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0666)
+	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0o666)
 }

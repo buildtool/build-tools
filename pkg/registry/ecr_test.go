@@ -47,7 +47,6 @@ func TestEcr_LoginAuthRequestFailed(t *testing.T) {
 	err := registry.Login(client)
 	assert.EqualError(t, err, "auth failure")
 	logMock.Check(t, []string{})
-
 }
 
 func TestEcr_LoginInvalidAuthData(t *testing.T) {
@@ -59,7 +58,6 @@ func TestEcr_LoginInvalidAuthData(t *testing.T) {
 	err := registry.Login(client)
 	assert.EqualError(t, err, "illegal base64 data at input byte 4")
 	logMock.Check(t, []string{})
-
 }
 
 func TestEcr_LoginFailed(t *testing.T) {
@@ -71,7 +69,6 @@ func TestEcr_LoginFailed(t *testing.T) {
 	err := registry.Login(client)
 	assert.EqualError(t, err, "invalid username/password")
 	logMock.Check(t, []string{})
-
 }
 
 func TestEcr_LoginSuccess(t *testing.T) {

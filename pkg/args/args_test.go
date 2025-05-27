@@ -40,7 +40,7 @@ func Test_Parse(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -54,7 +54,7 @@ func Test_Help(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -82,7 +82,7 @@ func Test_Version(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -109,7 +109,7 @@ targets:
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -121,8 +121,10 @@ targets:
 		Date:        "date",
 	}, arguments)
 	require.Equal(t, err, ErrDone)
-	logMock.Check(t, []string{"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
-		"info: Current config\nci: none\nvcs: Git\nregistry: {}" + yaml})
+	logMock.Check(t, []string{
+		"debug: Parsing config from env: BUILDTOOLS_CONTENT\n",
+		"info: Current config\nci: none\nvcs: Git\nregistry: {}" + yaml,
+	})
 }
 
 func Test_Config_Error(t *testing.T) {
@@ -133,7 +135,7 @@ func Test_Config_Error(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -157,7 +159,7 @@ func Test_Verbose_Enabled(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.InfoLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
@@ -177,7 +179,7 @@ func Test_Verbose(t *testing.T) {
 	log.SetHandler(logMock)
 	log.SetLevel(log.InfoLevel)
 
-	var arguments = &struct {
+	arguments := &struct {
 		Globals
 		Name string
 	}{}
