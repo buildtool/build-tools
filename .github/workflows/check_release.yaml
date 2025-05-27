@@ -3,8 +3,6 @@ name: check release
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   check_release:
