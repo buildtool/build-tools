@@ -29,6 +29,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -39,7 +40,7 @@ import (
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/docker/docker/api/types"
+	dockerbuild "github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stringid"
 	controlapi "github.com/moby/buildkit/api/services/control"
@@ -220,9 +221,9 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 		defer func() { // make sure the Status ends cleanly on build errors
 			_ = s.Close()
 		}()
-		var outputs []types.ImageBuildOutput
+		var outputs []dockerbuild.ImageBuildOutput
 		if strings.HasPrefix(stage, "export") {
-			outputs = append(outputs, types.ImageBuildOutput{
+			outputs = append(outputs, dockerbuild.ImageBuildOutput{
 				Type:  "local",
 				Attrs: map[string]string{},
 			})
@@ -233,9 +234,9 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 	return eg.Wait()
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []types.ImageBuildOutput, platform string) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []dockerbuild.ImageBuildOutput, platform string) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
-	options := types.ImageBuildOptions{
+	options := dockerbuild.ImageBuildOptions{
 		BuildArgs:     args,
 		BuildID:       buildID,
 		CacheFrom:     caches,
@@ -249,11 +250,11 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 		ShmSize:       256 * 1024 * 1024,
 		Tags:          tags,
 		Target:        target,
-		Version:       types.BuilderBuildKit,
+		Version:       dockerbuild.BuilderBuildKit,
 		Platform:      platform,
 	}
 	logVerbose(options)
-	var response types.ImageBuildResponse
+	var response dockerbuild.ImageBuildResponse
 	var err error
 	response, err = dkrClient.ImageBuild(context.Background(), nil, options)
 	if err != nil {
@@ -281,7 +282,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	imageID := ""
 	writeAux := func(msg jsonmessage.JSONMessage) {
 		if msg.ID == "moby.image.id" {
-			var result types.BuildResult
+			var result dockerbuild.Result
 			if err := json.Unmarshal(*msg.Aux, &result); err != nil {
 				log.Errorf("failed to parse aux message: %v", err)
 			}
@@ -293,7 +294,8 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 
 	err = jsonmessage.DisplayJSONMessagesStream(response.Body, buf, os.Stdout.Fd(), true, writeAux)
 	if err != nil {
-		if jerr, ok := err.(*jsonmessage.JSONError); ok {
+		var jerr *jsonmessage.JSONError
+		if errors.As(err, &jerr) {
 			// If no error code is set, default to 1
 			if jerr.Code == 0 {
 				jerr.Code = 1
@@ -322,7 +324,7 @@ func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgrou
 	})
 }
 
-func logVerbose(options types.ImageBuildOptions) {
+func logVerbose(options dockerbuild.ImageBuildOptions) {
 	loggableOptions := options
 	loggableOptions.AuthConfigs = nil
 	loggableOptions.BuildID = ""

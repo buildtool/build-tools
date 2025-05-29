@@ -35,7 +35,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
@@ -43,7 +43,7 @@ import (
 
 type Client interface {
 	RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error)
-	ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error)
+	ImageBuild(ctx context.Context, buildContext io.Reader, options build.ImageBuildOptions) (build.ImageBuildResponse, error)
 	ImagePush(ctx context.Context, image string, options image.PushOptions) (io.ReadCloser, error)
 	DialHijack(ctx context.Context, url, proto string, meta map[string][]string) (net.Conn, error)
 	BuildCancel(ctx context.Context, id string) error

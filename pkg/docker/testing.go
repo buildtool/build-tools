@@ -32,7 +32,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/build"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/registry"
 )
@@ -42,7 +42,7 @@ type MockDocker struct {
 	Password      string
 	ServerAddress string
 	BuildContext  []io.Reader
-	BuildOptions  []types.ImageBuildOptions
+	BuildOptions  []build.ImageBuildOptions
 	Images        []string
 	LoginError    error
 	BuildCount    int
@@ -54,28 +54,28 @@ type MockDocker struct {
 	ResponseBody  io.Reader
 }
 
-func (m *MockDocker) ImageBuild(ctx context.Context, buildContext io.Reader, options types.ImageBuildOptions) (types.ImageBuildResponse, error) {
+func (m *MockDocker) ImageBuild(_ context.Context, buildContext io.Reader, options build.ImageBuildOptions) (build.ImageBuildResponse, error) {
 	defer func() { m.BuildCount = m.BuildCount + 1 }()
 	m.BuildContext = append(m.BuildContext, buildContext)
 	m.BuildOptions = append(m.BuildOptions, options)
 
 	if m.BrokenOutput {
-		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
+		return build.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(`{"errorDetail":{"code":0,"message":"some message"}}`))}, nil
 	}
 	if m.ResponseError != nil {
-		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
+		return build.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.ResponseError)))}, nil
 	}
 	if len(m.BuildError) > m.BuildCount && m.BuildError[m.BuildCount] != nil {
-		return types.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
+		return build.ImageBuildResponse{Body: io.NopCloser(strings.NewReader(fmt.Sprintf(`{"errorDetail":{"code":123,"message":"%v"}}`, m.BuildError)))}, m.BuildError[m.BuildCount]
 	}
 	var body io.Reader = strings.NewReader(`{"stream":"Build successful"}`)
 	if m.ResponseBody != nil {
 		body = m.ResponseBody
 	}
-	return types.ImageBuildResponse{Body: io.NopCloser(body)}, nil
+	return build.ImageBuildResponse{Body: io.NopCloser(body)}, nil
 }
 
-func (m *MockDocker) ImagePush(ctx context.Context, image string, options image.PushOptions) (io.ReadCloser, error) {
+func (m *MockDocker) ImagePush(_ context.Context, image string, _ image.PushOptions) (io.ReadCloser, error) {
 	m.Images = append(m.Images, image)
 
 	if m.PushError != nil {
@@ -85,7 +85,7 @@ func (m *MockDocker) ImagePush(ctx context.Context, image string, options image.
 	return io.NopCloser(strings.NewReader(*m.PushOutput)), nil
 }
 
-func (m *MockDocker) RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error) {
+func (m *MockDocker) RegistryLogin(_ context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error) {
 	m.Username = auth.Username
 	m.Password = auth.Password
 	m.ServerAddress = auth.ServerAddress
@@ -99,7 +99,7 @@ func (m *MockDocker) DialHijack(context.Context, string, string, map[string][]st
 	return nil, nil
 }
 
-func (m *MockDocker) BuildCancel(ctx context.Context, id string) error {
+func (m *MockDocker) BuildCancel(context.Context, string) error {
 	return nil
 }
 
