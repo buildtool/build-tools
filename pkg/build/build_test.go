@@ -33,7 +33,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types"
+	dockerbuild "github.com/docker/docker/api/types/build"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/stretchr/testify/assert"
@@ -349,7 +349,7 @@ func TestBuild_BrokenBuildResult(t *testing.T) {
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: Dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"error: failed to parse aux message: json: cannot unmarshal number into Go struct field BuildResult.ID of type string",
+		"error: failed to parse aux message: json: cannot unmarshal number into Go struct field Result.ID of type string",
 		"info: ",
 	})
 }
@@ -914,7 +914,7 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, []string{"repo/reponame:test"}, client.BuildOptions[1].Tags)
 	assert.Equal(t, []string{"repo/reponame:export"}, client.BuildOptions[2].Tags)
-	assert.Equal(t, []types.ImageBuildOutput{
+	assert.Equal(t, []dockerbuild.ImageBuildOutput{
 		{
 			Type:  "local",
 			Attrs: map[string]string{},
@@ -982,7 +982,7 @@ COPY --from=test file2 .
 	assert.Equal(t, []string{"repo/reponame:build"}, client.BuildOptions[0].Tags)
 	assert.Equal(t, []string{"repo/reponame:test"}, client.BuildOptions[1].Tags)
 	assert.Equal(t, []string{"repo/reponame:export"}, client.BuildOptions[2].Tags)
-	assert.Equal(t, []types.ImageBuildOutput{
+	assert.Equal(t, []dockerbuild.ImageBuildOutput{
 		{
 			Type:  "local",
 			Attrs: map[string]string{},
