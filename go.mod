@@ -17,7 +17,7 @@ require (
 	github.com/docker/docker v28.2.2+incompatible
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/liamg/tml v0.7.0
-	github.com/moby/buildkit v0.23.0
+	github.com/moby/buildkit v0.23.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
@@ -56,7 +56,7 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/console v1.0.5 // indirect
 	github.com/containerd/containerd/api v1.9.0 // indirect
-	github.com/containerd/containerd/v2 v2.1.1 // indirect
+	github.com/containerd/containerd/v2 v2.1.3 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
