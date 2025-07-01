@@ -17,7 +17,7 @@ require (
 	github.com/docker/docker v28.3.0+incompatible
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/liamg/tml v0.7.0
-	github.com/moby/buildkit v0.23.1
+	github.com/moby/buildkit v0.23.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
