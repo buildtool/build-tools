@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.34.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/containerd/containerd v1.7.27
-	github.com/docker/docker v28.3.1+incompatible
+	github.com/docker/docker v28.3.2+incompatible
 	github.com/go-git/go-git/v5 v5.16.2
 	github.com/liamg/tml v0.7.0
 	github.com/moby/buildkit v0.23.2
