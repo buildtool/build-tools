@@ -82,7 +82,7 @@ func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenReque
 			return nil, fmt.Errorf("failed to fetch anonymous and authenticated token, %w", err)
 		}
 	}
-	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresIn), nil
+	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresInSeconds), nil
 }
 
 func (ap *authenticator) GetTokenAuthority(ctx context.Context, req *auth.GetTokenAuthorityRequest) (*auth.GetTokenAuthorityResponse, error) {
