@@ -19,7 +19,7 @@ require (
 	github.com/liamg/tml v0.7.0
 	github.com/moby/buildkit v0.23.2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.1
 	github.com/stretchr/testify v1.11.1
 	github.com/tonistiigi/fsutil v0.0.0-20250605211040-586307ad452f
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
@@ -136,7 +136,7 @@ require (
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20240514184818-90bafcd6abab // indirect
