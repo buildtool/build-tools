@@ -134,7 +134,7 @@ func (k kubectl) defaultArgs() (args []string) {
 	if cli.Verbose(log.Log) {
 		args = append(args, fmt.Sprintf("--v=%d", kubectlVerbosityLevel))
 	}
-	return
+	return args
 }
 
 func (k kubectl) Apply(input string) error {
