@@ -31,7 +31,7 @@ import (
 	"net/http"
 	"time"
 
-	authutil "github.com/containerd/containerd/remotes/docker/auth"
+	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
 
 	"github.com/docker/docker/api/types/registry"
 	"github.com/moby/buildkit/session"
