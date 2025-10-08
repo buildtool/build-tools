@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-FROM amd64/golang:1.25.1@sha256:12640a422d109b7f3edb02c855c21aec3122814f068e7ca829f1e8fa371694ae as go-build
+FROM amd64/golang:1.25.2@sha256:f1ad40af66e45084d5b2dcd74d25e77085c964e57356a2f77b0c15c121003f23 as go-build
 
 RUN go install sigs.k8s.io/aws-iam-authenticator/cmd/aws-iam-authenticator@v0.7.2
 
