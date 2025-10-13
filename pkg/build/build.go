@@ -138,7 +138,21 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return err
 	}
-
+	dockerFile, err := os.Create(filepath.Join(dir, "build-tools-dockerfile"))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = os.Remove(dockerFile.Name()) }()
+	if _, err := dockerFile.Write(content); err != nil {
+		return err
+	}
+	if err := dockerFile.Close(); err != nil {
+		return err
+	}
+	buildVars.Dockerfile, err = filepath.Rel(dir, dockerFile.Name())
+	if err != nil {
+		return err
+	}
 	if len(strings.TrimSpace(string(content))) == 0 {
 		return fmt.Errorf("<red>the Dockerfile cannot be empty</red>")
 	}
