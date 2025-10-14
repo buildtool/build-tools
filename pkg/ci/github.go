@@ -23,6 +23,7 @@
 package ci
 
 import (
+	"path/filepath"
 	"strings"
 )
 
@@ -44,7 +45,11 @@ func (c *Github) BranchReplaceSlash() string {
 }
 
 func (c *Github) BuildName() string {
-	return c.Common.BuildName(strings.TrimPrefix(c.CIBuildName, "/home/runner/work/"))
+	if c.CIBuildName != "" {
+		return c.Common.BuildName(filepath.Base(c.CIBuildName))
+	} else {
+		return c.Common.BuildName(c.CIBuildName)
+	}
 }
 
 func (c *Github) Branch() string {
@@ -62,5 +67,5 @@ func (c *Github) Commit() string {
 }
 
 func (c *Github) Configured() bool {
-	return c.CIBuildName != ""
+	return c.CICommit != ""
 }
