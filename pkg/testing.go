@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 //go:build !prod
-// +build !prod
 
 package pkg
 
