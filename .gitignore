@@ -12,3 +12,4 @@ www/site
 www/bin
 www/tmp
 .DS_Store
+.claude/
