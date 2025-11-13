@@ -448,6 +448,89 @@ func TestBuild_WithPlatform(t *testing.T) {
 	})
 }
 
+func TestBuild_WithMultiPlatform(t *testing.T) {
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
+	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	client := &docker.MockDocker{}
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	err := build(client, name, Args{
+		Globals:    args.Globals{},
+		Dockerfile: "Dockerfile",
+		NoLogin:    false,
+		NoPull:     false,
+		Platform:   "linux/amd64,linux/arm64",
+	})
+	assert.NoError(t, err)
+
+	// Verify multi-platform outputs were added
+	assert.Equal(t, 3, len(client.BuildOptions[0].Outputs))
+	assert.Equal(t, "image", client.BuildOptions[0].Outputs[0].Type)
+	assert.Equal(t, "repo/reponame:sha", client.BuildOptions[0].Outputs[0].Attrs["name"])
+	assert.Equal(t, "true", client.BuildOptions[0].Outputs[0].Attrs["push"])
+	assert.Equal(t, "image", client.BuildOptions[0].Outputs[1].Type)
+	assert.Equal(t, "repo/reponame:master", client.BuildOptions[0].Outputs[1].Attrs["name"])
+	assert.Equal(t, "true", client.BuildOptions[0].Outputs[1].Attrs["push"])
+	assert.Equal(t, "image", client.BuildOptions[0].Outputs[2].Type)
+	assert.Equal(t, "repo/reponame:latest", client.BuildOptions[0].Outputs[2].Attrs["name"])
+	assert.Equal(t, "true", client.BuildOptions[0].Outputs[2].Attrs["push"])
+
+	logMock.Check(t, []string{
+		"info: building for <cyan>2</cyan> platforms: <green>linux/amd64,linux/arm64</green>\n",
+		"debug: Using CI <green>Gitlab</green>\n",
+		"debug: Using registry <green>Dockerhub</green>\n",
+		"debug: Authenticating against registry <green>Dockerhub</green>\n",
+		"debug: Logged in\n",
+		"debug: Using build variables commit <green>sha</green> on branch <green>master</green>\n",
+		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: build-tools-dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: sha\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: linux/amd64,linux/arm64\nversion: \"2\"\nbuildid: \"\"\noutputs:\n    - type: image\n      attrs:\n        name: repo/reponame:sha\n        push: \"true\"\n    - type: image\n      attrs:\n        name: repo/reponame:master\n        push: \"true\"\n    - type: image\n      attrs:\n        name: repo/reponame:latest\n        push: \"true\"\n\n",
+		"info: Build successful",
+	})
+}
+
+func TestArgs_IsMultiPlatform(t *testing.T) {
+	tests := []struct {
+		name     string
+		platform string
+		want     bool
+	}{
+		{"empty", "", false},
+		{"single platform", "linux/amd64", false},
+		{"two platforms", "linux/amd64,linux/arm64", true},
+		{"three platforms", "linux/amd64,linux/arm64,linux/arm/v7", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Platform: tt.platform}
+			assert.Equal(t, tt.want, a.isMultiPlatform())
+		})
+	}
+}
+
+func TestArgs_PlatformCount(t *testing.T) {
+	tests := []struct {
+		name     string
+		platform string
+		want     int
+	}{
+		{"empty", "", 0},
+		{"single platform", "linux/amd64", 1},
+		{"two platforms", "linux/amd64,linux/arm64", 2},
+		{"three platforms", "linux/amd64,linux/arm64,linux/arm/v7", 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Platform: tt.platform}
+			assert.Equal(t, tt.want, a.platformCount())
+		})
+	}
+}
+
 func TestBuild_WithSkipLogin(t *testing.T) {
 	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
 	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
