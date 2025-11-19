@@ -9,9 +9,9 @@ require (
 	github.com/alecthomas/kong v1.13.0
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go-v2 v1.39.6
-	github.com/aws/aws-sdk-go-v2/config v1.31.20
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.52.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.40.2
+	github.com/aws/aws-sdk-go-v2/config v1.31.21
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.53.0
+	github.com/aws/aws-sdk-go-v2/service/sts v1.41.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/containerd/containerd/v2 v2.2.0
 	github.com/docker/docker v28.5.2+incompatible
@@ -41,7 +41,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.18.24 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.18.25 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.13 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.13 // indirect
