@@ -65,7 +65,7 @@ type Args struct {
 	BuildArgs  []string `name:"build-arg" type:"list" help:"additional docker build-args to use, see https://docs.docker.com/engine/reference/commandline/build/ for more information."`
 	NoLogin    bool     `help:"disable login to docker registry" default:"false" `
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
-	Platform   string   `help:"specify target platform to build" default:""`
+	Platform   string   `help:"specify target platform(s) to build (e.g. 'linux/amd64' or 'linux/amd64,linux/arm64' for multi-platform)" default:""`
 }
 
 func (a Args) isDockerfileFromStdin() bool {
@@ -77,6 +77,17 @@ func (a Args) dockerfileName() string {
 		return ""
 	}
 	return a.Dockerfile
+}
+
+func (a Args) isMultiPlatform() bool {
+	return a.Platform != "" && strings.Contains(a.Platform, ",")
+}
+
+func (a Args) platformCount() int {
+	if a.Platform == "" {
+		return 0
+	}
+	return len(strings.Split(a.Platform, ","))
 }
 
 func DoBuild(dir string, buildArgs Args) error {
@@ -109,7 +120,12 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	}
 	currentCI := cfg.CurrentCI()
 	if buildVars.Platform != "" {
-		log.Infof("building for platform <green>%s</green>\n", buildVars.Platform)
+		platforms := strings.Split(buildVars.Platform, ",")
+		if len(platforms) > 1 {
+			log.Infof("building for <cyan>%d</cyan> platforms: <green>%s</green>\n", len(platforms), buildVars.Platform)
+		} else {
+			log.Infof("building for platform <green>%s</green>\n", buildVars.Platform)
+		}
 	}
 
 	log.Debugf("Using CI <green>%s</green>\n", currentCI.Name())
@@ -200,16 +216,16 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authenticator)
+		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authenticator, false)
 		if err != nil {
 			return err
 		}
 	}
 
-	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
+	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator, buildVars.isMultiPlatform())
 }
 
-func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
+func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator, isMultiPlatform bool) error {
 	s := setupSession(dir)
 	if authenticator != nil {
 		s.Allow(authenticator)
@@ -241,6 +257,18 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 				Type:  "local",
 				Attrs: map[string]string{},
 			})
+		} else if isMultiPlatform {
+			// For multi-platform builds, we must push directly to registry
+			// as multi-platform manifests cannot be loaded to local Docker daemon
+			for _, tag := range tags {
+				outputs = append(outputs, dockerbuild.ImageBuildOutput{
+					Type: "image",
+					Attrs: map[string]string{
+						"name": tag,
+						"push": "true",
+					},
+				})
+			}
 		}
 		sessionID := s.ID()
 		return doBuild(ctx, client, eg, buildVars.dockerfileName(), buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
