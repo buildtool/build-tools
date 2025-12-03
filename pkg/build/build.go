@@ -45,6 +45,7 @@ import (
 	"github.com/docker/docker/pkg/stringid"
 	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
@@ -65,7 +66,24 @@ type Args struct {
 	BuildArgs  []string `name:"build-arg" type:"list" help:"additional docker build-args to use, see https://docs.docker.com/engine/reference/commandline/build/ for more information."`
 	NoLogin    bool     `help:"disable login to docker registry" default:"false" `
 	NoPull     bool     `help:"disable pulling latest from docker registry" default:"false"`
-	Platform   string   `help:"specify target platform to build" default:""`
+	Platform   string   `help:"specify target platform(s) to build (e.g. 'linux/amd64' or 'linux/amd64,linux/arm64' for multi-platform)" default:""`
+}
+
+// BuildkitClient defines the interface for buildkit operations.
+// This interface allows for mocking in tests.
+type BuildkitClient interface {
+	Solve(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error)
+	ListWorkers(ctx context.Context, opts ...client.ListWorkersOption) ([]*client.WorkerInfo, error)
+	Close() error
+}
+
+// BuildkitClientFactory creates BuildkitClient instances.
+// This is used to inject mock clients for testing.
+type BuildkitClientFactory func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error)
+
+// defaultBuildkitClientFactory creates real buildkit clients.
+var defaultBuildkitClientFactory BuildkitClientFactory = func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+	return client.New(ctx, address, opts...)
 }
 
 func (a Args) isDockerfileFromStdin() bool {
@@ -77,6 +95,17 @@ func (a Args) dockerfileName() string {
 		return ""
 	}
 	return a.Dockerfile
+}
+
+func (a Args) isMultiPlatform() bool {
+	return a.Platform != "" && strings.Contains(a.Platform, ",")
+}
+
+func (a Args) platformCount() int {
+	if a.Platform == "" {
+		return 0
+	}
+	return len(strings.Split(a.Platform, ","))
 }
 
 func DoBuild(dir string, buildArgs Args) error {
@@ -109,7 +138,12 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	}
 	currentCI := cfg.CurrentCI()
 	if buildVars.Platform != "" {
-		log.Infof("building for platform <green>%s</green>\n", buildVars.Platform)
+		platforms := strings.Split(buildVars.Platform, ",")
+		if len(platforms) > 1 {
+			log.Infof("building for <cyan>%d</cyan> platforms: <green>%s</green>\n", len(platforms), buildVars.Platform)
+		} else {
+			log.Infof("building for platform <green>%s</green>\n", buildVars.Platform)
+		}
 	}
 
 	log.Debugf("Using CI <green>%s</green>\n", currentCI.Name())
@@ -206,10 +240,13 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		}
 	}
 
+	if buildVars.isMultiPlatform() {
+		return buildMultiPlatform(client, dir, buildVars, buildArgs, tags, caches, authenticator)
+	}
 	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
 }
 
-func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
+func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
 	s := setupSession(dir)
 	if authenticator != nil {
 		s.Allow(authenticator)
@@ -226,7 +263,7 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
-		return client.DialHijack(ctx, "/session", proto, meta)
+		return dkrClient.DialHijack(ctx, "/session", proto, meta)
 	}
 	eg.Go(func() error {
 		return s.Run(context.TODO(), dialSession)
@@ -243,9 +280,177 @@ func buildStage(client docker.Client, dir string, buildVars Args, buildArgs map[
 			})
 		}
 		sessionID := s.ID()
-		return doBuild(ctx, client, eg, buildVars.dockerfileName(), buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
+		return doBuild(ctx, dkrClient, eg, buildVars.dockerfileName(), buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
 	})
 	return eg.Wait()
+}
+
+// buildFrontendAttrs creates the frontend attributes map for buildkit.
+// It includes the dockerfile name, platform, and any build arguments.
+func buildFrontendAttrs(dockerfile, platform string, buildArgs map[string]*string) map[string]string {
+	attrs := map[string]string{
+		"filename": dockerfile,
+		"platform": platform,
+	}
+
+	for k, v := range buildArgs {
+		if v != nil {
+			attrs["build-arg:"+k] = *v
+		}
+	}
+
+	return attrs
+}
+
+// buildExportEntry creates the export configuration for pushing images to a registry.
+// All tags are joined into a single entry with comma-separated names.
+func buildExportEntry(tags []string) client.ExportEntry {
+	return client.ExportEntry{
+		Type: client.ExporterImage,
+		Attrs: map[string]string{
+			"name": strings.Join(tags, ","),
+			"push": "true",
+		},
+	}
+}
+
+// buildCacheImports creates cache import entries for registry-based caching.
+func buildCacheImports(caches []string) []client.CacheOptionsEntry {
+	var imports []client.CacheOptionsEntry
+	for _, cache := range caches {
+		imports = append(imports, client.CacheOptionsEntry{
+			Type: "registry",
+			Attrs: map[string]string{
+				"ref": cache,
+			},
+		})
+	}
+	return imports
+}
+
+// hasContainerdSnapshotter checks if any worker has containerd snapshotter support.
+// This is required for multi-platform builds via Docker's embedded buildkit.
+func hasContainerdSnapshotter(workers []*client.WorkerInfo) bool {
+	for _, w := range workers {
+		for key, value := range w.Labels {
+			if strings.Contains(key, "containerd") || strings.Contains(value, "containerd") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// buildMultiPlatform builds images for multiple platforms using buildkit client.
+// This is required because Docker's /build API only supports single platform builds.
+//
+// Connection priority:
+// 1. If BUILDKIT_HOST is set, connect directly to that buildkit instance
+// 2. Otherwise, connect via Docker's /grpc endpoint (requires containerd snapshotter)
+//
+// For Docker's embedded buildkit, containerd snapshotter must be enabled.
+// See: https://docs.docker.com/storage/containerd/
+// Enable it by adding to /etc/docker/daemon.json:
+//
+//	{ "features": { "containerd-snapshotter": true } }
+func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, authenticator docker.Authenticator) error {
+	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, authenticator, defaultBuildkitClientFactory)
+}
+
+// buildMultiPlatformWithFactory is the internal implementation that accepts a BuildkitClientFactory for testing.
+func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
+	fs, err := fsutil.NewFS(dir)
+	if err != nil {
+		return err
+	}
+
+	eg, ctx := errgroup.WithContext(context.Background())
+
+	var bkClient BuildkitClient
+
+	// Check if BUILDKIT_HOST is set - if so, connect directly to buildkit
+	buildkitHost := os.Getenv("BUILDKIT_HOST")
+	if buildkitHost != "" {
+		log.Infof("Connecting to buildkit at <green>%s</green>\n", buildkitHost)
+		bkClient, err = clientFactory(ctx, buildkitHost)
+		if err != nil {
+			return fmt.Errorf("failed to connect to buildkit at %s: %w", buildkitHost, err)
+		}
+	} else {
+		// Connect to buildkit via Docker's grpc endpoint (like buildx does)
+		log.Debug("Connecting to buildkit via Docker daemon")
+		dialContext := func(ctx context.Context, _ string) (net.Conn, error) {
+			return dkrClient.DialHijack(ctx, "/grpc", "h2c", nil)
+		}
+		dialSession := func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+			return dkrClient.DialHijack(ctx, "/session", proto, meta)
+		}
+
+		bkClient, err = clientFactory(ctx, "",
+			client.WithContextDialer(dialContext),
+			client.WithSessionDialer(dialSession),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create buildkit client: %w", err)
+		}
+
+		// Check if the image exporter is available (requires containerd snapshotter)
+		// by querying worker info - only needed when using Docker's embedded buildkit
+		workers, err := bkClient.ListWorkers(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to list buildkit workers: %w", err)
+		}
+
+		if !hasContainerdSnapshotter(workers) {
+			log.Warn("Docker may not have containerd snapshotter enabled. Multi-platform builds require it.")
+			log.Warn("Alternatively, set BUILDKIT_HOST to connect to a standalone buildkit instance.")
+			log.Warn("Enable containerd snapshotter by adding to /etc/docker/daemon.json: {\"features\": {\"containerd-snapshotter\": true}}")
+		}
+	}
+	defer func() { _ = bkClient.Close() }()
+
+	frontendAttrs := buildFrontendAttrs(buildVars.dockerfileName(), buildVars.Platform, buildArgs)
+	exports := []client.ExportEntry{buildExportEntry(tags)}
+	cacheImports := buildCacheImports(caches)
+
+	// Session attachables for authentication and file sync
+	var sessionAttachables []session.Attachable
+	if authenticator != nil {
+		sessionAttachables = append(sessionAttachables, authenticator)
+		log.Debugf("Added authenticator for multi-platform build\n")
+	} else {
+		log.Warnf("No authenticator provided for multi-platform build - registry push may fail\n")
+	}
+
+	solveOpt := client.SolveOpt{
+		Frontend:      "dockerfile.v0",
+		FrontendAttrs: frontendAttrs,
+		LocalMounts: map[string]fsutil.FS{
+			"context":    fs,
+			"dockerfile": fs,
+		},
+		Session:      sessionAttachables,
+		Exports:      exports,
+		CacheImports: cacheImports,
+	}
+
+	// Create status channel for progress
+	statusChan := make(chan *client.SolveStatus)
+	displayStatus(os.Stdout, statusChan, eg)
+
+	_, err = bkClient.Solve(ctx, nil, solveOpt, statusChan)
+	if err != nil {
+		if strings.Contains(err.Error(), "exporter") && strings.Contains(err.Error(), "not be found") {
+			log.Error("This error typically means Docker's containerd snapshotter is not enabled")
+			log.Error("Enable it by adding to /etc/docker/daemon.json: {\"features\": {\"containerd-snapshotter\": true}}")
+			log.Error("Then restart Docker")
+			return fmt.Errorf("multi-platform build failed: %w", err)
+		}
+		return fmt.Errorf("multi-platform build failed: %w", err)
+	}
+
+	log.Info("Build successful")
+	return nil
 }
 
 func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []dockerbuild.ImageBuildOutput, platform string) (finalErr error) {

@@ -24,6 +24,7 @@ package build
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -34,6 +35,8 @@ import (
 
 	"github.com/apex/log"
 	dockerbuild "github.com/docker/docker/api/types/build"
+	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/client/llb"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 
 	"github.com/stretchr/testify/assert"
@@ -42,6 +45,35 @@ import (
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/docker"
 )
+
+// MockBuildkitClient is a mock implementation of BuildkitClient for testing.
+type MockBuildkitClient struct {
+	SolveFunc       func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error)
+	ListWorkersFunc func(ctx context.Context, opts ...client.ListWorkersOption) ([]*client.WorkerInfo, error)
+	CloseFunc       func() error
+}
+
+func (m *MockBuildkitClient) Solve(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+	if m.SolveFunc != nil {
+		return m.SolveFunc(ctx, def, opt, statusChan)
+	}
+	close(statusChan)
+	return &client.SolveResponse{}, nil
+}
+
+func (m *MockBuildkitClient) ListWorkers(ctx context.Context, opts ...client.ListWorkersOption) ([]*client.WorkerInfo, error) {
+	if m.ListWorkersFunc != nil {
+		return m.ListWorkersFunc(ctx, opts...)
+	}
+	return []*client.WorkerInfo{}, nil
+}
+
+func (m *MockBuildkitClient) Close() error {
+	if m.CloseFunc != nil {
+		return m.CloseFunc()
+	}
+	return nil
+}
 
 var name string
 
@@ -446,6 +478,73 @@ func TestBuild_WithPlatform(t *testing.T) {
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:sha\n    - repo/reponame:master\n    - repo/reponame:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: build-tools-dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: master\n    CI_COMMIT: sha\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:master\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: linux/amd64\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
 		"info: Build successful",
 	})
+}
+
+// TestBuild_WithMultiPlatform is an integration test that requires a running Docker daemon with buildkit.
+// Multi-platform builds use the buildkit client directly via Docker's /grpc endpoint,
+// which cannot be easily mocked. This test verifies that multi-platform detection works correctly.
+// For actual multi-platform build testing, use integration tests with a real Docker daemon.
+func TestBuild_WithMultiPlatform_Detection(t *testing.T) {
+	defer pkg.SetEnv("CI_PROJECT_NAME", "reponame")()
+	defer pkg.SetEnv("CI_COMMIT_REF_NAME", "master")()
+	defer pkg.SetEnv("CI_COMMIT_SHA", "sha")()
+	defer pkg.SetEnv("DOCKERHUB_NAMESPACE", "repo")()
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	defer func() { _ = os.RemoveAll(name) }()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	// Test that isMultiPlatform correctly detects multi-platform builds
+	args := Args{
+		Dockerfile: "Dockerfile",
+		Platform:   "linux/amd64,linux/arm64",
+	}
+	assert.True(t, args.isMultiPlatform())
+	assert.Equal(t, 2, args.platformCount())
+
+	// Single platform should not be detected as multi-platform
+	args.Platform = "linux/amd64"
+	assert.False(t, args.isMultiPlatform())
+	assert.Equal(t, 1, args.platformCount())
+}
+
+func TestArgs_IsMultiPlatform(t *testing.T) {
+	tests := []struct {
+		name     string
+		platform string
+		want     bool
+	}{
+		{"empty", "", false},
+		{"single platform", "linux/amd64", false},
+		{"two platforms", "linux/amd64,linux/arm64", true},
+		{"three platforms", "linux/amd64,linux/arm64,linux/arm/v7", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Platform: tt.platform}
+			assert.Equal(t, tt.want, a.isMultiPlatform())
+		})
+	}
+}
+
+func TestArgs_PlatformCount(t *testing.T) {
+	tests := []struct {
+		name     string
+		platform string
+		want     int
+	}{
+		{"empty", "", 0},
+		{"single platform", "linux/amd64", 1},
+		{"two platforms", "linux/amd64,linux/arm64", 2},
+		{"three platforms", "linux/amd64,linux/arm64,linux/arm/v7", 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Platform: tt.platform}
+			assert.Equal(t, tt.want, a.platformCount())
+		})
+	}
 }
 
 func TestBuild_WithSkipLogin(t *testing.T) {
@@ -1022,4 +1121,550 @@ func write(dir, file, content string) error {
 		return err
 	}
 	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0o666)
+}
+
+func TestBuild_MultiPlatform_ArgsValidation(t *testing.T) {
+	// Test multi-platform argument validation and detection
+	tests := []struct {
+		name            string
+		platform        string
+		isMultiPlatform bool
+		platformCount   int
+	}{
+		{"empty platform", "", false, 0},
+		{"single platform linux/amd64", "linux/amd64", false, 1},
+		{"single platform linux/arm64", "linux/arm64", false, 1},
+		{"two platforms", "linux/amd64,linux/arm64", true, 2},
+		{"three platforms", "linux/amd64,linux/arm64,linux/arm/v7", true, 3},
+		{"platform with spaces", "linux/amd64, linux/arm64", true, 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Platform: tt.platform}
+			assert.Equal(t, tt.isMultiPlatform, a.isMultiPlatform(), "isMultiPlatform mismatch")
+			assert.Equal(t, tt.platformCount, a.platformCount(), "platformCount mismatch")
+		})
+	}
+}
+
+func Test_getBuildSharedKey(t *testing.T) {
+	// Test that getBuildSharedKey returns consistent results for the same directory
+	key1 := getBuildSharedKey("/test/dir")
+	key2 := getBuildSharedKey("/test/dir")
+	assert.Equal(t, key1, key2, "Same directory should produce same key")
+
+	// Different directories should produce different keys
+	key3 := getBuildSharedKey("/different/dir")
+	assert.NotEqual(t, key1, key3, "Different directories should produce different keys")
+
+	// Key should be a valid hex string
+	assert.Regexp(t, "^[a-f0-9]+$", key1, "Key should be a hex string")
+}
+
+func Test_tryNodeIdentifier(t *testing.T) {
+	// Test that tryNodeIdentifier returns a non-empty string
+	id := tryNodeIdentifier()
+	assert.NotEmpty(t, id, "Node identifier should not be empty")
+
+	// Test that it returns consistent results
+	id2 := tryNodeIdentifier()
+	assert.Equal(t, id, id2, "Node identifier should be consistent")
+}
+
+func Test_provideSession(t *testing.T) {
+	// Temporarily restore the original setupSession for this test
+	originalSetupSession := setupSession
+	setupSession = provideSession
+	defer func() { setupSession = originalSetupSession }()
+
+	// Test that provideSession returns a valid session
+	session := provideSession("/test/dir")
+	assert.NotNil(t, session, "Session should not be nil")
+}
+
+func TestArgs_DockerfileName(t *testing.T) {
+	tests := []struct {
+		name       string
+		dockerfile string
+		want       string
+	}{
+		{"normal dockerfile", "Dockerfile", "Dockerfile"},
+		{"custom dockerfile", "Dockerfile.prod", "Dockerfile.prod"},
+		{"stdin", "-", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Dockerfile: tt.dockerfile}
+			assert.Equal(t, tt.want, a.dockerfileName())
+		})
+	}
+}
+
+func TestArgs_IsDockerfileFromStdin(t *testing.T) {
+	tests := []struct {
+		name       string
+		dockerfile string
+		want       bool
+	}{
+		{"normal dockerfile", "Dockerfile", false},
+		{"stdin", "-", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := Args{Dockerfile: tt.dockerfile}
+			assert.Equal(t, tt.want, a.isDockerfileFromStdin())
+		})
+	}
+}
+
+func Test_buildFrontendAttrs(t *testing.T) {
+	tests := []struct {
+		name       string
+		dockerfile string
+		platform   string
+		buildArgs  map[string]*string
+		want       map[string]string
+	}{
+		{
+			name:       "basic attributes",
+			dockerfile: "Dockerfile",
+			platform:   "linux/amd64",
+			buildArgs:  nil,
+			want: map[string]string{
+				"filename": "Dockerfile",
+				"platform": "linux/amd64",
+			},
+		},
+		{
+			name:       "with build args",
+			dockerfile: "Dockerfile.prod",
+			platform:   "linux/amd64,linux/arm64",
+			buildArgs: map[string]*string{
+				"VERSION": strPtr("1.0.0"),
+				"DEBUG":   strPtr("true"),
+			},
+			want: map[string]string{
+				"filename":          "Dockerfile.prod",
+				"platform":          "linux/amd64,linux/arm64",
+				"build-arg:VERSION": "1.0.0",
+				"build-arg:DEBUG":   "true",
+			},
+		},
+		{
+			name:       "with nil build arg value",
+			dockerfile: "Dockerfile",
+			platform:   "linux/arm64",
+			buildArgs: map[string]*string{
+				"SET":   strPtr("value"),
+				"UNSET": nil,
+			},
+			want: map[string]string{
+				"filename":      "Dockerfile",
+				"platform":      "linux/arm64",
+				"build-arg:SET": "value",
+			},
+		},
+		{
+			name:       "empty platform",
+			dockerfile: "Dockerfile",
+			platform:   "",
+			buildArgs:  nil,
+			want: map[string]string{
+				"filename": "Dockerfile",
+				"platform": "",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := buildFrontendAttrs(tt.dockerfile, tt.platform, tt.buildArgs)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_buildExportEntry(t *testing.T) {
+	tests := []struct {
+		name string
+		tags []string
+		want string
+	}{
+		{
+			name: "single tag",
+			tags: []string{"registry.example.com/image:v1"},
+			want: "registry.example.com/image:v1",
+		},
+		{
+			name: "multiple tags",
+			tags: []string{
+				"registry.example.com/image:v1",
+				"registry.example.com/image:latest",
+				"registry.example.com/image:sha-abc123",
+			},
+			want: "registry.example.com/image:v1,registry.example.com/image:latest,registry.example.com/image:sha-abc123",
+		},
+		{
+			name: "empty tags",
+			tags: []string{},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			entry := buildExportEntry(tt.tags)
+			assert.Equal(t, "image", entry.Type)
+			assert.Equal(t, tt.want, entry.Attrs["name"])
+			assert.Equal(t, "true", entry.Attrs["push"])
+		})
+	}
+}
+
+func Test_buildCacheImports(t *testing.T) {
+	tests := []struct {
+		name   string
+		caches []string
+		want   int
+	}{
+		{
+			name:   "no caches",
+			caches: []string{},
+			want:   0,
+		},
+		{
+			name:   "nil caches",
+			caches: nil,
+			want:   0,
+		},
+		{
+			name:   "single cache",
+			caches: []string{"registry.example.com/image:cache"},
+			want:   1,
+		},
+		{
+			name: "multiple caches",
+			caches: []string{
+				"registry.example.com/image:branch",
+				"registry.example.com/image:latest",
+			},
+			want: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			imports := buildCacheImports(tt.caches)
+			assert.Len(t, imports, tt.want)
+
+			for i, imp := range imports {
+				assert.Equal(t, "registry", imp.Type)
+				assert.Equal(t, tt.caches[i], imp.Attrs["ref"])
+			}
+		})
+	}
+}
+
+func Test_hasContainerdSnapshotter(t *testing.T) {
+	tests := []struct {
+		name    string
+		workers []*client.WorkerInfo
+		want    bool
+	}{
+		{
+			name:    "nil workers",
+			workers: nil,
+			want:    false,
+		},
+		{
+			name:    "empty workers",
+			workers: []*client.WorkerInfo{},
+			want:    false,
+		},
+		{
+			name: "worker without containerd label",
+			workers: []*client.WorkerInfo{
+				{Labels: map[string]string{"foo": "bar"}},
+			},
+			want: false,
+		},
+		{
+			name: "worker with containerd in label key",
+			workers: []*client.WorkerInfo{
+				{Labels: map[string]string{"containerd.snapshotter": "overlayfs"}},
+			},
+			want: true,
+		},
+		{
+			name: "worker with containerd in label value",
+			workers: []*client.WorkerInfo{
+				{Labels: map[string]string{"snapshotter": "containerd"}},
+			},
+			want: true,
+		},
+		{
+			name: "multiple workers one with containerd",
+			workers: []*client.WorkerInfo{
+				{Labels: map[string]string{"foo": "bar"}},
+				{Labels: map[string]string{"snapshotter": "containerd-overlayfs"}},
+			},
+			want: true,
+		},
+		{
+			name: "worker with empty labels",
+			workers: []*client.WorkerInfo{
+				{Labels: map[string]string{}},
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasContainerdSnapshotter(tt.workers)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	var capturedOpts client.SolveOpt
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			capturedOpts = opt
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		assert.Equal(t, "tcp://localhost:1234", address)
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		map[string]*string{"VERSION": strPtr("1.0.0")},
+		[]string{"registry.example.com/image:v1", "registry.example.com/image:latest"},
+		[]string{"registry.example.com/image:cache"},
+		nil,
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+	assert.Equal(t, "dockerfile.v0", capturedOpts.Frontend)
+	assert.Equal(t, "linux/amd64,linux/arm64", capturedOpts.FrontendAttrs["platform"])
+	assert.Equal(t, "1.0.0", capturedOpts.FrontendAttrs["build-arg:VERSION"])
+	assert.Len(t, capturedOpts.Exports, 1)
+	assert.Equal(t, "registry.example.com/image:v1,registry.example.com/image:latest", capturedOpts.Exports[0].Attrs["name"])
+	assert.Len(t, capturedOpts.CacheImports, 1)
+}
+
+func Test_buildMultiPlatformWithFactory_ClientConnectionError(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return nil, errors.New("connection refused")
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to connect to buildkit")
+	assert.Contains(t, err.Error(), "connection refused")
+}
+
+func Test_buildMultiPlatformWithFactory_SolveError(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			close(statusChan)
+			return nil, errors.New("build failed")
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "multi-platform build failed")
+}
+
+func Test_buildMultiPlatformWithFactory_ExporterNotFoundError(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			close(statusChan)
+			return nil, errors.New("exporter 'image' could not be found")
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "multi-platform build failed")
+	// Check that helpful error messages were logged
+	found := false
+	for _, entry := range logMock.Logged {
+		if strings.Contains(entry, "containerd-snapshotter") {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found, "Should log containerd snapshotter help message")
+}
+
+func Test_buildMultiPlatformWithFactory_InvalidDirectory(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return &MockBuildkitClient{}, nil
+	}
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		"/nonexistent/directory/that/does/not/exist",
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.Error(t, err)
+}
+
+func Test_buildMultiPlatformWithFactory_ViaDocker(t *testing.T) {
+	// Test the Docker daemon path (no BUILDKIT_HOST)
+	defer pkg.SetEnv("BUILDKIT_HOST", "")()
+
+	var capturedOpts []client.ClientOpt
+	mockClient := &MockBuildkitClient{
+		ListWorkersFunc: func(ctx context.Context, opts ...client.ListWorkersOption) ([]*client.WorkerInfo, error) {
+			return []*client.WorkerInfo{
+				{Labels: map[string]string{"containerd.snapshotter": "overlayfs"}},
+			}, nil
+		},
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		capturedOpts = opts
+		assert.Equal(t, "", address) // Empty address when using Docker daemon
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+	// Should have context and session dialers when using Docker daemon
+	assert.Len(t, capturedOpts, 2)
+}
+
+func Test_buildMultiPlatformWithFactory_ListWorkersError(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "")()
+
+	mockClient := &MockBuildkitClient{
+		ListWorkersFunc: func(ctx context.Context, opts ...client.ListWorkersOption) ([]*client.WorkerInfo, error) {
+			return nil, errors.New("failed to list workers")
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to list buildkit workers")
 }
