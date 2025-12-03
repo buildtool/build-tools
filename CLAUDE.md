@@ -99,9 +99,42 @@ The configuration file defines:
 
 Only one CI provider and one registry should be configured at a time.
 
+## Multi-Platform Build Support
+
+The build system supports building Docker images for multiple platforms (architectures) simultaneously:
+
+**Implementation Details**:
+- Platform specification: Single platform (`--platform linux/amd64`) or comma-separated list (`--platform linux/amd64,linux/arm64`)
+- Helper methods in `pkg/build/build.go`:
+  - `isMultiPlatform()` - Detects if building for multiple platforms
+  - `platformCount()` - Returns number of target platforms
+- Multi-platform build behavior:
+  - Buildkit receives comma-separated platform string natively
+  - Images are pushed directly to registry (type: "image", push: "true")
+  - Multi-platform manifest lists cannot be loaded to local Docker daemon
+  - All tags are joined in a single output entry (comma-separated names)
+- Single-platform builds load to local daemon (default behavior)
+- Platform string is passed directly to buildkit's `ImageBuildOptions.Platform` field
+
+**Key Code Locations**:
+- Platform argument definition: `pkg/build/build.go:68`
+- Multi-platform detection logic: `pkg/build/build.go:82-90`
+- Registry output configuration: `pkg/build/build.go:260-272`
+- Tests: `pkg/build/build_test.go:451-532`
+
+**Architecture Note**:
+- Single-platform builds use Docker's `/build` API with buildkit backend
+- Multi-platform builds use buildkit client directly via `client.Solve()`
+- Connection priority for multi-platform:
+  1. If `BUILDKIT_HOST` env var is set, connect directly to that buildkit instance
+  2. Otherwise, connect via Docker's `/grpc` endpoint (requires containerd snapshotter)
+- This is necessary because Docker's `/build` API only accepts single platform values
+- The `buildMultiPlatform()` function in `pkg/build/build.go` handles this
+
 ## Dependencies
 - Go 1.25.3+
 - Uses buildkit for Docker builds (via `github.com/moby/buildkit`)
 - Uses containerd for container operations
 - Kubernetes client libraries (k8s.io/client-go, k8s.io/kubectl)
 - Cloud provider SDKs (AWS, Azure, GCP) for registry authentication
+- Buildkit 0.11+ recommended for optimal multi-platform support

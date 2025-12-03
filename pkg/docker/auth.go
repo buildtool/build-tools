@@ -29,6 +29,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
@@ -40,15 +41,30 @@ import (
 	"google.golang.org/grpc"
 )
 
+// TokenFetcher is a function type for fetching tokens from a registry.
+// This allows injecting mock implementations for testing.
+type TokenFetcher func(ctx context.Context, client *http.Client, headers http.Header, to authutil.TokenOptions) (*authutil.FetchTokenResponse, error)
+
+// defaultTokenFetcher is the real implementation that calls authutil.FetchToken.
+var defaultTokenFetcher TokenFetcher = authutil.FetchToken
+
 type authenticator struct {
 	authConfig   registry.AuthConfig
 	registryHost string
+	tokenFetcher TokenFetcher
 }
 
+// NewAuthenticator creates a new authenticator with the default token fetcher.
 func NewAuthenticator(registryHost string, authConfig registry.AuthConfig) Authenticator {
+	return NewAuthenticatorWithTokenFetcher(registryHost, authConfig, defaultTokenFetcher)
+}
+
+// NewAuthenticatorWithTokenFetcher creates a new authenticator with a custom token fetcher.
+func NewAuthenticatorWithTokenFetcher(registryHost string, authConfig registry.AuthConfig, tokenFetcher TokenFetcher) Authenticator {
 	return &authenticator{
 		authConfig:   authConfig,
 		registryHost: registryHost,
+		tokenFetcher: tokenFetcher,
 	}
 }
 
@@ -57,29 +73,50 @@ func (a *authenticator) Register(server *grpc.Server) {
 }
 
 func (a authenticator) Credentials(ctx context.Context, req *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
-	if req.Host != a.registryHost {
+	// Check if the request host matches the registry host.
+	// The registryHost may contain a path (e.g., "registry.gitlab.com/org/repo")
+	// while req.Host only contains the hostname (e.g., "registry.gitlab.com").
+	// We check both exact match and prefix match to handle both cases.
+	if req.Host != a.registryHost && !strings.HasPrefix(a.registryHost, req.Host+"/") && !strings.HasPrefix(a.registryHost, req.Host) {
 		return &auth.CredentialsResponse{}, nil
 	}
 	return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
 }
 
+// GetRegistryHost returns the configured registry host for this authenticator.
+func (a authenticator) GetRegistryHost() string {
+	return a.registryHost
+}
+
 func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenRequest) (*auth.FetchTokenResponse, error) {
 	to := authutil.TokenOptions{
-		Realm:    req.Realm,
-		Service:  req.Service,
-		Scopes:   req.Scopes,
-		Username: "",
-		Secret:   "",
+		Realm:   req.Realm,
+		Service: req.Service,
+		Scopes:  req.Scopes,
 	}
-	// do request anonymously
-	resp, err := authutil.FetchToken(ctx, http.DefaultClient, nil, to)
-	if err != nil {
-		// try with auth
+
+	// Always use credentials when available to ensure proper scopes (especially for push)
+	if a.authConfig.Username != "" && a.authConfig.Password != "" {
 		to.Username = a.authConfig.Username
 		to.Secret = a.authConfig.Password
-		resp, err = authutil.FetchToken(ctx, http.DefaultClient, nil, to)
+	}
+
+	// Use the injected token fetcher
+	fetcher := a.tokenFetcher
+	if fetcher == nil {
+		fetcher = defaultTokenFetcher
+	}
+
+	resp, err := fetcher(ctx, http.DefaultClient, nil, to)
+	if err != nil {
+		// If authenticated request failed and we had credentials, try anonymous as fallback
+		if to.Username != "" {
+			to.Username = ""
+			to.Secret = ""
+			resp, err = fetcher(ctx, http.DefaultClient, nil, to)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch anonymous and authenticated token, %w", err)
+			return nil, fmt.Errorf("failed to fetch token: %w", err)
 		}
 	}
 	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresInSeconds), nil
