@@ -1223,6 +1223,7 @@ func Test_buildFrontendAttrs(t *testing.T) {
 		name       string
 		dockerfile string
 		platform   string
+		target     string
 		buildArgs  map[string]*string
 		want       map[string]string
 	}{
@@ -1230,6 +1231,7 @@ func Test_buildFrontendAttrs(t *testing.T) {
 			name:       "basic attributes",
 			dockerfile: "Dockerfile",
 			platform:   "linux/amd64",
+			target:     "",
 			buildArgs:  nil,
 			want: map[string]string{
 				"filename": "Dockerfile",
@@ -1240,6 +1242,7 @@ func Test_buildFrontendAttrs(t *testing.T) {
 			name:       "with build args",
 			dockerfile: "Dockerfile.prod",
 			platform:   "linux/amd64,linux/arm64",
+			target:     "",
 			buildArgs: map[string]*string{
 				"VERSION": strPtr("1.0.0"),
 				"DEBUG":   strPtr("true"),
@@ -1255,6 +1258,7 @@ func Test_buildFrontendAttrs(t *testing.T) {
 			name:       "with nil build arg value",
 			dockerfile: "Dockerfile",
 			platform:   "linux/arm64",
+			target:     "",
 			buildArgs: map[string]*string{
 				"SET":   strPtr("value"),
 				"UNSET": nil,
@@ -1269,17 +1273,45 @@ func Test_buildFrontendAttrs(t *testing.T) {
 			name:       "empty platform",
 			dockerfile: "Dockerfile",
 			platform:   "",
+			target:     "",
 			buildArgs:  nil,
 			want: map[string]string{
 				"filename": "Dockerfile",
 				"platform": "",
 			},
 		},
+		{
+			name:       "with target stage",
+			dockerfile: "Dockerfile",
+			platform:   "linux/amd64",
+			target:     "builder",
+			buildArgs:  nil,
+			want: map[string]string{
+				"filename": "Dockerfile",
+				"platform": "linux/amd64",
+				"target":   "builder",
+			},
+		},
+		{
+			name:       "with target and build args",
+			dockerfile: "Dockerfile",
+			platform:   "linux/amd64,linux/arm64",
+			target:     "production",
+			buildArgs: map[string]*string{
+				"VERSION": strPtr("2.0.0"),
+			},
+			want: map[string]string{
+				"filename":          "Dockerfile",
+				"platform":          "linux/amd64,linux/arm64",
+				"target":            "production",
+				"build-arg:VERSION": "2.0.0",
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := buildFrontendAttrs(tt.dockerfile, tt.platform, tt.buildArgs)
+			got := buildFrontendAttrs(tt.dockerfile, tt.platform, tt.target, tt.buildArgs)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -1459,6 +1491,7 @@ func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
 		map[string]*string{"VERSION": strPtr("1.0.0")},
 		[]string{"registry.example.com/image:v1", "registry.example.com/image:latest"},
 		[]string{"registry.example.com/image:cache"},
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1489,6 +1522,7 @@ func Test_buildMultiPlatformWithFactory_ClientConnectionError(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1522,6 +1556,7 @@ func Test_buildMultiPlatformWithFactory_SolveError(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1558,6 +1593,7 @@ func Test_buildMultiPlatformWithFactory_ExporterNotFoundError(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1589,6 +1625,7 @@ func Test_buildMultiPlatformWithFactory_InvalidDirectory(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1629,6 +1666,7 @@ func Test_buildMultiPlatformWithFactory_ViaDocker(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)
@@ -1661,6 +1699,7 @@ func Test_buildMultiPlatformWithFactory_ListWorkersError(t *testing.T) {
 		nil,
 		[]string{"registry.example.com/image:v1"},
 		nil,
+		"",
 		nil,
 		mockFactory,
 	)

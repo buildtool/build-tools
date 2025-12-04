@@ -158,6 +158,9 @@ You can run a standalone buildkit container:
 docker run -d --name buildkitd --privileged moby/buildkit:latest
 ```
 
+!!! note "BUILDKIT_HOST behavior"
+    When `BUILDKIT_HOST` is set, **all builds** (single-platform and multi-platform) use the buildkit client directly. Images are pushed to the registry during the build, so the `push` command becomes a no-op.
+
 **Option 2: Enable containerd snapshotter in Docker**
 
 If not using `BUILDKIT_HOST`, multi-platform builds require Docker to be configured with the **containerd snapshotter**. This is because Docker's default storage driver doesn't support the image exporter needed for multi-platform manifest lists.

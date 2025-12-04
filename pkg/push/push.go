@@ -69,6 +69,12 @@ func Push(dir string, info version.Info, osArgs ...string) int {
 }
 
 func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string) int {
+	// If BUILDKIT_HOST is set, images are pushed during build, so push is a no-op
+	if os.Getenv("BUILDKIT_HOST") != "" {
+		log.Info("BUILDKIT_HOST is set - images were pushed during build, skipping push")
+		return 0
+	}
+
 	currentCI := cfg.CurrentCI()
 	currentRegistry := cfg.CurrentRegistry()
 

@@ -241,12 +241,18 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	}
 
 	if buildVars.isMultiPlatform() {
-		return buildMultiPlatform(client, dir, buildVars, buildArgs, tags, caches, authenticator)
+		return buildMultiPlatform(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
 	}
 	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
 }
 
 func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
+	// If BUILDKIT_HOST is set, use buildkit client directly (pushes to registry)
+	if os.Getenv("BUILDKIT_HOST") != "" {
+		return buildMultiPlatform(dkrClient, dir, buildVars, buildArgs, tags, caches, stage, authenticator)
+	}
+
+	// Otherwise use Docker API (loads to local daemon)
 	s := setupSession(dir)
 	if authenticator != nil {
 		s.Allow(authenticator)
@@ -286,11 +292,15 @@ func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs m
 }
 
 // buildFrontendAttrs creates the frontend attributes map for buildkit.
-// It includes the dockerfile name, platform, and any build arguments.
-func buildFrontendAttrs(dockerfile, platform string, buildArgs map[string]*string) map[string]string {
+// It includes the dockerfile name, platform, target stage, and any build arguments.
+func buildFrontendAttrs(dockerfile, platform, target string, buildArgs map[string]*string) map[string]string {
 	attrs := map[string]string{
 		"filename": dockerfile,
 		"platform": platform,
+	}
+
+	if target != "" {
+		attrs["target"] = target
 	}
 
 	for k, v := range buildArgs {
@@ -353,12 +363,12 @@ func hasContainerdSnapshotter(workers []*client.WorkerInfo) bool {
 // Enable it by adding to /etc/docker/daemon.json:
 //
 //	{ "features": { "containerd-snapshotter": true } }
-func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, authenticator docker.Authenticator) error {
-	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, authenticator, defaultBuildkitClientFactory)
+func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, authenticator docker.Authenticator) error {
+	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, target, authenticator, defaultBuildkitClientFactory)
 }
 
 // buildMultiPlatformWithFactory is the internal implementation that accepts a BuildkitClientFactory for testing.
-func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
+func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
 	fs, err := fsutil.NewFS(dir)
 	if err != nil {
 		return err
@@ -409,7 +419,7 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 	}
 	defer func() { _ = bkClient.Close() }()
 
-	frontendAttrs := buildFrontendAttrs(buildVars.dockerfileName(), buildVars.Platform, buildArgs)
+	frontendAttrs := buildFrontendAttrs(buildVars.dockerfileName(), buildVars.Platform, target, buildArgs)
 	exports := []client.ExportEntry{buildExportEntry(tags)}
 	cacheImports := buildCacheImports(caches)
 
