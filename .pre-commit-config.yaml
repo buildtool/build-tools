@@ -52,6 +52,6 @@ repos:
       - id: go-test-mod
       - id: go-fumpt
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.7.0
+    rev: v2.7.1
     hooks:
     - id: golangci-lint-full
