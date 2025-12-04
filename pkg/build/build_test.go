@@ -43,6 +43,7 @@ import (
 
 	"github.com/buildtool/build-tools/pkg"
 	"github.com/buildtool/build-tools/pkg/args"
+	"github.com/buildtool/build-tools/pkg/config"
 	"github.com/buildtool/build-tools/pkg/docker"
 )
 
@@ -1356,24 +1357,28 @@ func Test_buildExportEntry(t *testing.T) {
 
 func Test_buildCacheImports(t *testing.T) {
 	tests := []struct {
-		name   string
-		caches []string
-		want   int
+		name     string
+		caches   []string
+		ecrCache *config.ECRCache
+		want     int
 	}{
 		{
-			name:   "no caches",
-			caches: []string{},
-			want:   0,
+			name:     "no caches",
+			caches:   []string{},
+			ecrCache: nil,
+			want:     0,
 		},
 		{
-			name:   "nil caches",
-			caches: nil,
-			want:   0,
+			name:     "nil caches",
+			caches:   nil,
+			ecrCache: nil,
+			want:     0,
 		},
 		{
-			name:   "single cache",
-			caches: []string{"registry.example.com/image:cache"},
-			want:   1,
+			name:     "single cache",
+			caches:   []string{"registry.example.com/image:cache"},
+			ecrCache: nil,
+			want:     1,
 		},
 		{
 			name: "multiple caches",
@@ -1381,18 +1386,92 @@ func Test_buildCacheImports(t *testing.T) {
 				"registry.example.com/image:branch",
 				"registry.example.com/image:latest",
 			},
-			want: 2,
+			ecrCache: nil,
+			want:     2,
+		},
+		{
+			name:     "with ECR cache",
+			caches:   []string{"registry.example.com/image:cache"},
+			ecrCache: &config.ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			want:     2,
+		},
+		{
+			name:     "only ECR cache",
+			caches:   nil,
+			ecrCache: &config.ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache", Tag: "custom-tag"},
+			want:     1,
+		},
+		{
+			name:     "empty ECR cache",
+			caches:   []string{"registry.example.com/image:cache"},
+			ecrCache: &config.ECRCache{},
+			want:     1,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			imports := buildCacheImports(tt.caches)
+			imports := buildCacheImports(tt.caches, tt.ecrCache)
 			assert.Len(t, imports, tt.want)
 
-			for i, imp := range imports {
-				assert.Equal(t, "registry", imp.Type)
-				assert.Equal(t, tt.caches[i], imp.Attrs["ref"])
+			// ECR cache should be first if configured
+			offset := 0
+			if tt.ecrCache != nil && tt.ecrCache.Configured() {
+				firstImport := imports[0]
+				assert.Equal(t, "registry", firstImport.Type)
+				assert.Equal(t, tt.ecrCache.CacheRef(), firstImport.Attrs["ref"])
+				offset = 1
+			}
+
+			// Verify regular caches come after ECR cache
+			for i, cache := range tt.caches {
+				assert.Equal(t, "registry", imports[offset+i].Type)
+				assert.Equal(t, cache, imports[offset+i].Attrs["ref"])
+			}
+		})
+	}
+}
+
+func Test_buildCacheExports(t *testing.T) {
+	tests := []struct {
+		name     string
+		ecrCache *config.ECRCache
+		want     int
+	}{
+		{
+			name:     "nil ECR cache",
+			ecrCache: nil,
+			want:     0,
+		},
+		{
+			name:     "empty ECR cache",
+			ecrCache: &config.ECRCache{},
+			want:     0,
+		},
+		{
+			name:     "configured ECR cache with default tag",
+			ecrCache: &config.ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			want:     1,
+		},
+		{
+			name:     "configured ECR cache with custom tag",
+			ecrCache: &config.ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache", Tag: "custom-tag"},
+			want:     1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exports := buildCacheExports(tt.ecrCache)
+			assert.Len(t, exports, tt.want)
+
+			if tt.want > 0 {
+				export := exports[0]
+				assert.Equal(t, "registry", export.Type)
+				assert.Equal(t, tt.ecrCache.CacheRef(), export.Attrs["ref"])
+				assert.Equal(t, "max", export.Attrs["mode"])
+				assert.Equal(t, "true", export.Attrs["image-manifest"])
+				assert.Equal(t, "true", export.Attrs["oci-mediatypes"])
 			}
 		})
 	}
@@ -1493,6 +1572,7 @@ func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
 		[]string{"registry.example.com/image:cache"},
 		"",
 		nil,
+		nil,
 		mockFactory,
 	)
 
@@ -1523,6 +1603,7 @@ func Test_buildMultiPlatformWithFactory_ClientConnectionError(t *testing.T) {
 		[]string{"registry.example.com/image:v1"},
 		nil,
 		"",
+		nil,
 		nil,
 		mockFactory,
 	)
@@ -1557,6 +1638,7 @@ func Test_buildMultiPlatformWithFactory_SolveError(t *testing.T) {
 		[]string{"registry.example.com/image:v1"},
 		nil,
 		"",
+		nil,
 		nil,
 		mockFactory,
 	)
@@ -1595,6 +1677,7 @@ func Test_buildMultiPlatformWithFactory_ExporterNotFoundError(t *testing.T) {
 		nil,
 		"",
 		nil,
+		nil,
 		mockFactory,
 	)
 
@@ -1626,6 +1709,7 @@ func Test_buildMultiPlatformWithFactory_InvalidDirectory(t *testing.T) {
 		[]string{"registry.example.com/image:v1"},
 		nil,
 		"",
+		nil,
 		nil,
 		mockFactory,
 	)
@@ -1668,6 +1752,7 @@ func Test_buildMultiPlatformWithFactory_ViaDocker(t *testing.T) {
 		nil,
 		"",
 		nil,
+		nil,
 		mockFactory,
 	)
 
@@ -1701,9 +1786,163 @@ func Test_buildMultiPlatformWithFactory_ListWorkersError(t *testing.T) {
 		nil,
 		"",
 		nil,
+		nil,
 		mockFactory,
 	)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to list buildkit workers")
+}
+
+func Test_buildMultiPlatformWithFactory_WithECRCache(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	var capturedOpts client.SolveOpt
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			capturedOpts = opt
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	ecrCache := &config.ECRCache{
+		Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache",
+		Tag: "my-cache",
+	}
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		[]string{"registry.example.com/image:branch"},
+		"",
+		ecrCache,
+		nil,
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+
+	// Verify cache imports include ECR cache (ECR cache is first for priority)
+	assert.Len(t, capturedOpts.CacheImports, 2)
+	assert.Equal(t, "registry", capturedOpts.CacheImports[0].Type)
+	assert.Equal(t, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:my-cache", capturedOpts.CacheImports[0].Attrs["ref"])
+	assert.Equal(t, "registry", capturedOpts.CacheImports[1].Type)
+	assert.Equal(t, "registry.example.com/image:branch", capturedOpts.CacheImports[1].Attrs["ref"])
+
+	// Verify cache exports have ECR-specific settings
+	assert.Len(t, capturedOpts.CacheExports, 1)
+	assert.Equal(t, "registry", capturedOpts.CacheExports[0].Type)
+	assert.Equal(t, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:my-cache", capturedOpts.CacheExports[0].Attrs["ref"])
+	assert.Equal(t, "max", capturedOpts.CacheExports[0].Attrs["mode"])
+	assert.Equal(t, "true", capturedOpts.CacheExports[0].Attrs["image-manifest"])
+	assert.Equal(t, "true", capturedOpts.CacheExports[0].Attrs["oci-mediatypes"])
+}
+
+func Test_buildMultiPlatformWithFactory_WithECRCache_DefaultTag(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	var capturedOpts client.SolveOpt
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			capturedOpts = opt
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	ecrCache := &config.ECRCache{
+		Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache",
+	}
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		"",
+		ecrCache,
+		nil,
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+
+	// Verify cache imports include ECR cache with default tag
+	assert.Len(t, capturedOpts.CacheImports, 1)
+	assert.Equal(t, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:buildcache", capturedOpts.CacheImports[0].Attrs["ref"])
+
+	// Verify cache exports
+	assert.Len(t, capturedOpts.CacheExports, 1)
+	assert.Equal(t, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:buildcache", capturedOpts.CacheExports[0].Attrs["ref"])
+}
+
+func Test_extractHost(t *testing.T) {
+	tests := []struct {
+		name string
+		url  string
+		want string
+	}{
+		{
+			name: "ECR URL with repo",
+			url:  "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache-repo",
+			want: "123456789012.dkr.ecr.us-east-1.amazonaws.com",
+		},
+		{
+			name: "ECR URL without repo",
+			url:  "123456789012.dkr.ecr.us-east-1.amazonaws.com",
+			want: "123456789012.dkr.ecr.us-east-1.amazonaws.com",
+		},
+		{
+			name: "URL with https prefix",
+			url:  "https://123456789012.dkr.ecr.us-east-1.amazonaws.com/cache-repo",
+			want: "123456789012.dkr.ecr.us-east-1.amazonaws.com",
+		},
+		{
+			name: "URL with http prefix",
+			url:  "http://registry.example.com/repo",
+			want: "registry.example.com",
+		},
+		{
+			name: "Docker Hub style",
+			url:  "docker.io/library/alpine",
+			want: "docker.io",
+		},
+		{
+			name: "GitLab registry",
+			url:  "registry.gitlab.com/org/project",
+			want: "registry.gitlab.com",
+		},
+		{
+			name: "empty string",
+			url:  "",
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractHost(tt.url)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

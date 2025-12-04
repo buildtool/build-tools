@@ -96,6 +96,46 @@ func Test_GetRegistryHost(t *testing.T) {
 	assert.Equal(t, "registry.example.com/org/repo", a.GetRegistryHost())
 }
 
+func Test_Credentials_MultiRegistry_NoInterference(t *testing.T) {
+	// Test that GitLab and ECR credentials don't interfere with each other
+	// This was a bug where ECR service "registry" would match "registry.gitlab.com"
+	auth := NewAuthenticator("registry.gitlab.com/org/repo", registry.AuthConfig{
+		Username: "gitlab-user",
+		Password: "gitlab-pass",
+	})
+
+	// Add ECR credentials
+	auth.AddCredentials("123456789.dkr.ecr.us-east-1.amazonaws.com", registry.AuthConfig{
+		Username: "AWS",
+		Password: "ecr-token",
+	})
+
+	// GitLab hostname should get GitLab credentials
+	creds, err := auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "registry.gitlab.com"})
+	require.NoError(t, err)
+	assert.Equal(t, "gitlab-user", creds.Username)
+	assert.Equal(t, "gitlab-pass", creds.Secret)
+
+	// ECR hostname should get ECR credentials
+	creds, err = auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "123456789.dkr.ecr.us-east-1.amazonaws.com"})
+	require.NoError(t, err)
+	assert.Equal(t, "AWS", creds.Username)
+	assert.Equal(t, "ecr-token", creds.Secret)
+
+	// A short service name like "registry" should NOT match anything
+	// (This was the bug - it was matching "registry.gitlab.com")
+	creds, err = auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "registry"})
+	require.NoError(t, err)
+	assert.Equal(t, "", creds.Username, "Short host 'registry' should not match 'registry.gitlab.com'")
+	assert.Equal(t, "", creds.Secret)
+
+	// Unknown registry should return empty
+	creds, err = auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "docker.io"})
+	require.NoError(t, err)
+	assert.Equal(t, "", creds.Username)
+	assert.Equal(t, "", creds.Secret)
+}
+
 func Test_Register(t *testing.T) {
 	auth := NewAuthenticator("registry.example.com", registry.AuthConfig{
 		Username: "user",
@@ -232,10 +272,14 @@ func Test_toTokenResponse(t *testing.T) {
 
 func Test_getAuthorityKey(t *testing.T) {
 	auth := &authenticator{
-		registryHost: "registry.example.com",
-		authConfig: registry.AuthConfig{
-			Username: "user",
-			Password: "pass",
+		credentials: []registryCredentials{
+			{
+				host: "registry.example.com",
+				authConfig: registry.AuthConfig{
+					Username: "user",
+					Password: "pass",
+				},
+			},
 		},
 	}
 
@@ -270,7 +314,7 @@ func Test_FetchToken_Success(t *testing.T) {
 
 	resp, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
 		Realm:   "https://registry.example.com/token",
-		Service: "registry",
+		Service: "registry.example.com",
 		Scopes:  []string{"repository:image:pull,push"},
 	})
 
@@ -297,7 +341,7 @@ func Test_FetchToken_WithCredentials(t *testing.T) {
 
 	_, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
 		Realm:   "https://registry.example.com/token",
-		Service: "registry",
+		Service: "registry.example.com",
 		Scopes:  []string{"repository:image:pull"},
 	})
 
@@ -330,7 +374,7 @@ func Test_FetchToken_AnonymousFallback(t *testing.T) {
 
 	resp, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
 		Realm:   "https://registry.example.com/token",
-		Service: "registry",
+		Service: "registry.example.com",
 		Scopes:  []string{"repository:image:pull"},
 	})
 
@@ -354,7 +398,7 @@ func Test_FetchToken_AllFailures(t *testing.T) {
 
 	_, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
 		Realm:   "https://registry.example.com/token",
-		Service: "registry",
+		Service: "registry.example.com",
 		Scopes:  []string{"repository:image:pull"},
 	})
 
@@ -377,7 +421,7 @@ func Test_FetchToken_NoCredentials(t *testing.T) {
 
 	resp, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
 		Realm:   "https://registry.example.com/token",
-		Service: "registry",
+		Service: "registry.example.com",
 		Scopes:  []string{"repository:image:pull"},
 	})
 
@@ -386,4 +430,74 @@ func Test_FetchToken_NoCredentials(t *testing.T) {
 	// Should not have credentials
 	assert.Equal(t, "", capturedOptions.Username)
 	assert.Equal(t, "", capturedOptions.Secret)
+}
+
+func Test_AddCredentials(t *testing.T) {
+	auth := NewAuthenticator("registry1.example.com", registry.AuthConfig{
+		Username: "user1",
+		Password: "pass1",
+	})
+
+	// Add additional credentials
+	auth.AddCredentials("registry2.example.com", registry.AuthConfig{
+		Username: "user2",
+		Password: "pass2",
+	})
+
+	// Test first registry credentials
+	resp, err := auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "registry1.example.com"})
+	require.NoError(t, err)
+	assert.Equal(t, "user1", resp.Username)
+	assert.Equal(t, "pass1", resp.Secret)
+
+	// Test second registry credentials
+	resp, err = auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "registry2.example.com"})
+	require.NoError(t, err)
+	assert.Equal(t, "user2", resp.Username)
+	assert.Equal(t, "pass2", resp.Secret)
+
+	// Test unknown registry returns empty
+	resp, err = auth.Credentials(context.TODO(), &auth2.CredentialsRequest{Host: "unknown.example.com"})
+	require.NoError(t, err)
+	assert.Equal(t, "", resp.Username)
+	assert.Equal(t, "", resp.Secret)
+}
+
+func Test_MultiCredentials_FetchToken(t *testing.T) {
+	callCount := 0
+	var capturedServices []string
+
+	mockFetcher := func(_ context.Context, _ *http.Client, _ http.Header, to authutil.TokenOptions) (*authutil.FetchTokenResponse, error) {
+		callCount++
+		capturedServices = append(capturedServices, to.Username)
+		return &authutil.FetchTokenResponse{Token: "token-" + to.Username}, nil
+	}
+
+	auth := NewAuthenticatorWithTokenFetcher("registry1.example.com", registry.AuthConfig{
+		Username: "user1",
+		Password: "pass1",
+	}, mockFetcher)
+
+	auth.AddCredentials("registry2.example.com", registry.AuthConfig{
+		Username: "user2",
+		Password: "pass2",
+	})
+
+	// Fetch token for first registry
+	resp, err := auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
+		Realm:   "https://registry1.example.com/token",
+		Service: "registry1.example.com",
+		Scopes:  []string{"repository:image:push"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "token-user1", resp.Token)
+
+	// Fetch token for second registry
+	resp, err = auth.FetchToken(context.TODO(), &auth2.FetchTokenRequest{
+		Realm:   "https://registry2.example.com/token",
+		Service: "registry2.example.com",
+		Scopes:  []string{"repository:cache:push"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "token-user2", resp.Token)
 }

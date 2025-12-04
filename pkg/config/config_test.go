@@ -329,3 +329,309 @@ targets:
 	assert.EqualError(t, err, "registry already defined, please check configuration")
 	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
 }
+
+func TestECRCache_Configured(t *testing.T) {
+	tests := []struct {
+		name  string
+		cache *ECRCache
+		want  bool
+	}{
+		{
+			name:  "nil cache",
+			cache: nil,
+			want:  false,
+		},
+		{
+			name:  "empty cache",
+			cache: &ECRCache{},
+			want:  false,
+		},
+		{
+			name:  "url only",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			want:  true,
+		},
+		{
+			name:  "url and tag",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache", Tag: "custom"},
+			want:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.cache.Configured())
+		})
+	}
+}
+
+func TestECRCache_CacheRef(t *testing.T) {
+	tests := []struct {
+		name  string
+		cache *ECRCache
+		want  string
+	}{
+		{
+			name:  "default tag",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			want:  "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:buildcache",
+		},
+		{
+			name:  "custom tag",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache", Tag: "v1"},
+			want:  "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:v1",
+		},
+		{
+			name:  "empty tag uses default",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache", Tag: ""},
+			want:  "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:buildcache",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.cache.CacheRef())
+		})
+	}
+}
+
+func TestECRCache_AsRegistry(t *testing.T) {
+	tests := []struct {
+		name       string
+		cache      *ECRCache
+		wantNil    bool
+		wantUrl    string
+		wantRegion string
+	}{
+		{
+			name:    "nil cache",
+			cache:   nil,
+			wantNil: true,
+		},
+		{
+			name:    "empty cache",
+			cache:   &ECRCache{},
+			wantNil: true,
+		},
+		{
+			name:       "configured cache us-east-1",
+			cache:      &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			wantNil:    false,
+			wantUrl:    "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache",
+			wantRegion: "us-east-1",
+		},
+		{
+			name:       "configured cache eu-west-1",
+			cache:      &ECRCache{Url: "987654321098.dkr.ecr.eu-west-1.amazonaws.com/my-cache"},
+			wantNil:    false,
+			wantUrl:    "987654321098.dkr.ecr.eu-west-1.amazonaws.com/my-cache",
+			wantRegion: "eu-west-1",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reg := tt.cache.AsRegistry()
+			if tt.wantNil {
+				assert.Nil(t, reg)
+			} else {
+				assert.NotNil(t, reg)
+				assert.Equal(t, tt.wantUrl, reg.RegistryUrl())
+				assert.Equal(t, tt.wantRegion, reg.Region)
+			}
+		})
+	}
+}
+
+func TestECRCache_extractRegion(t *testing.T) {
+	tests := []struct {
+		name  string
+		cache *ECRCache
+		want  string
+	}{
+		{
+			name:  "nil cache",
+			cache: nil,
+			want:  "",
+		},
+		{
+			name:  "empty url",
+			cache: &ECRCache{Url: ""},
+			want:  "",
+		},
+		{
+			name:  "us-east-1",
+			cache: &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			want:  "us-east-1",
+		},
+		{
+			name:  "eu-west-1",
+			cache: &ECRCache{Url: "987654321098.dkr.ecr.eu-west-1.amazonaws.com/cache"},
+			want:  "eu-west-1",
+		},
+		{
+			name:  "ap-southeast-2",
+			cache: &ECRCache{Url: "111222333444.dkr.ecr.ap-southeast-2.amazonaws.com/my-cache-repo"},
+			want:  "ap-southeast-2",
+		},
+		{
+			name:  "invalid url format",
+			cache: &ECRCache{Url: "docker.io/library/alpine"},
+			want:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.cache.extractRegion()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestECRCache_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cache   *ECRCache
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "nil cache",
+			cache:   nil,
+			wantErr: false,
+		},
+		{
+			name:    "empty url",
+			cache:   &ECRCache{Url: ""},
+			wantErr: false,
+		},
+		{
+			name:    "valid ECR URL us-east-1",
+			cache:   &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			wantErr: false,
+		},
+		{
+			name:    "valid ECR URL eu-west-1",
+			cache:   &ECRCache{Url: "987654321098.dkr.ecr.eu-west-1.amazonaws.com/my-cache"},
+			wantErr: false,
+		},
+		{
+			name:    "valid ECR URL without repo path",
+			cache:   &ECRCache{Url: "123456789012.dkr.ecr.us-west-2.amazonaws.com"},
+			wantErr: false,
+		},
+		{
+			name:    "valid ECR URL with nested repo path",
+			cache:   &ECRCache{Url: "123456789012.dkr.ecr.eu-central-1.amazonaws.com/org/project/cache"},
+			wantErr: false,
+		},
+		{
+			name:    "invalid - Docker Hub URL",
+			cache:   &ECRCache{Url: "docker.io/library/alpine"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - GitHub Container Registry",
+			cache:   &ECRCache{Url: "ghcr.io/owner/repo"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - GitLab Registry",
+			cache:   &ECRCache{Url: "registry.gitlab.com/group/project"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - account ID too short",
+			cache:   &ECRCache{Url: "12345.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - account ID too long",
+			cache:   &ECRCache{Url: "1234567890123.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - account ID with letters",
+			cache:   &ECRCache{Url: "12345678901a.dkr.ecr.us-east-1.amazonaws.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - missing dkr",
+			cache:   &ECRCache{Url: "123456789012.ecr.us-east-1.amazonaws.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - missing ecr",
+			cache:   &ECRCache{Url: "123456789012.dkr.us-east-1.amazonaws.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - wrong domain",
+			cache:   &ECRCache{Url: "123456789012.dkr.ecr.us-east-1.example.com/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - S3 URL",
+			cache:   &ECRCache{Url: "s3://my-bucket/cache"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+		{
+			name:    "invalid - random string",
+			cache:   &ECRCache{Url: "not-a-valid-url"},
+			wantErr: true,
+			errMsg:  "invalid ECR cache URL",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cache.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMsg)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestLoad_InvalidECRCacheURL(t *testing.T) {
+	yaml := `
+cache:
+  ecr:
+    url: docker.io/library/alpine
+    tag: cache
+`
+	name := filepath.Join(t.TempDir(), ".buildtools.yaml")
+	_ = os.WriteFile(name, []byte(yaml), 0o644)
+
+	_, err := Load(filepath.Dir(name))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid ECR cache URL")
+}
+
+func TestLoad_UnknownCacheType(t *testing.T) {
+	yaml := `
+cache:
+  gitlab:
+    url: registry.gitlab.com/group/project
+`
+	name := filepath.Join(t.TempDir(), ".buildtools.yaml")
+	_ = os.WriteFile(name, []byte(yaml), 0o644)
+
+	_, err := Load(filepath.Dir(name))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "gitlab")
+}

@@ -32,6 +32,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apex/log"
 	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
 
 	"github.com/docker/docker/api/types/registry"
@@ -48,9 +49,14 @@ type TokenFetcher func(ctx context.Context, client *http.Client, headers http.He
 // defaultTokenFetcher is the real implementation that calls authutil.FetchToken.
 var defaultTokenFetcher TokenFetcher = authutil.FetchToken
 
+// registryCredentials holds credentials for a specific registry host.
+type registryCredentials struct {
+	host       string
+	authConfig registry.AuthConfig
+}
+
 type authenticator struct {
-	authConfig   registry.AuthConfig
-	registryHost string
+	credentials  []registryCredentials
 	tokenFetcher TokenFetcher
 }
 
@@ -62,43 +68,95 @@ func NewAuthenticator(registryHost string, authConfig registry.AuthConfig) Authe
 // NewAuthenticatorWithTokenFetcher creates a new authenticator with a custom token fetcher.
 func NewAuthenticatorWithTokenFetcher(registryHost string, authConfig registry.AuthConfig, tokenFetcher TokenFetcher) Authenticator {
 	return &authenticator{
-		authConfig:   authConfig,
-		registryHost: registryHost,
+		credentials: []registryCredentials{
+			{host: registryHost, authConfig: authConfig},
+		},
 		tokenFetcher: tokenFetcher,
 	}
+}
+
+// AddCredentials adds additional registry credentials to the authenticator.
+// This is useful when pushing to multiple registries (e.g., image registry and cache registry).
+func (a *authenticator) AddCredentials(registryHost string, authConfig registry.AuthConfig) {
+	log.Debugf("AddCredentials: adding credentials for host=%s (username=%s)\n", registryHost, authConfig.Username)
+	a.credentials = append(a.credentials, registryCredentials{
+		host:       registryHost,
+		authConfig: authConfig,
+	})
 }
 
 func (a *authenticator) Register(server *grpc.Server) {
 	auth.RegisterAuthServer(server, a)
 }
 
-func (a authenticator) Credentials(ctx context.Context, req *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
-	// Check if the request host matches the registry host.
-	// The registryHost may contain a path (e.g., "registry.gitlab.com/org/repo")
-	// while req.Host only contains the hostname (e.g., "registry.gitlab.com").
-	// We check both exact match and prefix match to handle both cases.
-	if req.Host != a.registryHost && !strings.HasPrefix(a.registryHost, req.Host+"/") && !strings.HasPrefix(a.registryHost, req.Host) {
-		return &auth.CredentialsResponse{}, nil
+// findCredentials finds the credentials for the given host.
+// The registryHost may contain a path (e.g., "registry.gitlab.com/org/repo")
+// while reqHost only contains the hostname (e.g., "registry.gitlab.com").
+// We check exact match first, then prefix match with path separator.
+func (a authenticator) findCredentials(reqHost string) *registryCredentials {
+	for i := range a.credentials {
+		cred := &a.credentials[i]
+		// Exact match
+		if reqHost == cred.host {
+			return cred
+		}
+		// reqHost is the base hostname and cred.host has a path
+		// e.g., reqHost="registry.gitlab.com" matches cred.host="registry.gitlab.com/org/repo"
+		if strings.HasPrefix(cred.host, reqHost+"/") {
+			return cred
+		}
+		// cred.host is the base hostname and reqHost has a path
+		// e.g., cred.host="registry.gitlab.com" matches reqHost="registry.gitlab.com/org/repo"
+		if strings.HasPrefix(reqHost, cred.host+"/") {
+			return cred
+		}
 	}
-	return &auth.CredentialsResponse{Username: a.authConfig.Username, Secret: a.authConfig.Password}, nil
+	return nil
 }
 
-// GetRegistryHost returns the configured registry host for this authenticator.
+func (a authenticator) Credentials(ctx context.Context, req *auth.CredentialsRequest) (*auth.CredentialsResponse, error) {
+	log.Debugf("Credentials request: Host=%s (have %d credential sets)\n", req.Host, len(a.credentials))
+	for i, c := range a.credentials {
+		log.Debugf("  credential[%d]: host=%s, username=%s, hasPassword=%v\n", i, c.host, c.authConfig.Username, c.authConfig.Password != "")
+	}
+	cred := a.findCredentials(req.Host)
+	if cred == nil {
+		log.Debugf("Credentials: no credentials found for host=%s\n", req.Host)
+		return &auth.CredentialsResponse{}, nil
+	}
+	log.Debugf("Credentials: returning username=%s, hasSecret=%v for host=%s (matched %s)\n", cred.authConfig.Username, cred.authConfig.Password != "", req.Host, cred.host)
+	return &auth.CredentialsResponse{Username: cred.authConfig.Username, Secret: cred.authConfig.Password}, nil
+}
+
+// GetRegistryHost returns the first configured registry host for this authenticator.
 func (a authenticator) GetRegistryHost() string {
-	return a.registryHost
+	if len(a.credentials) > 0 {
+		return a.credentials[0].host
+	}
+	return ""
 }
 
 func (a authenticator) FetchToken(ctx context.Context, req *auth.FetchTokenRequest) (*auth.FetchTokenResponse, error) {
+	log.Debugf("FetchToken request: Host=%s, Realm=%s, Service=%s, Scopes=%v\n", req.Host, req.Realm, req.Service, req.Scopes)
+
 	to := authutil.TokenOptions{
 		Realm:   req.Realm,
 		Service: req.Service,
 		Scopes:  req.Scopes,
 	}
 
-	// Always use credentials when available to ensure proper scopes (especially for push)
-	if a.authConfig.Username != "" && a.authConfig.Password != "" {
-		to.Username = a.authConfig.Username
-		to.Secret = a.authConfig.Password
+	// Find credentials for this service or host
+	// Try service first, then fall back to host (some registries use different service names)
+	cred := a.findCredentials(req.Service)
+	if cred == nil && req.Host != "" && req.Host != req.Service {
+		cred = a.findCredentials(req.Host)
+	}
+	if cred != nil && cred.authConfig.Username != "" && cred.authConfig.Password != "" {
+		log.Debugf("FetchToken: using credentials for host=%s\n", cred.host)
+		to.Username = cred.authConfig.Username
+		to.Secret = cred.authConfig.Password
+	} else {
+		log.Debugf("FetchToken: no credentials found for service=%s or host=%s\n", req.Service, req.Host)
 	}
 
 	// Use the injected token fetcher
@@ -142,6 +200,8 @@ var _ Authenticator = &authenticator{}
 type Authenticator interface {
 	auth.AuthServer
 	session.Attachable
+	// AddCredentials adds additional registry credentials for authentication.
+	AddCredentials(registryHost string, authConfig registry.AuthConfig)
 }
 
 func toTokenResponse(token string, issuedAt time.Time, expires int) *auth.FetchTokenResponse {

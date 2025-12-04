@@ -93,6 +93,7 @@ The configuration file defines:
 - `vcs`: Version control settings
 - `ci`: CI platform credentials (azure, buildkite, gitlab, github, teamcity)
 - `registry`: Registry credentials (dockerhub, acr, ecr, gcr, github, gitlab, quay)
+- `cache`: Layer cache configuration (ecr)
 - `targets`: Kubernetes deployment targets (context, namespace, kubeconfig)
 - `git`: Git user configuration for commits (used by promote command)
 - `gitops`: GitOps repository configurations (url, path)
@@ -132,6 +133,31 @@ The build system supports building Docker images for multiple platforms (archite
   - Multi-platform builds connect via Docker's `/grpc` endpoint (requires containerd snapshotter)
 - This is necessary because Docker's `/build` API only accepts single platform values
 - The `buildMultiPlatform()` function in `pkg/build/build.go` handles buildkit client builds
+
+## ECR Layer Cache Support
+
+The build system supports using AWS ECR as a remote layer cache for buildkit builds:
+
+**Configuration**:
+- Set via `.buildtools.yaml`:
+  ```yaml
+  cache:
+    ecr:
+      url: 123456789.dkr.ecr.us-east-1.amazonaws.com/cache-repo
+      tag: buildcache  # optional, defaults to "buildcache"
+  ```
+- Or via environment variables: `BUILDTOOLS_CACHE_ECR_URL`, `BUILDTOOLS_CACHE_ECR_TAG`
+
+**Implementation Details**:
+- ECR cache is only used when `BUILDKIT_HOST` is set (buildkit client mode)
+- Cache import: Pulls cached layers from ECR before build
+- Cache export: Pushes all layers with `mode=max` (all stages)
+- ECR-specific settings: `image-manifest=true`, `oci-mediatypes=true` (required for ECR compatibility)
+
+**Key Code Locations**:
+- Config structs: `pkg/config/config.go` (`CacheConfig`, `ECRCache`)
+- Cache import/export: `pkg/build/build.go` (`buildCacheImports()`, `buildCacheExports()`)
+- Tests: `pkg/build/build_test.go`, `pkg/config/config_test.go`
 
 ## Dependencies
 - Go 1.25.3+
