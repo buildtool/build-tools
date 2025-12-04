@@ -88,7 +88,8 @@ func TestEcr_LoginSuccess(t *testing.T) {
 func TestEcr_GetAuthInfo(t *testing.T) {
 	registry := &ECR{Url: "ecr-url", Region: "eu-west-1", username: "AWS", password: "abc123"}
 	auth := registry.GetAuthInfo()
-	assert.Equal(t, "eyJ1c2VybmFtZSI6IkFXUyIsInBhc3N3b3JkIjoiYWJjMTIzIn0=", auth)
+	// Base64 of {"username":"AWS","password":"abc123","serveraddress":"ecr-url"}
+	assert.Equal(t, "eyJ1c2VybmFtZSI6IkFXUyIsInBhc3N3b3JkIjoiYWJjMTIzIiwic2VydmVyYWRkcmVzcyI6ImVjci11cmwifQ==", auth)
 }
 
 func TestEcr_RegistryAndClientInDifferentAccounts(t *testing.T) {

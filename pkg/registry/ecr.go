@@ -131,7 +131,7 @@ func (r *ECR) Login(client docker.Client) error {
 }
 
 func (r *ECR) GetAuthConfig() registry.AuthConfig {
-	return registry.AuthConfig{Username: r.username, Password: r.password}
+	return registry.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}
 }
 
 func (r *ECR) GetAuthInfo() string {

@@ -190,3 +190,55 @@ docker run --privileged --rm tonistiigi/binfmt --install all
 ```
 
 This is typically pre-configured in most CI/CD environments (GitHub Actions, GitLab CI, etc.).
+
+## Layer caching with ECR
+
+When using buildkit (via `BUILDKIT_HOST`), you can configure AWS ECR as a remote layer cache backend. This significantly speeds up builds by caching intermediate layers in an ECR repository.
+
+### Configuration
+
+Add the following to your `.buildtools.yaml`:
+
+```yaml
+cache:
+  ecr:
+    url: 123456789.dkr.ecr.us-east-1.amazonaws.com/my-cache-repo
+    tag: buildcache  # optional, defaults to "buildcache"
+```
+
+Or use environment variables:
+
+```shell
+export BUILDTOOLS_CACHE_ECR_URL=123456789.dkr.ecr.us-east-1.amazonaws.com/my-cache-repo
+export BUILDTOOLS_CACHE_ECR_TAG=buildcache  # optional
+```
+
+### How it works
+
+When ECR cache is configured:
+
+1. **Cache import**: Before building, buildkit attempts to pull cached layers from the ECR repository
+2. **Cache export**: After building, buildkit pushes all cached layers to the ECR repository using `mode=max` (caches all stages)
+3. **ECR-compatible format**: Uses `image-manifest=true` and `oci-mediatypes=true` for ECR compatibility
+
+### Requirements
+
+- `BUILDKIT_HOST` must be set (ECR cache only works with buildkit client)
+- The ECR repository for cache must exist before running the build
+- AWS credentials must have access to both the image registry and cache registry
+
+### Example
+
+```shell
+# Create the cache repository in ECR (one-time setup)
+aws ecr create-repository --repository-name my-cache-repo
+
+# Configure buildkit and run the build
+export BUILDKIT_HOST=docker-container://buildkitd
+export BUILDTOOLS_CACHE_ECR_URL=123456789.dkr.ecr.us-east-1.amazonaws.com/my-cache-repo
+
+build --platform linux/amd64,linux/arm64
+```
+
+!!! tip "Separate cache repository"
+    It's recommended to use a dedicated ECR repository for cache storage, separate from your image repositories. This allows you to apply different lifecycle policies and keeps your cache isolated.

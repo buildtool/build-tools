@@ -30,6 +30,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"dario.cat/mergo"
@@ -46,6 +47,7 @@ type Config struct {
 	VCS                 *VCSConfig        `yaml:"vcs"`
 	CI                  *CIConfig         `yaml:"ci"`
 	Registry            *RegistryConfig   `yaml:"registry"`
+	Cache               *CacheConfig      `yaml:"cache"`
 	Targets             map[string]Target `yaml:"targets"`
 	Git                 Git               `yaml:"git"`
 	Gitops              map[string]Gitops `yaml:"gitops"`
@@ -91,6 +93,76 @@ type Git struct {
 type Gitops struct {
 	URL  string `yaml:"url,omitempty"`
 	Path string `yaml:"path,omitempty"`
+}
+
+// CacheConfig configures buildkit layer cache storage.
+type CacheConfig struct {
+	// ECR configures AWS ECR as a layer cache backend for buildkit builds.
+	ECR *ECRCache `yaml:"ecr"`
+}
+
+// ECRCache configures ECR-based layer caching for buildkit builds.
+// This enables remote caching using ECR registry-based cache storage.
+// See: https://aws.amazon.com/blogs/containers/announcing-remote-cache-support-in-amazon-ecr-for-buildkit-clients/
+type ECRCache struct {
+	// Url is the ECR repository URL to use for cache storage (e.g., 123456789.dkr.ecr.us-east-1.amazonaws.com/cache-repo)
+	Url string `yaml:"url" env:"BUILDTOOLS_CACHE_ECR_URL"`
+	// Tag is the tag to use for the cache image (default: "buildcache")
+	Tag string `yaml:"tag" env:"BUILDTOOLS_CACHE_ECR_TAG"`
+}
+
+// ecrURLPattern matches valid ECR URLs: <12-digit-account>.dkr.ecr.<region>.amazonaws.com[/repo]
+var ecrURLPattern = regexp.MustCompile(`^\d{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com(/[a-zA-Z0-9._/-]+)?$`)
+
+// Configured returns true if ECR cache is configured.
+func (c *ECRCache) Configured() bool {
+	return c != nil && c.Url != ""
+}
+
+// Validate checks that the ECR cache configuration is valid.
+// Returns an error if the URL is set but doesn't match the expected ECR URL format.
+func (c *ECRCache) Validate() error {
+	if c == nil || c.Url == "" {
+		return nil
+	}
+	if !ecrURLPattern.MatchString(c.Url) {
+		return fmt.Errorf("invalid ECR cache URL %q: must match format <12-digit-account>.dkr.ecr.<region>.amazonaws.com[/repository]", c.Url)
+	}
+	return nil
+}
+
+// CacheRef returns the full cache reference (url:tag).
+func (c *ECRCache) CacheRef() string {
+	tag := c.Tag
+	if tag == "" {
+		tag = "buildcache"
+	}
+	return c.Url + ":" + tag
+}
+
+// AsRegistry returns an ECR registry instance for authenticating to the cache registry.
+// This allows the cache to authenticate independently of the image registry.
+func (c *ECRCache) AsRegistry() *registry.ECR {
+	if !c.Configured() {
+		return nil
+	}
+	return &registry.ECR{Url: c.Url, Region: c.extractRegion()}
+}
+
+// extractRegion extracts the AWS region from the ECR URL.
+// For example, "123456789.dkr.ecr.us-east-1.amazonaws.com/cache" returns "us-east-1".
+func (c *ECRCache) extractRegion() string {
+	if c == nil || c.Url == "" {
+		return ""
+	}
+	// ECR URLs follow the pattern: <account>.dkr.ecr.<region>.amazonaws.com
+	parts := strings.Split(c.Url, ".")
+	for i, part := range parts {
+		if part == "ecr" && i+1 < len(parts) {
+			return parts[i+1]
+		}
+	}
+	return ""
 }
 
 const envBuildtoolsContent = "BUILDTOOLS_CONTENT"
@@ -147,6 +219,9 @@ func InitEmptyConfig() *Config {
 			Gitlab:    &registry.Gitlab{},
 			Quay:      &registry.Quay{},
 			GCR:       &registry.GCR{},
+		},
+		Cache: &CacheConfig{
+			ECR: &ECRCache{},
 		},
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity, c.CI.Github}
@@ -288,6 +363,13 @@ func validate(config *Config) error {
 				return fmt.Errorf("registry already defined, please check configuration")
 			}
 			found = true
+		}
+	}
+
+	// Validate ECR cache configuration
+	if config.Cache != nil && config.Cache.ECR != nil {
+		if err := config.Cache.ECR.Validate(); err != nil {
+			return err
 		}
 	}
 

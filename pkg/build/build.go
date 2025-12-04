@@ -108,6 +108,21 @@ func (a Args) platformCount() int {
 	return len(strings.Split(a.Platform, ","))
 }
 
+// extractHost extracts the host portion from a registry URL.
+// For example, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache-repo" returns "123456789012.dkr.ecr.us-east-1.amazonaws.com".
+func extractHost(url string) string {
+	// Remove any protocol prefix
+	url = strings.TrimPrefix(url, "https://")
+	url = strings.TrimPrefix(url, "http://")
+
+	// Split by "/" and return the first part (the host)
+	parts := strings.SplitN(url, "/", 2)
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return url
+}
+
 func DoBuild(dir string, buildArgs Args) error {
 	dkrClient, err := dockerClient()
 	if err != nil {
@@ -159,6 +174,22 @@ func build(client docker.Client, dir string, buildVars Args) error {
 			return err
 		}
 		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
+
+		// If ECR cache is configured, authenticate to the cache registry separately
+		// This works even when the image registry is not ECR (e.g., GitLab + ECR cache)
+		if cfg.Cache.ECR.Configured() {
+			cacheRegistry := cfg.Cache.ECR.AsRegistry()
+			if cacheRegistry.Configured() {
+				log.Debugf("Authenticating against ECR cache registry\n")
+				if err := cacheRegistry.Login(client); err != nil {
+					log.Warnf("Failed to authenticate to ECR cache registry: %v\n", err)
+				} else {
+					cacheHost := extractHost(cfg.Cache.ECR.Url)
+					log.Debugf("Adding cache registry credentials for <green>%s</green>\n", cacheHost)
+					authenticator.AddCredentials(cacheHost, cacheRegistry.GetAuthConfig())
+				}
+			}
+		}
 	}
 
 	var content []byte
@@ -231,25 +262,26 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		}
 	}
 
+	ecrCache := cfg.Cache.ECR
 	for _, stage := range stages {
 		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
 		caches = append([]string{tag}, caches...)
-		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, authenticator)
+		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, ecrCache, authenticator)
 		if err != nil {
 			return err
 		}
 	}
 
 	if buildVars.isMultiPlatform() {
-		return buildMultiPlatform(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
+		return buildMultiPlatform(client, dir, buildVars, buildArgs, tags, caches, "", ecrCache, authenticator)
 	}
-	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", authenticator)
+	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", ecrCache, authenticator)
 }
 
-func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, authenticator docker.Authenticator) error {
+func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, ecrCache *config.ECRCache, authenticator docker.Authenticator) error {
 	// If BUILDKIT_HOST is set, use buildkit client directly (pushes to registry)
 	if os.Getenv("BUILDKIT_HOST") != "" {
-		return buildMultiPlatform(dkrClient, dir, buildVars, buildArgs, tags, caches, stage, authenticator)
+		return buildMultiPlatform(dkrClient, dir, buildVars, buildArgs, tags, caches, stage, ecrCache, authenticator)
 	}
 
 	// Otherwise use Docker API (loads to local daemon)
@@ -325,8 +357,18 @@ func buildExportEntry(tags []string) client.ExportEntry {
 }
 
 // buildCacheImports creates cache import entries for registry-based caching.
-func buildCacheImports(caches []string) []client.CacheOptionsEntry {
+// ECR cache is added first (if configured) so it's checked before other caches.
+func buildCacheImports(caches []string, ecrCache *config.ECRCache) []client.CacheOptionsEntry {
 	var imports []client.CacheOptionsEntry
+	// Add ECR cache import first if configured (checked before other caches)
+	if ecrCache.Configured() {
+		imports = append(imports, client.CacheOptionsEntry{
+			Type: "registry",
+			Attrs: map[string]string{
+				"ref": ecrCache.CacheRef(),
+			},
+		})
+	}
 	for _, cache := range caches {
 		imports = append(imports, client.CacheOptionsEntry{
 			Type: "registry",
@@ -336,6 +378,26 @@ func buildCacheImports(caches []string) []client.CacheOptionsEntry {
 		})
 	}
 	return imports
+}
+
+// buildCacheExports creates cache export entries for ECR registry-based caching.
+// ECR requires special settings: image-manifest=true and oci-mediatypes=true.
+// See: https://aws.amazon.com/blogs/containers/announcing-remote-cache-support-in-amazon-ecr-for-buildkit-clients/
+func buildCacheExports(ecrCache *config.ECRCache) []client.CacheOptionsEntry {
+	if !ecrCache.Configured() {
+		return nil
+	}
+	return []client.CacheOptionsEntry{
+		{
+			Type: "registry",
+			Attrs: map[string]string{
+				"ref":            ecrCache.CacheRef(),
+				"mode":           "max",
+				"image-manifest": "true",
+				"oci-mediatypes": "true",
+			},
+		},
+	}
 }
 
 // hasContainerdSnapshotter checks if any worker has containerd snapshotter support.
@@ -363,12 +425,12 @@ func hasContainerdSnapshotter(workers []*client.WorkerInfo) bool {
 // Enable it by adding to /etc/docker/daemon.json:
 //
 //	{ "features": { "containerd-snapshotter": true } }
-func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, authenticator docker.Authenticator) error {
-	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, target, authenticator, defaultBuildkitClientFactory)
+func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator) error {
+	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, target, ecrCache, authenticator, defaultBuildkitClientFactory)
 }
 
 // buildMultiPlatformWithFactory is the internal implementation that accepts a BuildkitClientFactory for testing.
-func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
+func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
 	fs, err := fsutil.NewFS(dir)
 	if err != nil {
 		return err
@@ -421,7 +483,12 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 
 	frontendAttrs := buildFrontendAttrs(buildVars.dockerfileName(), buildVars.Platform, target, buildArgs)
 	exports := []client.ExportEntry{buildExportEntry(tags)}
-	cacheImports := buildCacheImports(caches)
+	cacheImports := buildCacheImports(caches, ecrCache)
+	cacheExports := buildCacheExports(ecrCache)
+
+	if ecrCache.Configured() {
+		log.Infof("Using ECR cache at <green>%s</green>\n", ecrCache.CacheRef())
+	}
 
 	// Session attachables for authentication and file sync
 	var sessionAttachables []session.Attachable
@@ -442,6 +509,7 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 		Session:      sessionAttachables,
 		Exports:      exports,
 		CacheImports: cacheImports,
+		CacheExports: cacheExports,
 	}
 
 	// Create status channel for progress
