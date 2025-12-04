@@ -477,3 +477,29 @@ func write(dir, file, content string) error {
 	}
 	return os.WriteFile(filepath.Join(dir, file), []byte(fmt.Sprintln(strings.TrimSpace(content))), 0o666)
 }
+
+func TestPush_BuildkitHost_SkipsPush(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+	_ = write(name, "Dockerfile", "FROM scratch")
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	client := &docker.MockDocker{}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Namespace = "repo"
+
+	exitCode := doPush(client, cfg, name, "Dockerfile")
+
+	assert.Equal(t, 0, exitCode)
+	// No images should be pushed
+	assert.Empty(t, client.Images)
+	logMock.Check(t, []string{
+		"info: BUILDKIT_HOST is set - images were pushed during build, skipping push",
+	})
+}

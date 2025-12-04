@@ -123,13 +123,15 @@ The build system supports building Docker images for multiple platforms (archite
 - Tests: `pkg/build/build_test.go:451-532`
 
 **Architecture Note**:
-- Single-platform builds use Docker's `/build` API with buildkit backend
-- Multi-platform builds use buildkit client directly via `client.Solve()`
-- Connection priority for multi-platform:
-  1. If `BUILDKIT_HOST` env var is set, connect directly to that buildkit instance
-  2. Otherwise, connect via Docker's `/grpc` endpoint (requires containerd snapshotter)
+- When `BUILDKIT_HOST` is set:
+  - All builds (single and multi-platform) use buildkit client directly via `client.Solve()`
+  - Images are pushed to registry during build
+  - The `push` command becomes a no-op (images already pushed)
+- When `BUILDKIT_HOST` is NOT set:
+  - Single-platform builds use Docker's `/build` API with buildkit backend (loads to local daemon)
+  - Multi-platform builds connect via Docker's `/grpc` endpoint (requires containerd snapshotter)
 - This is necessary because Docker's `/build` API only accepts single platform values
-- The `buildMultiPlatform()` function in `pkg/build/build.go` handles this
+- The `buildMultiPlatform()` function in `pkg/build/build.go` handles buildkit client builds
 
 ## Dependencies
 - Go 1.25.3+
