@@ -1896,6 +1896,158 @@ func Test_buildMultiPlatformWithFactory_WithECRCache_DefaultTag(t *testing.T) {
 	assert.Equal(t, "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache:buildcache", capturedOpts.CacheExports[0].Attrs["ref"])
 }
 
+func Test_buildMultiPlatformWithFactory_ExportStage(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	var capturedOpts client.SolveOpt
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			capturedOpts = opt
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch AS export-artifacts\nCOPY . /out")
+
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		"export-artifacts", // export stage target
+		nil,
+		nil,
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+
+	// Verify that the export uses local exporter instead of image exporter
+	assert.Len(t, capturedOpts.Exports, 1)
+	assert.Equal(t, client.ExporterLocal, capturedOpts.Exports[0].Type)
+	assert.Equal(t, filepath.Join(dir, "exported"), capturedOpts.Exports[0].OutputDir)
+
+	// Verify target is set in frontend attrs
+	assert.Equal(t, "export-artifacts", capturedOpts.FrontendAttrs["target"])
+
+	// Verify the export directory was created
+	_, err = os.Stat(filepath.Join(dir, "exported"))
+	assert.NoError(t, err)
+
+	// Verify log message about exporting
+	foundExportLog := false
+	for _, entry := range logMock.Logged {
+		if strings.Contains(entry, "Exporting build artifacts") {
+			foundExportLog = true
+			break
+		}
+	}
+	assert.True(t, foundExportLog, "Should log message about exporting build artifacts")
+}
+
+func Test_buildMultiPlatformWithFactory_ExportStage_NoAuthWarning(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch AS export-files\nCOPY . /out")
+
+	// Call without authenticator - should NOT warn for export stages
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		"export-files", // export stage target
+		nil,
+		nil, // no authenticator
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+
+	// Verify NO warning about missing authenticator for export stages
+	for _, entry := range logMock.Logged {
+		assert.NotContains(t, entry, "No authenticator provided", "Should not warn about missing authenticator for export stages")
+	}
+}
+
+func Test_buildMultiPlatformWithFactory_NonExportStage_WarnNoAuth(t *testing.T) {
+	defer pkg.SetEnv("BUILDKIT_HOST", "tcp://localhost:1234")()
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+
+	mockClient := &MockBuildkitClient{
+		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
+			close(statusChan)
+			return &client.SolveResponse{}, nil
+		},
+	}
+
+	mockFactory := func(ctx context.Context, address string, opts ...client.ClientOpt) (BuildkitClient, error) {
+		return mockClient, nil
+	}
+
+	dir := t.TempDir()
+	_ = write(dir, "Dockerfile", "FROM scratch")
+
+	// Call without authenticator for non-export stage - should warn
+	err := buildMultiPlatformWithFactory(
+		&docker.MockDocker{},
+		dir,
+		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
+		nil,
+		[]string{"registry.example.com/image:v1"},
+		nil,
+		"", // empty target - regular build
+		nil,
+		nil, // no authenticator
+		mockFactory,
+	)
+
+	assert.NoError(t, err)
+
+	// Verify warning about missing authenticator for non-export stages
+	foundWarning := false
+	for _, entry := range logMock.Logged {
+		if strings.Contains(entry, "No authenticator provided") {
+			foundWarning = true
+			break
+		}
+	}
+	assert.True(t, foundWarning, "Should warn about missing authenticator for non-export stages")
+}
+
 func Test_extractHost(t *testing.T) {
 	tests := []struct {
 		name string

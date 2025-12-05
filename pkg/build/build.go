@@ -482,9 +482,26 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 	defer func() { _ = bkClient.Close() }()
 
 	frontendAttrs := buildFrontendAttrs(buildVars.dockerfileName(), buildVars.Platform, target, buildArgs)
-	exports := []client.ExportEntry{buildExportEntry(tags)}
 	cacheImports := buildCacheImports(caches, ecrCache)
 	cacheExports := buildCacheExports(ecrCache)
+
+	// Determine export type: local for "export" stages, image for regular builds
+	var exports []client.ExportEntry
+	isExportStage := strings.HasPrefix(target, "export")
+	if isExportStage {
+		// Export to local "exported" directory
+		exportDir := filepath.Join(dir, "exported")
+		if err := os.MkdirAll(exportDir, 0o755); err != nil {
+			return fmt.Errorf("failed to create export directory: %w", err)
+		}
+		exports = []client.ExportEntry{{
+			Type:      client.ExporterLocal,
+			OutputDir: exportDir,
+		}}
+		log.Infof("Exporting build artifacts to <green>%s</green>\n", exportDir)
+	} else {
+		exports = []client.ExportEntry{buildExportEntry(tags)}
+	}
 
 	if ecrCache.Configured() {
 		log.Infof("Using ECR cache at <green>%s</green>\n", ecrCache.CacheRef())
@@ -495,7 +512,7 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 	if authenticator != nil {
 		sessionAttachables = append(sessionAttachables, authenticator)
 		log.Debugf("Added authenticator for multi-platform build\n")
-	} else {
+	} else if !isExportStage {
 		log.Warnf("No authenticator provided for multi-platform build - registry push may fail\n")
 	}
 
