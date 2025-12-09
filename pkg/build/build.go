@@ -328,7 +328,10 @@ func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs m
 func buildFrontendAttrs(dockerfile, platform, target string, buildArgs map[string]*string) map[string]string {
 	attrs := map[string]string{
 		"filename": dockerfile,
-		"platform": platform,
+	}
+
+	if platform != "" {
+		attrs["platform"] = platform
 	}
 
 	if target != "" {

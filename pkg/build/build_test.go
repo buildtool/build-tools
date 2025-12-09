@@ -1278,7 +1278,6 @@ func Test_buildFrontendAttrs(t *testing.T) {
 			buildArgs:  nil,
 			want: map[string]string{
 				"filename": "Dockerfile",
-				"platform": "",
 			},
 		},
 		{
