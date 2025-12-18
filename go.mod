@@ -10,7 +10,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go-v2 v1.41.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.6
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.54.4
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.55.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.5
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/containerd/containerd/v2 v2.2.0
