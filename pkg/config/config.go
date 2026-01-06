@@ -74,6 +74,7 @@ type RegistryConfig struct {
 	ECR       *registry.ECR       `yaml:"ecr"`
 	Github    *registry.Github    `yaml:"github"`
 	Gitlab    *registry.Gitlab    `yaml:"gitlab"`
+	Gitea     *registry.Gitea     `yaml:"gitea"`
 	Quay      *registry.Quay      `yaml:"quay"`
 	GCR       *registry.GCR       `yaml:"gcr"`
 }
@@ -217,6 +218,7 @@ func InitEmptyConfig() *Config {
 			ECR:       &registry.ECR{},
 			Github:    &registry.Github{},
 			Gitlab:    &registry.Gitlab{},
+			Gitea:     &registry.Gitea{},
 			Quay:      &registry.Quay{},
 			GCR:       &registry.GCR{},
 		},
@@ -225,7 +227,7 @@ func InitEmptyConfig() *Config {
 		},
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity, c.CI.Github}
-	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ACR, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay, c.Registry.GCR}
+	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ACR, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Gitea, c.Registry.Quay, c.Registry.GCR}
 	return c
 }
 

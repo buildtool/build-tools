@@ -635,3 +635,56 @@ cache:
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "gitlab")
 }
+
+func TestLoad_YAML_Gitea(t *testing.T) {
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+	yaml := `
+registry:
+  gitea:
+    registry: gitea.example.com
+    username: user
+    token: token
+    repository: org/repo
+targets:
+  local:
+    context: docker-desktop
+`
+	_ = os.WriteFile(filepath.Join(name, ".buildtools.yaml"), []byte(yaml), 0o777)
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
+	assert.Nil(t, err)
+	assert.True(t, cfg.Registry.Gitea.Configured())
+	assert.Equal(t, "Gitea", cfg.CurrentRegistry().Name())
+	assert.Equal(t, "gitea.example.com", cfg.Registry.Gitea.Registry)
+	assert.Equal(t, "user", cfg.Registry.Gitea.Username)
+	assert.Equal(t, "token", cfg.Registry.Gitea.Token)
+	assert.Equal(t, "org/repo", cfg.Registry.Gitea.Repository)
+	assert.Equal(t, "gitea.example.com/org", cfg.CurrentRegistry().RegistryUrl())
+	logMock.Check(t, []string{fmt.Sprintf("debug: Parsing config from file: <green>'%s/.buildtools.yaml'</green>\n", name)})
+}
+
+func TestLoad_YAML_Gitea_Env(t *testing.T) {
+	name, _ := os.MkdirTemp(os.TempDir(), "build-tools")
+	defer func() { _ = os.RemoveAll(name) }()
+
+	t.Setenv("GITEA_REGISTRY", "gitea.example.com")
+	t.Setenv("GITEA_USERNAME", "user")
+	t.Setenv("GITEA_TOKEN", "token")
+	t.Setenv("GITEA_REPOSITORY", "org/repo")
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	cfg, err := Load(name)
+	assert.Nil(t, err)
+	assert.True(t, cfg.Registry.Gitea.Configured())
+	assert.Equal(t, "Gitea", cfg.CurrentRegistry().Name())
+	assert.Equal(t, "gitea.example.com", cfg.Registry.Gitea.Registry)
+	assert.Equal(t, "user", cfg.Registry.Gitea.Username)
+	assert.Equal(t, "token", cfg.Registry.Gitea.Token)
+	assert.Equal(t, "org/repo", cfg.Registry.Gitea.Repository)
+}
