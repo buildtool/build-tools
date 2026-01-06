@@ -40,7 +40,7 @@ Each command in `cmd/` (build, push, deploy, promote, kubecmd) is a standalone C
 - `pkg/config` - Configuration loading and parsing. Loads `.buildtools.yaml` files hierarchically from current directory up to root. Merges multiple config files together. Contains `Config` struct that coordinates VCS, CI, and Registry configurations.
 - `pkg/vcs` - Version control system abstraction (currently Git-focused)
 - `pkg/ci` - CI/CD platform integrations (Azure, Buildkite, GitLab, GitHub Actions, TeamCity). Each CI provider implements the `ci.CI` interface.
-- `pkg/registry` - Docker registry integrations (Dockerhub, ACR, ECR, GCR, GitHub, GitLab, Quay). Each registry implements the `registry.Registry` interface.
+- `pkg/registry` - Docker registry integrations (Dockerhub, ACR, ECR, GCR, GitHub, GitLab, Gitea, Quay). Each registry implements the `registry.Registry` interface.
 
 **Implementation Packages**:
 - `pkg/build` - Docker image building using buildkit
@@ -92,7 +92,7 @@ Each command in `cmd/` (build, push, deploy, promote, kubecmd) is a standalone C
 The configuration file defines:
 - `vcs`: Version control settings
 - `ci`: CI platform credentials (azure, buildkite, gitlab, github, teamcity)
-- `registry`: Registry credentials (dockerhub, acr, ecr, gcr, github, gitlab, quay)
+- `registry`: Registry credentials (dockerhub, acr, ecr, gcr, github, gitlab, gitea, quay)
 - `cache`: Layer cache configuration (ecr)
 - `targets`: Kubernetes deployment targets (context, namespace, kubeconfig)
 - `git`: Git user configuration for commits (used by promote command)

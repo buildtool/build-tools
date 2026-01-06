@@ -24,6 +24,7 @@ The following registries are supported:
 | [`ecr`](#ecr)             | [AWS Elastic Container Registry](https://docs.aws.amazon.com/ecr/index.html)                                         |
 | [`github`](#github)       | [Github package registry](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages) |
 | [`gitlab`](#gitlab)       | [Gitlab container registry](https://docs.gitlab.com/ee/user/packages/container_registry/)                            |
+| [`gitea`](#gitea)         | [Gitea container registry](https://docs.gitea.com/usage/packages/container)                                          |
 | [`quay`](#quay)           | [Quay docker registry](https://docs.quay.io/)                                                                        |
 | [`gcr`](#gcr)             | [Google Container registry](https://cloud.google.com/container-registry)                                             |
 
@@ -74,6 +75,30 @@ To authenticate `token` or a combination of `username` and `password` must be pr
 | `repository` | The repository part of the docker image name      | `CI_REGISTRY_IMAGE` |
 | `user`       | User to authenticate                              | `CI_REGISTRY_USER`  |
 | `token`      | A personal access token to use for authentication | `CI_JOB_TOKEN`      |
+
+### gitea
+
+Self-hosted [Gitea](https://gitea.com/) instances with container registry support (v1.17+).
+
+Note: Gitea Actions does not yet support automatic token authentication for package registries. You must create a Personal Access Token with `package:write` scope and provide it via the `token` parameter or `GITEA_TOKEN` environment variable.
+
+| Parameter    | Description                                       | Env variable        |
+|:-------------|:--------------------------------------------------|:--------------------|
+| `registry`   | The Gitea server hostname                         | `GITEA_REGISTRY`    |
+| `repository` | The repository path (owner/repo format)           | `GITEA_REPOSITORY`  |
+| `username`   | User to authenticate                              | `GITEA_USERNAME`    |
+| `token`      | A personal access token to use for authentication | `GITEA_TOKEN`       |
+
+Example configuration:
+
+```yaml
+registry:
+  gitea:
+    registry: gitea.example.com
+    username: myuser
+    token: ${GITEA_TOKEN}
+    repository: myorg/myrepo
+```
 
 ### quay
 
