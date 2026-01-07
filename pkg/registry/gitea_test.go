@@ -76,27 +76,51 @@ func TestGitea_Configured(t *testing.T) {
 
 func TestGitea_LoginSuccess(t *testing.T) {
 	client := &docker.MockDocker{}
-	registry := &Gitea{Registry: "gitea.example.com", Repository: "org/repo", Username: "user", Token: "token"}
+	registry := &Gitea{Registry: "gitea.example.com", Repository: "org/repo", Username: "user", Token: "secret-token-value"}
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	err := registry.Login(client)
 	assert.Nil(t, err)
 	assert.Equal(t, "user", client.Username)
-	assert.Equal(t, "token", client.Password)
+	assert.Equal(t, "secret-token-value", client.Password)
 	assert.Equal(t, "gitea.example.com", client.ServerAddress)
-	logMock.Check(t, []string{"debug: Logged in\n"})
+	logMock.Check(t, []string{
+		"debug: Gitea login: registry=gitea.example.com, username=user, token=secr...alue[len=18]\n",
+		"debug: Gitea login successful: Logged in\n",
+	})
 }
 
 func TestGitea_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
-	registry := &Gitea{}
+	registry := &Gitea{Registry: "gitea.example.com", Username: "user", Token: "secret-token-value"}
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
 	err := registry.Login(client)
-	assert.EqualError(t, err, "invalid username/password")
-	logMock.Check(t, []string{})
+	assert.EqualError(t, err, "gitea registry login to gitea.example.com failed: invalid username/password")
+	logMock.Check(t, []string{
+		"debug: Gitea login: registry=gitea.example.com, username=user, token=secr...alue[len=18]\n",
+		"error: Gitea login failed: invalid username/password\n",
+	})
+}
+
+func TestMaskToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		token    string
+		expected string
+	}{
+		{"empty token", "", "<empty>"},
+		{"short token", "abc", "[len=3]"},
+		{"8 char token", "12345678", "[len=8]"},
+		{"long token", "secret-token-value", "secr...alue[len=18]"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, maskToken(tt.token))
+		})
+	}
 }
 
 func TestGitea_GetAuthInfo(t *testing.T) {

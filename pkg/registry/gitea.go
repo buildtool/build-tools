@@ -54,12 +54,27 @@ func (r Gitea) Configured() bool {
 }
 
 func (r Gitea) Login(client docker.Client) error {
-	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
-		log.Debugf("%s\n", ok.Status)
-		return nil
-	} else {
-		return err
+	tokenInfo := maskToken(r.Token)
+	log.Debugf("Gitea login: registry=%s, username=%s, token=%s\n", r.Registry, r.Username, tokenInfo)
+	authConfig := r.GetAuthConfig()
+	ok, err := client.RegistryLogin(context.Background(), authConfig)
+	if err != nil {
+		log.Errorf("Gitea login failed: %v\n", err)
+		return fmt.Errorf("gitea registry login to %s failed: %w", r.Registry, err)
 	}
+	log.Debugf("Gitea login successful: %s\n", ok.Status)
+	return nil
+}
+
+// maskToken returns a masked representation of the token showing length and first/last 4 chars.
+func maskToken(token string) string {
+	if len(token) == 0 {
+		return "<empty>"
+	}
+	if len(token) <= 8 {
+		return fmt.Sprintf("[len=%d]", len(token))
+	}
+	return fmt.Sprintf("%s...%s[len=%d]", token[:4], token[len(token)-4:], len(token))
 }
 
 func (r Gitea) GetAuthConfig() registry.AuthConfig {
