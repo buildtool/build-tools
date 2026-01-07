@@ -227,7 +227,7 @@ func InitEmptyConfig() *Config {
 		},
 	}
 	c.AvailableCI = []ci.CI{c.CI.Azure, c.CI.Buildkite, c.CI.Gitlab, c.CI.TeamCity, c.CI.Github}
-	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ACR, c.Registry.ECR, c.Registry.Github, c.Registry.Gitlab, c.Registry.Gitea, c.Registry.Quay, c.Registry.GCR}
+	c.AvailableRegistries = []registry.Registry{c.Registry.Dockerhub, c.Registry.ACR, c.Registry.ECR, c.Registry.Gitea, c.Registry.Github, c.Registry.Gitlab, c.Registry.Quay, c.Registry.GCR}
 	return c
 }
 
