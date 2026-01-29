@@ -17,7 +17,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/liamg/tml v0.7.0
-	github.com/moby/buildkit v0.27.0
+	github.com/moby/buildkit v0.27.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
@@ -113,7 +113,7 @@ require (
 	github.com/jonboulle/clockwork v0.5.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.18.2 // indirect
+	github.com/klauspost/compress v1.18.3 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
