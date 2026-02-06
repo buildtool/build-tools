@@ -30,6 +30,7 @@ import (
 
 	"github.com/buildtool/build-tools/pkg/args"
 	"github.com/buildtool/build-tools/pkg/build"
+	"github.com/buildtool/build-tools/pkg/ci"
 	"github.com/buildtool/build-tools/pkg/cli"
 	ver "github.com/buildtool/build-tools/pkg/version"
 )
@@ -65,10 +66,14 @@ func main() {
 		}
 	}
 
-	if err := build.DoBuild(dir, buildArgs); err != nil {
+	digest, err := build.DoBuild(dir, buildArgs)
+	if err != nil {
 		log.Error(err.Error())
 		exitFunc(-1)
 		return
+	}
+	if digest != "" {
+		ci.WriteGitHubOutput("digest", digest)
 	}
 	exitFunc(0)
 }

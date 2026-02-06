@@ -448,7 +448,7 @@ func (m mockRegistry) Create(repository string) error {
 	return errors.New("create error")
 }
 
-func (m mockRegistry) PushImage(client docker.Client, auth, image string) error {
+func (m mockRegistry) PushImage(client docker.Client, auth, image string) (string, error) {
 	panic("implement me")
 }
 

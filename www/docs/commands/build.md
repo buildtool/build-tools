@@ -242,3 +242,16 @@ build --platform linux/amd64,linux/arm64
 
 !!! tip "Separate cache repository"
     It's recommended to use a dedicated ECR repository for cache storage, separate from your image repositories. This allows you to apply different lifecycle policies and keeps your cache isolated.
+
+## GitHub Actions outputs
+
+When running in GitHub Actions, the `build` command writes the following step outputs to `$GITHUB_OUTPUT`:
+
+| Output       | Description                          | When available                        |
+|:-------------|:-------------------------------------|:--------------------------------------|
+| `image-name` | Full image name without tag          | Always                                |
+| `digest`     | Image digest (`sha256:...`)          | Only when `BUILDKIT_HOST` is set      |
+
+When `BUILDKIT_HOST` is not set, the digest is instead output by the [`push`](push.md) command.
+
+See [GitHub Actions](../ci/github.md#artifact-attestations) for a full workflow example with artifact attestations.

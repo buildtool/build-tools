@@ -20,50 +20,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package registry
+package ci
 
 import (
 	"fmt"
-
-	"github.com/apex/log"
-	"github.com/docker/docker/api/types/registry"
-
-	"github.com/buildtool/build-tools/pkg/docker"
+	"os"
 )
 
-type NoDockerRegistry struct{}
-
-func (n NoDockerRegistry) Configured() bool {
-	return true
+// WriteGitHubOutput writes a key=value pair to $GITHUB_OUTPUT.
+// This is only active when running in GitHub Actions (GITHUB_ACTIONS=true).
+func WriteGitHubOutput(key, value string) {
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		return
+	}
+	f := os.Getenv("GITHUB_OUTPUT")
+	if f == "" {
+		return
+	}
+	file, err := os.OpenFile(f, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer func() { _ = file.Close() }()
+	_, _ = fmt.Fprintf(file, "%s=%s\n", key, value)
 }
-
-func (n NoDockerRegistry) Name() string {
-	return "No docker registry"
-}
-
-func (n NoDockerRegistry) Login(client docker.Client) error {
-	log.Debugf("Authentication <yellow>not supported</yellow> for registry <green>%s</green>\n", n.Name())
-	return nil
-}
-
-func (n NoDockerRegistry) GetAuthConfig() registry.AuthConfig {
-	return registry.AuthConfig{}
-}
-
-func (n NoDockerRegistry) GetAuthInfo() string {
-	return ""
-}
-
-func (n NoDockerRegistry) RegistryUrl() string {
-	return "noregistry"
-}
-
-func (n NoDockerRegistry) Create(repository string) error {
-	return nil
-}
-
-func (n NoDockerRegistry) PushImage(client docker.Client, auth, image string) (string, error) {
-	return "", fmt.Errorf("push not supported by registry")
-}
-
-var _ Registry = &NoDockerRegistry{}

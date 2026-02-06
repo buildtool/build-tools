@@ -113,12 +113,22 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string) in
 	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest"))
 	}
+	var lastDigest string
 	for _, tag := range tags {
 		log.Info(fmt.Sprintf("Pushing tag '<green>%s</green>'\n", tag))
-		if err := currentRegistry.PushImage(client, auth, tag); err != nil {
+		digest, err := currentRegistry.PushImage(client, auth, tag)
+		if err != nil {
 			log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 			return -7
 		}
+		if digest != "" {
+			lastDigest = digest
+		}
+	}
+	if lastDigest != "" {
+		imageName := currentRegistry.RegistryUrl() + "/" + currentCI.BuildName()
+		ci.WriteGitHubOutput("image-name", imageName)
+		ci.WriteGitHubOutput("digest", lastDigest)
 	}
 	return 0
 }
