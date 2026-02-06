@@ -35,6 +35,28 @@ func TestDockerRegistry_PushImage(t *testing.T) {
 	registry := &Gitlab{}
 	client := &docker.MockDocker{PushError: errors.New("error")}
 
-	err := registry.PushImage(client, "dummy", "unknown")
+	digest, err := registry.PushImage(client, "dummy", "unknown")
 	assert.EqualError(t, err, "error")
+	assert.Empty(t, digest)
+}
+
+func TestDockerRegistry_PushImage_ReturnsDigest(t *testing.T) {
+	pushOut := `{"status":"Pushing"}
+{"progressDetail":{},"aux":{"Tag":"v1","Digest":"sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7","Size":2828}}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushOutput: &pushOut}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Equal(t, "sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7", digest)
+}
+
+func TestDockerRegistry_PushImage_NoDigest(t *testing.T) {
+	pushOut := `{"status":"Push successful"}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushOutput: &pushOut}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Empty(t, digest)
 }

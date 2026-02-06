@@ -123,10 +123,10 @@ func extractHost(url string) string {
 	return url
 }
 
-func DoBuild(dir string, buildArgs Args) error {
+func DoBuild(dir string, buildArgs Args) (string, error) {
 	dkrClient, err := dockerClient()
 	if err != nil {
-		return err
+		return "", err
 	}
 	return build(dkrClient, dir, buildArgs)
 }
@@ -146,10 +146,10 @@ func provideSession(dir string) Session {
 	return s
 }
 
-func build(client docker.Client, dir string, buildVars Args) error {
+func build(client docker.Client, dir string, buildVars Args) (string, error) {
 	cfg, err := config.Load(dir)
 	if err != nil {
-		return err
+		return "", err
 	}
 	currentCI := cfg.CurrentCI()
 	if buildVars.Platform != "" {
@@ -171,7 +171,7 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	} else {
 		log.Debugf("Authenticating against registry <green>%s</green>\n", currentRegistry.Name())
 		if err := currentRegistry.Login(client); err != nil {
-			return err
+			return "", err
 		}
 		authenticator = docker.NewAuthenticator(currentRegistry.RegistryUrl(), currentRegistry.GetAuthConfig())
 
@@ -201,39 +201,41 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	}
 	if err != nil {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
-		return err
+		return "", err
 	}
 	dockerFile, err := os.Create(filepath.Join(dir, "build-tools-dockerfile"))
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() { _ = os.Remove(dockerFile.Name()) }()
 	if _, err := dockerFile.Write(content); err != nil {
-		return err
+		return "", err
 	}
 	if err := dockerFile.Close(); err != nil {
-		return err
+		return "", err
 	}
 	buildVars.Dockerfile, err = filepath.Rel(dir, dockerFile.Name())
 	if err != nil {
-		return err
+		return "", err
 	}
 	if len(strings.TrimSpace(string(content))) == 0 {
-		return fmt.Errorf("<red>the Dockerfile cannot be empty</red>")
+		return "", fmt.Errorf("<red>the Dockerfile cannot be empty</red>")
 	}
 	stages := docker.FindStages(string(content))
 	if !ci.IsValid(currentCI) {
-		return fmt.Errorf("commit and/or branch information is <red>missing</red> (perhaps you're not in a Git repository or forgot to set environment variables?)")
+		return "", fmt.Errorf("commit and/or branch information is <red>missing</red> (perhaps you're not in a Git repository or forgot to set environment variables?)")
 	}
 
 	commit := currentCI.Commit()
 	branch := currentCI.BranchReplaceSlash()
 	log.Debugf("Using build variables commit <green>%s</green> on branch <green>%s</green>\n", commit, branch)
+	registryUrl := currentRegistry.RegistryUrl()
+	buildName := currentCI.BuildName()
 	var tags []string
-	branchTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), branch)
-	latestTag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), "latest")
+	branchTag := docker.Tag(registryUrl, buildName, branch)
+	latestTag := docker.Tag(registryUrl, buildName, "latest")
 	tags = append(tags, []string{
-		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), commit),
+		docker.Tag(registryUrl, buildName, commit),
 		branchTag,
 	}...)
 	if currentCI.Branch() == "master" || currentCI.Branch() == "main" {
@@ -262,13 +264,16 @@ func build(client docker.Client, dir string, buildVars Args) error {
 		}
 	}
 
+	imageName := registryUrl + "/" + buildName
+	ci.WriteGitHubOutput("image-name", imageName)
+
 	ecrCache := cfg.Cache.ECR
 	for _, stage := range stages {
-		tag := docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage)
+		tag := docker.Tag(registryUrl, buildName, stage)
 		caches = append([]string{tag}, caches...)
-		err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, ecrCache, authenticator)
+		_, err := buildStage(client, dir, buildVars, buildArgs, []string{tag}, caches, stage, ecrCache, authenticator)
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
@@ -278,7 +283,7 @@ func build(client docker.Client, dir string, buildVars Args) error {
 	return buildStage(client, dir, buildVars, buildArgs, tags, caches, "", ecrCache, authenticator)
 }
 
-func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, ecrCache *config.ECRCache, authenticator docker.Authenticator) error {
+func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, stage string, ecrCache *config.ECRCache, authenticator docker.Authenticator) (string, error) {
 	// If BUILDKIT_HOST is set, use buildkit client directly (pushes to registry)
 	if os.Getenv("BUILDKIT_HOST") != "" {
 		return buildMultiPlatform(dkrClient, dir, buildVars, buildArgs, tags, caches, stage, ecrCache, authenticator)
@@ -291,7 +296,7 @@ func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs m
 	}
 	fs, err := fsutil.NewFS(dir)
 	if err != nil {
-		return err
+		return "", err
 	}
 	s.Allow(filesync.NewFSSyncProvider(filesync.StaticDirSource{
 		"context":    fs,
@@ -320,7 +325,8 @@ func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs m
 		sessionID := s.ID()
 		return doBuild(ctx, dkrClient, eg, buildVars.dockerfileName(), buildArgs, tags, caches, stage, !buildVars.NoPull, sessionID, outputs, buildVars.Platform)
 	})
-	return eg.Wait()
+	// Docker API path doesn't provide digest (it comes from push)
+	return "", eg.Wait()
 }
 
 // buildFrontendAttrs creates the frontend attributes map for buildkit.
@@ -428,15 +434,15 @@ func hasContainerdSnapshotter(workers []*client.WorkerInfo) bool {
 // Enable it by adding to /etc/docker/daemon.json:
 //
 //	{ "features": { "containerd-snapshotter": true } }
-func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator) error {
+func buildMultiPlatform(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator) (string, error) {
 	return buildMultiPlatformWithFactory(dkrClient, dir, buildVars, buildArgs, tags, caches, target, ecrCache, authenticator, defaultBuildkitClientFactory)
 }
 
 // buildMultiPlatformWithFactory is the internal implementation that accepts a BuildkitClientFactory for testing.
-func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) error {
+func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVars Args, buildArgs map[string]*string, tags []string, caches []string, target string, ecrCache *config.ECRCache, authenticator docker.Authenticator, clientFactory BuildkitClientFactory) (string, error) {
 	fs, err := fsutil.NewFS(dir)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	eg, ctx := errgroup.WithContext(context.Background())
@@ -449,7 +455,7 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 		log.Infof("Connecting to buildkit at <green>%s</green>\n", buildkitHost)
 		bkClient, err = clientFactory(ctx, buildkitHost)
 		if err != nil {
-			return fmt.Errorf("failed to connect to buildkit at %s: %w", buildkitHost, err)
+			return "", fmt.Errorf("failed to connect to buildkit at %s: %w", buildkitHost, err)
 		}
 	} else {
 		// Connect to buildkit via Docker's grpc endpoint (like buildx does)
@@ -466,14 +472,14 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 			client.WithSessionDialer(dialSession),
 		)
 		if err != nil {
-			return fmt.Errorf("failed to create buildkit client: %w", err)
+			return "", fmt.Errorf("failed to create buildkit client: %w", err)
 		}
 
 		// Check if the image exporter is available (requires containerd snapshotter)
 		// by querying worker info - only needed when using Docker's embedded buildkit
 		workers, err := bkClient.ListWorkers(ctx)
 		if err != nil {
-			return fmt.Errorf("failed to list buildkit workers: %w", err)
+			return "", fmt.Errorf("failed to list buildkit workers: %w", err)
 		}
 
 		if !hasContainerdSnapshotter(workers) {
@@ -495,7 +501,7 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 		// Export to local "exported" directory
 		exportDir := filepath.Join(dir, "exported")
 		if err := os.MkdirAll(exportDir, 0o755); err != nil {
-			return fmt.Errorf("failed to create export directory: %w", err)
+			return "", fmt.Errorf("failed to create export directory: %w", err)
 		}
 		exports = []client.ExportEntry{{
 			Type:      client.ExporterLocal,
@@ -536,19 +542,24 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 	statusChan := make(chan *client.SolveStatus)
 	displayStatus(os.Stdout, statusChan, eg)
 
-	_, err = bkClient.Solve(ctx, nil, solveOpt, statusChan)
+	resp, err := bkClient.Solve(ctx, nil, solveOpt, statusChan)
 	if err != nil {
 		if strings.Contains(err.Error(), "exporter") && strings.Contains(err.Error(), "not be found") {
 			log.Error("This error typically means Docker's containerd snapshotter is not enabled")
 			log.Error("Enable it by adding to /etc/docker/daemon.json: {\"features\": {\"containerd-snapshotter\": true}}")
 			log.Error("Then restart Docker")
-			return fmt.Errorf("multi-platform build failed: %w", err)
+			return "", fmt.Errorf("multi-platform build failed: %w", err)
 		}
-		return fmt.Errorf("multi-platform build failed: %w", err)
+		return "", fmt.Errorf("multi-platform build failed: %w", err)
+	}
+
+	var imageDigest string
+	if resp != nil && resp.ExporterResponse != nil {
+		imageDigest = resp.ExporterResponse["containerimage.digest"]
 	}
 
 	log.Info("Build successful")
-	return nil
+	return imageDigest, nil
 }
 
 func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []dockerbuild.ImageBuildOutput, platform string) (finalErr error) {

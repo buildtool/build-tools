@@ -43,7 +43,7 @@ type Registry interface {
 	GetAuthInfo() string
 	RegistryUrl() string
 	Create(repository string) error
-	PushImage(client docker.Client, auth, image string) error
+	PushImage(client docker.Client, auth, image string) (string, error)
 }
 
 type responsetype struct {
@@ -67,24 +67,26 @@ type responsetype struct {
 
 type dockerRegistry struct{}
 
-func (dockerRegistry) PushImage(client docker.Client, auth, image string) error {
-	if out, err := client.ImagePush(context.Background(), image, img.PushOptions{All: true, RegistryAuth: auth}); err != nil {
-		return err
-	} else {
-		scanner := bufio.NewScanner(out)
-		for scanner.Scan() {
-			r := &responsetype{}
-			response := scanner.Bytes()
-			if err := json.Unmarshal(response, &r); err != nil {
-				log.Errorf("Unable to parse response: %s, Error: %v\n", string(response), err)
-				return err
-			} else {
-				if r.ErrorDetail != nil {
-					return errors.New(r.ErrorDetail.Message)
-				}
-			}
-		}
-
-		return nil
+func (dockerRegistry) PushImage(client docker.Client, auth, image string) (string, error) {
+	out, err := client.ImagePush(context.Background(), image, img.PushOptions{All: true, RegistryAuth: auth})
+	if err != nil {
+		return "", err
 	}
+	var digestResult string
+	scanner := bufio.NewScanner(out)
+	for scanner.Scan() {
+		r := &responsetype{}
+		response := scanner.Bytes()
+		if err := json.Unmarshal(response, &r); err != nil {
+			log.Errorf("Unable to parse response: %s, Error: %v\n", string(response), err)
+			return "", err
+		}
+		if r.ErrorDetail != nil {
+			return "", errors.New(r.ErrorDetail.Message)
+		}
+		if r.Aux != nil && r.Aux.Digest != "" {
+			digestResult = r.Aux.Digest
+		}
+	}
+	return digestResult, nil
 }

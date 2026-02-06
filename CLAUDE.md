@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## General Guidelines
+
+- Always update the documentation in `www/docs/` when making user-facing changes (new features, changed behavior, new flags, etc.)
+
 ## Project Overview
 
 build-tools is a set of highly opinionated CLI tools for building Docker images and deploying them to Kubernetes clusters. The project provides five main commands: `build`, `push`, `deploy`, `promote`, and `kubecmd`.
@@ -158,6 +162,38 @@ The build system supports using AWS ECR as a remote layer cache for buildkit bui
 - Config structs: `pkg/config/config.go` (`CacheConfig`, `ECRCache`)
 - Cache import/export: `pkg/build/build.go` (`buildCacheImports()`, `buildCacheExports()`)
 - Tests: `pkg/build/build_test.go`, `pkg/config/config_test.go`
+
+## GitHub Actions Outputs (Image Digest & Name)
+
+Both `build` and `push` commands write `image-name` and `digest` to `$GITHUB_OUTPUT` when running in GitHub Actions, enabling artifact attestation workflows.
+
+**How it works**:
+- **Buildkit path** (`BUILDKIT_HOST` set): Digest is captured from `SolveResponse.ExporterResponse["containerimage.digest"]` during build. The `build` command writes both `image-name` and `digest` to `$GITHUB_OUTPUT`.
+- **Docker API path** (default): Digest is captured from the push response `Aux.Digest` field. The `build` command writes `image-name`, the `push` command writes both `image-name` and `digest`.
+- Output is only written when `GITHUB_ACTIONS=true` and `GITHUB_OUTPUT` is set.
+
+**Usage in workflows**:
+```yaml
+- name: Build
+  id: build
+  run: build
+- name: Push
+  id: push
+  run: push
+- name: Attest
+  uses: actions/attest-build-provenance@v2
+  with:
+    subject-name: ${{ steps.push.outputs.image-name || steps.build.outputs.image-name }}
+    subject-digest: ${{ steps.push.outputs.digest || steps.build.outputs.digest }}
+```
+
+**Key Code Locations**:
+- GitHub output helper: `pkg/ci/github_output.go` (`WriteGitHubOutput()`)
+- Digest capture (buildkit): `pkg/build/build.go` (`buildMultiPlatformWithFactory()`)
+- Image name + digest (build): `pkg/build/build.go` (`build()`)
+- Image name + digest (push): `pkg/push/push.go` (`doPush()`)
+- Digest capture (push): `pkg/registry/registry.go` (`dockerRegistry.PushImage()`)
+- Tests: `pkg/ci/github_output_test.go`, `pkg/build/build_test.go`, `pkg/registry/registry_test.go`
 
 ## Dependencies
 - Go 1.25.3+

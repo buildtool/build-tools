@@ -115,7 +115,7 @@ func TestBuild_BrokenConfig(t *testing.T) {
 	client := &docker.MockDocker{}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -145,7 +145,7 @@ func TestBuild_NoRegistry(t *testing.T) {
 	}
 	defer func() { dockerClient = tmpDockerClient }()
 
-	err := DoBuild(name, Args{Dockerfile: "Dockerfile"})
+	_, err := DoBuild(name, Args{Dockerfile: "Dockerfile"})
 	assert.NoError(t, err)
 	logMock.Check(t, []string{
 		"debug: Using CI <green>Gitlab</green>\n",
@@ -172,7 +172,7 @@ func TestBuild_LoginError(t *testing.T) {
 	client := &docker.MockDocker{LoginError: fmt.Errorf("invalid username/password")}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -200,7 +200,7 @@ func TestBuild_NoCI(t *testing.T) {
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
 
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -231,7 +231,7 @@ func TestBuild_BuildError(t *testing.T) {
 	client := &docker.MockDocker{BuildError: []error{fmt.Errorf("build error")}}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -264,7 +264,7 @@ func TestBuild_BuildResponseError(t *testing.T) {
 	client := &docker.MockDocker{ResponseError: fmt.Errorf("build error")}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -297,7 +297,7 @@ func TestBuild_ErrorOutput(t *testing.T) {
 	client := &docker.MockDocker{BrokenOutput: true}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -332,7 +332,7 @@ func TestBuild_ValidOutput(t *testing.T) {
 	client := &docker.MockDocker{ResponseBody: bufio.NewReader(f)}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err = build(client, name, Args{
+	_, err = build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -366,7 +366,7 @@ func TestBuild_BrokenBuildResult(t *testing.T) {
 	client := &docker.MockDocker{ResponseBody: strings.NewReader(`{"id":"moby.image.id","aux":{"id":123}}`)}
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -396,7 +396,7 @@ func TestBuild_WithBuildArgs(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1", "buildargs2=2"},
@@ -423,7 +423,7 @@ func TestBuild_WithStrangeBuildArg(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  []string{"buildargs1=1=1", "buildargs2", "buildargs3=", "buildargs4"},
@@ -460,7 +460,7 @@ func TestBuild_WithPlatform(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		NoLogin:    false,
@@ -560,7 +560,7 @@ func TestBuild_WithSkipLogin(t *testing.T) {
 	_ = write(name, "Dockerfile", "FROM scratch")
 
 	client := &docker.MockDocker{}
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -593,7 +593,7 @@ func TestBuild_FeatureBranch(t *testing.T) {
 	_ = write(name, "Dockerfile", "FROM scratch")
 
 	client := &docker.MockDocker{}
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -640,7 +640,7 @@ func TestBuild_MasterBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -680,7 +680,7 @@ func TestBuild_MainBranch(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -721,7 +721,7 @@ func TestBuild_WithImageName(t *testing.T) {
 	_ = write(name, "Dockerfile", "FROM scratch")
 
 	client := &docker.MockDocker{}
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -742,8 +742,6 @@ func TestBuild_WithImageName(t *testing.T) {
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>main</green>\n",
 		"info: Using other as BuildName\n",
-		"info: Using other as BuildName\n",
-		"info: Using other as BuildName\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/other:abc123\n    - repo/other:main\n    - repo/other:latest\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: build-tools-dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: main\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/other:main\n    - repo/other:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatform: \"\"\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
 		"info: Build successful",
 	})
@@ -754,7 +752,7 @@ func TestBuild_BadDockerHost(t *testing.T) {
 	logMock := mocks.New()
 	log.SetHandler(logMock)
 	log.SetLevel(log.DebugLevel)
-	err := DoBuild(name, Args{})
+	_, err := DoBuild(name, Args{})
 	assert.EqualError(t, err, "unable to parse docker host `abc-123`")
 	logMock.Check(t, []string{})
 }
@@ -776,7 +774,7 @@ func TestBuild_Unreadable_Dockerfile(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -810,7 +808,7 @@ func TestBuild_Empty_Dockerfile(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	client := &docker.MockDocker{}
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -844,7 +842,7 @@ func TestBuild_Dockerfile_FromStdin(t *testing.T) {
 	err := os.MkdirAll(name, 0o777)
 	assert.NoError(t, err)
 
-	err = build(client, name, Args{
+	_, err = build(client, name, Args{
 		Globals: args.Globals{
 			StdIn: strings.NewReader("FROM scratch\n"),
 		},
@@ -891,7 +889,7 @@ COPY --from=test file2 .
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", dockerfile)
 
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -949,7 +947,7 @@ COPY --from=test file2 .
 `
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", dockerfile)
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -996,7 +994,7 @@ COPY --from=test file2 .
 `
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", dockerfile)
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -1064,7 +1062,7 @@ COPY --from=test file2 .
 `
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", dockerfile)
-	err := build(client, name, Args{
+	_, err := build(client, name, Args{
 		Globals:    args.Globals{},
 		Dockerfile: "Dockerfile",
 		BuildArgs:  nil,
@@ -1550,7 +1548,11 @@ func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
 		SolveFunc: func(ctx context.Context, def *llb.Definition, opt client.SolveOpt, statusChan chan *client.SolveStatus) (*client.SolveResponse, error) {
 			capturedOpts = opt
 			close(statusChan)
-			return &client.SolveResponse{}, nil
+			return &client.SolveResponse{
+				ExporterResponse: map[string]string{
+					"containerimage.digest": "sha256:abc123def456",
+				},
+			}, nil
 		},
 	}
 
@@ -1562,7 +1564,7 @@ func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	digest, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1576,6 +1578,7 @@ func Test_buildMultiPlatformWithFactory_Success(t *testing.T) {
 	)
 
 	assert.NoError(t, err)
+	assert.Equal(t, "sha256:abc123def456", digest)
 	assert.Equal(t, "dockerfile.v0", capturedOpts.Frontend)
 	assert.Equal(t, "linux/amd64,linux/arm64", capturedOpts.FrontendAttrs["platform"])
 	assert.Equal(t, "1.0.0", capturedOpts.FrontendAttrs["build-arg:VERSION"])
@@ -1594,7 +1597,7 @@ func Test_buildMultiPlatformWithFactory_ClientConnectionError(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1629,7 +1632,7 @@ func Test_buildMultiPlatformWithFactory_SolveError(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1667,7 +1670,7 @@ func Test_buildMultiPlatformWithFactory_ExporterNotFoundError(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1700,7 +1703,7 @@ func Test_buildMultiPlatformWithFactory_InvalidDirectory(t *testing.T) {
 		return &MockBuildkitClient{}, nil
 	}
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		"/nonexistent/directory/that/does/not/exist",
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1742,7 +1745,7 @@ func Test_buildMultiPlatformWithFactory_ViaDocker(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1776,7 +1779,7 @@ func Test_buildMultiPlatformWithFactory_ListWorkersError(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1817,7 +1820,7 @@ func Test_buildMultiPlatformWithFactory_WithECRCache(t *testing.T) {
 		Tag: "my-cache",
 	}
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1871,7 +1874,7 @@ func Test_buildMultiPlatformWithFactory_WithECRCache_DefaultTag(t *testing.T) {
 		Url: "123456789012.dkr.ecr.us-east-1.amazonaws.com/cache",
 	}
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64,linux/arm64", Dockerfile: "Dockerfile"},
@@ -1918,7 +1921,7 @@ func Test_buildMultiPlatformWithFactory_ExportStage(t *testing.T) {
 	dir := t.TempDir()
 	_ = write(dir, "Dockerfile", "FROM scratch AS export-artifacts\nCOPY . /out")
 
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
@@ -1978,7 +1981,7 @@ func Test_buildMultiPlatformWithFactory_ExportStage_NoAuthWarning(t *testing.T) 
 	_ = write(dir, "Dockerfile", "FROM scratch AS export-files\nCOPY . /out")
 
 	// Call without authenticator - should NOT warn for export stages
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
@@ -2021,7 +2024,7 @@ func Test_buildMultiPlatformWithFactory_NonExportStage_WarnNoAuth(t *testing.T) 
 	_ = write(dir, "Dockerfile", "FROM scratch")
 
 	// Call without authenticator for non-export stage - should warn
-	err := buildMultiPlatformWithFactory(
+	_, err := buildMultiPlatformWithFactory(
 		&docker.MockDocker{},
 		dir,
 		Args{Platform: "linux/amd64", Dockerfile: "Dockerfile"},
