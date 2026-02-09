@@ -27,6 +27,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"regexp"
 
 	"github.com/apex/log"
 	img "github.com/docker/docker/api/types/image"
@@ -34,6 +35,8 @@ import (
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
+
+var digestRegexp = regexp.MustCompile(`sha256:[a-fA-F0-9]{64}`)
 
 type Registry interface {
 	Configured() bool
@@ -86,6 +89,10 @@ func (dockerRegistry) PushImage(client docker.Client, auth, image string) (strin
 		}
 		if r.Aux != nil && r.Aux.Digest != "" {
 			digestResult = r.Aux.Digest
+		} else if digestResult == "" && r.Status != "" {
+			if match := digestRegexp.FindString(r.Status); match != "" {
+				digestResult = match
+			}
 		}
 	}
 	return digestResult, nil

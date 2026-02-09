@@ -60,3 +60,27 @@ func TestDockerRegistry_PushImage_NoDigest(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, digest)
 }
+
+func TestDockerRegistry_PushImage_DigestFromStatus(t *testing.T) {
+	pushOut := `{"status":"Preparing","progressDetail":{},"id":"abc123"}
+{"status":"Pushing","progressDetail":{"current":512,"total":1234},"id":"abc123"}
+{"status":"Pushed","progressDetail":{},"id":"abc123"}
+{"status":"v1: digest: sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7 size: 2828"}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushOutput: &pushOut}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Equal(t, "sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7", digest)
+}
+
+func TestDockerRegistry_PushImage_AuxTakesPrecedenceOverStatus(t *testing.T) {
+	pushOut := `{"status":"v1: digest: sha256:0000000000000000000000000000000000000000000000000000000000000000 size: 100"}
+{"progressDetail":{},"aux":{"Tag":"v1","Digest":"sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7","Size":2828}}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushOutput: &pushOut}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Equal(t, "sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7", digest)
+}
