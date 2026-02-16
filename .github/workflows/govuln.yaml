@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - uses: opzkit/govulncheck-action@f522a4de778cf9f398be705615b86addf059f594 # v1.1.1
+      - uses: opzkit/govulncheck-action@7e79b3ec534e9d8b6c381498d96180b049855a97 # v1.1.2
         with:
           go-version-file: 'go.mod'
           check-latest: 'true'
