@@ -15,7 +15,7 @@ require (
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/containerd/containerd/v2 v2.2.1
 	github.com/docker/docker v28.5.2+incompatible
-	github.com/go-git/go-git/v5 v5.16.5
+	github.com/go-git/go-git/v5 v5.17.0
 	github.com/liamg/tml v0.7.0
 	github.com/moby/buildkit v0.27.1
 	github.com/opencontainers/go-digest v1.0.0
@@ -78,7 +78,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.6.2 // indirect
+	github.com/go-git/go-billy/v5 v5.8.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.22.1 // indirect
