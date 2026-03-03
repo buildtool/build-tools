@@ -2100,3 +2100,214 @@ func Test_extractHost(t *testing.T) {
 		})
 	}
 }
+
+func Test_injectGoCacheMounts(t *testing.T) {
+	mount := "--mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod "
+
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "simple golang stage",
+			input:    "FROM golang:1.24 AS builder\nRUN go build -o /app",
+			expected: "FROM golang:1.24 AS builder\nRUN " + mount + "go build -o /app",
+		},
+		{
+			name:     "non-golang stage unchanged",
+			input:    "FROM alpine\nRUN apk add go",
+			expected: "FROM alpine\nRUN apk add go",
+		},
+		{
+			name:     "stage inheritance",
+			input:    "FROM golang:1.24 AS deps\nRUN go mod download\nFROM deps AS builder\nRUN go build",
+			expected: "FROM golang:1.24 AS deps\nRUN " + mount + "go mod download\nFROM deps AS builder\nRUN " + mount + "go build",
+		},
+		{
+			name:     "already has mounts",
+			input:    "FROM golang:1.24 AS builder\nRUN --mount=type=cache,target=/root/.cache/go-build go build",
+			expected: "FROM golang:1.24 AS builder\nRUN --mount=type=cache,target=/root/.cache/go-build go build",
+		},
+		{
+			name:     "exec form RUN unchanged",
+			input:    "FROM golang:1.24 AS builder\nRUN [\"go\", \"build\"]",
+			expected: "FROM golang:1.24 AS builder\nRUN [\"go\", \"build\"]",
+		},
+		{
+			name:     "mixed stages only modifies golang",
+			input:    "FROM golang:1.24 AS builder\nRUN go build\nFROM alpine AS runtime\nRUN echo done",
+			expected: "FROM golang:1.24 AS builder\nRUN " + mount + "go build\nFROM alpine AS runtime\nRUN echo done",
+		},
+		{
+			name:     "existing mount flags get cache prepended",
+			input:    "FROM golang:1.24 AS builder\nRUN --mount=type=secret,id=x go build",
+			expected: "FROM golang:1.24 AS builder\nRUN " + mount + "--mount=type=secret,id=x go build",
+		},
+		{
+			name:     "no FROM instruction",
+			input:    "RUN go build",
+			expected: "RUN go build",
+		},
+		{
+			name:     "empty content",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "golang alpine variant",
+			input:    "FROM golang:1.24-alpine AS builder\nRUN go build",
+			expected: "FROM golang:1.24-alpine AS builder\nRUN " + mount + "go build",
+		},
+		{
+			name:     "multiple RUN in golang stage",
+			input:    "FROM golang:1.24 AS builder\nRUN go mod download\nRUN go build -o /app",
+			expected: "FROM golang:1.24 AS builder\nRUN " + mount + "go mod download\nRUN " + mount + "go build -o /app",
+		},
+		{
+			name:     "indented RUN",
+			input:    "FROM golang:1.24 AS builder\n  RUN go build",
+			expected: "FROM golang:1.24 AS builder\n  RUN " + mount + "go build",
+		},
+		{
+			name:     "case insensitive FROM and RUN",
+			input:    "from golang:1.24 as builder\nrun go build",
+			expected: "from golang:1.24 as builder\nrun " + mount + "go build",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := injectGoCacheMounts([]byte(tt.input))
+			assert.Equal(t, tt.expected, string(got))
+		})
+	}
+}
+
+func Test_parseGoStage(t *testing.T) {
+	tests := []struct {
+		name     string
+		fromLine string
+		existing map[string]bool
+		wantGo   bool
+		wantMap  map[string]bool
+	}{
+		{
+			name:     "golang image",
+			fromLine: "FROM golang:1.24 AS builder",
+			existing: map[string]bool{},
+			wantGo:   true,
+			wantMap:  map[string]bool{"builder": true},
+		},
+		{
+			name:     "alpine image",
+			fromLine: "FROM alpine:3.19",
+			existing: map[string]bool{},
+			wantGo:   false,
+			wantMap:  map[string]bool{},
+		},
+		{
+			name:     "inherited stage",
+			fromLine: "FROM deps AS builder",
+			existing: map[string]bool{"deps": true},
+			wantGo:   true,
+			wantMap:  map[string]bool{"deps": true, "builder": true},
+		},
+		{
+			name:     "unknown stage not go",
+			fromLine: "FROM mybase AS builder",
+			existing: map[string]bool{},
+			wantGo:   false,
+			wantMap:  map[string]bool{},
+		},
+		{
+			name:     "no AS clause",
+			fromLine: "FROM golang:1.24",
+			existing: map[string]bool{},
+			wantGo:   true,
+			wantMap:  map[string]bool{},
+		},
+		{
+			name:     "empty FROM",
+			fromLine: "FROM",
+			existing: map[string]bool{},
+			wantGo:   false,
+			wantMap:  map[string]bool{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseGoStage(tt.fromLine, tt.existing)
+			assert.Equal(t, tt.wantGo, got)
+			assert.Equal(t, tt.wantMap, tt.existing)
+		})
+	}
+}
+
+func Test_isShellRunInstruction(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+		want bool
+	}{
+		{
+			name: "shell form",
+			line: "RUN go build",
+			want: true,
+		},
+		{
+			name: "exec form",
+			line: "RUN [\"go\", \"build\"]",
+			want: false,
+		},
+		{
+			name: "not RUN",
+			line: "COPY . .",
+			want: false,
+		},
+		{
+			name: "run with mount",
+			line: "RUN --mount=type=secret,id=x go build",
+			want: true,
+		},
+		{
+			name: "lowercase run",
+			line: "run go build",
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isShellRunInstruction([]byte(tt.line))
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func Test_hasGoCacheMount(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+		want bool
+	}{
+		{
+			name: "has mount",
+			line: "RUN --mount=type=cache,target=/root/.cache/go-build go build",
+			want: true,
+		},
+		{
+			name: "no mount",
+			line: "RUN go build",
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasGoCacheMount([]byte(tt.line))
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

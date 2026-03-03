@@ -688,3 +688,30 @@ func TestLoad_YAML_Gitea_Env(t *testing.T) {
 	assert.Equal(t, "token", cfg.Registry.Gitea.Token)
 	assert.Equal(t, "org/repo", cfg.Registry.Gitea.Repository)
 }
+
+func TestCacheConfig_GoMounts_YAML(t *testing.T) {
+	yaml := `
+cache:
+  go_mounts: true
+`
+	name := filepath.Join(t.TempDir(), ".buildtools.yaml")
+	_ = os.WriteFile(name, []byte(yaml), 0o644)
+
+	cfg, err := Load(filepath.Dir(name))
+	assert.NoError(t, err)
+	assert.True(t, cfg.Cache.GoMounts)
+}
+
+func TestCacheConfig_GoMounts_Env(t *testing.T) {
+	t.Setenv("BUILDTOOLS_CACHE_GO_MOUNTS", "true")
+
+	cfg, err := Load(t.TempDir())
+	assert.NoError(t, err)
+	assert.True(t, cfg.Cache.GoMounts)
+}
+
+func TestCacheConfig_GoMounts_Default(t *testing.T) {
+	cfg, err := Load(t.TempDir())
+	assert.NoError(t, err)
+	assert.False(t, cfg.Cache.GoMounts)
+}
