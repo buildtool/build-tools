@@ -7,6 +7,7 @@ and a list of [`targets`](targets.md) to use.
 |      Key             |                   Description       |
 | :------------------- | :---------------------------------- |
 | registry  | [registry](registry.md) registry to push to    |
+| cache     | [cache](../commands/build.md#layer-caching-with-ecr) configuration (ECR layer cache, Go build cache mounts) |
 | targets   | [targets](targets.md) to deploy to             |
 | git       |  [git](git.md) configuration block             |
 | gitops    |  [git repos](gitops.md) to push descriptors to |
