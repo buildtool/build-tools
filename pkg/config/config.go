@@ -100,6 +100,9 @@ type Gitops struct {
 type CacheConfig struct {
 	// ECR configures AWS ECR as a layer cache backend for buildkit builds.
 	ECR *ECRCache `yaml:"ecr"`
+	// GoMounts enables automatic injection of --mount=type=cache directives for
+	// Go build and module caches into RUN instructions within golang Dockerfile stages.
+	GoMounts bool `yaml:"go_mounts" env:"BUILDTOOLS_CACHE_GO_MOUNTS"`
 }
 
 // ECRCache configures ECR-based layer caching for buildkit builds.

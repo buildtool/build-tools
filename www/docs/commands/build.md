@@ -243,6 +243,54 @@ build --platform linux/amd64,linux/arm64
 !!! tip "Separate cache repository"
     It's recommended to use a dedicated ECR repository for cache storage, separate from your image repositories. This allows you to apply different lifecycle policies and keeps your cache isolated.
 
+## Go build cache mounts
+
+When building Go applications, you can enable automatic injection of BuildKit cache mount directives into your Dockerfile. This persists Go's internal build cache and module cache between builds, so only changed packages get recompiled — even when the Docker layer cache is busted by a source file change.
+
+### Configuration
+
+Add the following to your `.buildtools.yaml`:
+
+```yaml
+cache:
+  go_mounts: true
+```
+
+Or use an environment variable:
+
+```shell
+export BUILDTOOLS_CACHE_GO_MOUNTS=true
+```
+
+### How it works
+
+When enabled, build-tools automatically injects `--mount=type=cache` directives into every shell-form `RUN` instruction within golang-based Dockerfile stages:
+
+```dockerfile
+# Your Dockerfile (unchanged)
+FROM golang:1.24 AS builder
+RUN go build -o /app
+
+# What buildkit actually sees
+FROM golang:1.24 AS builder
+RUN --mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod go build -o /app
+```
+
+The injection:
+
+- Only applies to stages using a `golang` base image (including inherited stages like `FROM deps AS builder` where `deps` is a golang stage)
+- Skips exec-form `RUN` instructions (`RUN ["go", "build"]`)
+- Skips instructions that already have Go cache mounts
+- Modifies a temporary copy of the Dockerfile, not the original
+
+### Requirements
+
+- `BUILDKIT_HOST` must be set (cache mounts require buildkit)
+- BuildKit must have persistent storage (PVC) for the cache to survive between builds
+
+!!! tip "Combine with ECR layer cache"
+    Go cache mounts and [ECR layer cache](#layer-caching-with-ecr) complement each other. ECR caches entire Docker layers across build instances, while Go cache mounts provide package-level granularity within a single buildkit instance. When a source file change busts the ECR layer cache, the Go build cache still avoids recompiling unchanged packages.
+
 ## GitHub Actions outputs
 
 When running in GitHub Actions, the `build` command writes the following step outputs to `$GITHUB_OUTPUT`:

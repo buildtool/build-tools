@@ -203,6 +203,10 @@ func build(client docker.Client, dir string, buildVars Args) (string, error) {
 		log.Error(fmt.Sprintf("<red>%s</red>", err.Error()))
 		return "", err
 	}
+	if cfg.Cache.GoMounts {
+		content = injectGoCacheMounts(content)
+		log.Debugf("Injected Go cache mounts into Dockerfile\n")
+	}
 	dockerFile, err := os.Create(filepath.Join(dir, "build-tools-dockerfile"))
 	if err != nil {
 		return "", err
@@ -775,4 +779,80 @@ func (t *tracer) write(msg jsonmessage.JSONMessage) {
 	}
 
 	t.displayCh <- &s
+}
+
+// goCacheMountPrefix is injected before the command in RUN instructions within
+// golang stages to persist Go build and module caches across builds via BuildKit.
+var goCacheMountPrefix = []byte(
+	"--mount=type=cache,target=/root/.cache/go-build " +
+		"--mount=type=cache,target=/go/pkg/mod ")
+
+// injectGoCacheMounts preprocesses Dockerfile content to add BuildKit cache
+// mount directives for Go build and module caches into RUN instructions within
+// golang-based stages. It modifies a copy of the content, not the original file.
+func injectGoCacheMounts(content []byte) []byte {
+	lines := bytes.Split(content, []byte("\n"))
+	goStages := make(map[string]bool)
+	inGoStage := false
+
+	for i, line := range lines {
+		trimmed := bytes.TrimSpace(line)
+		upper := bytes.ToUpper(trimmed)
+
+		// Track FROM instructions to identify golang stages
+		if bytes.HasPrefix(upper, []byte("FROM ")) {
+			inGoStage = parseGoStage(string(trimmed), goStages)
+			continue
+		}
+
+		// Inject cache mounts into shell-form RUN instructions in Go stages
+		if inGoStage && isShellRunInstruction(trimmed) && !hasGoCacheMount(trimmed) {
+			idx := bytes.Index(bytes.ToUpper(line), []byte("RUN "))
+			if idx >= 0 {
+				newLine := make([]byte, 0, len(line)+len(goCacheMountPrefix))
+				newLine = append(newLine, line[:idx+4]...)
+				newLine = append(newLine, goCacheMountPrefix...)
+				newLine = append(newLine, line[idx+4:]...)
+				lines[i] = newLine
+			}
+		}
+	}
+	return bytes.Join(lines, []byte("\n"))
+}
+
+// parseGoStage checks if a FROM line uses a golang base image (directly or via
+// a previously identified Go stage alias). Tracks stage names in goStages map.
+// Returns true if the current stage is a Go stage.
+func parseGoStage(fromLine string, goStages map[string]bool) bool {
+	fields := strings.Fields(fromLine)
+	if len(fields) < 2 {
+		return false
+	}
+	image := strings.ToLower(fields[1])
+
+	isGo := strings.HasPrefix(image, "golang") || goStages[image]
+
+	// Register named stage (FROM image AS name)
+	if len(fields) >= 4 && strings.EqualFold(fields[2], "AS") {
+		if isGo {
+			goStages[strings.ToLower(fields[3])] = true
+		}
+	}
+	return isGo
+}
+
+// isShellRunInstruction returns true if the trimmed line is a shell-form RUN
+// instruction (not exec form like RUN ["cmd", ...]).
+func isShellRunInstruction(trimmed []byte) bool {
+	if !bytes.HasPrefix(bytes.ToUpper(trimmed), []byte("RUN ")) {
+		return false
+	}
+	afterRun := bytes.TrimSpace(trimmed[4:])
+	// Skip exec form: RUN ["cmd", ...]
+	return len(afterRun) == 0 || afterRun[0] != '['
+}
+
+// hasGoCacheMount checks if a line already contains a Go build cache mount.
+func hasGoCacheMount(line []byte) bool {
+	return bytes.Contains(line, []byte("--mount=type=cache,target=/root/.cache/go-build"))
 }

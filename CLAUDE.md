@@ -97,7 +97,7 @@ The configuration file defines:
 - `vcs`: Version control settings
 - `ci`: CI platform credentials (azure, buildkite, gitlab, github, teamcity)
 - `registry`: Registry credentials (dockerhub, acr, ecr, gcr, github, gitlab, gitea, quay)
-- `cache`: Layer cache configuration (ecr)
+- `cache`: Layer cache configuration (ecr, go_mounts)
 - `targets`: Kubernetes deployment targets (context, namespace, kubeconfig)
 - `git`: Git user configuration for commits (used by promote command)
 - `gitops`: GitOps repository configurations (url, path)
@@ -161,6 +161,31 @@ The build system supports using AWS ECR as a remote layer cache for buildkit bui
 **Key Code Locations**:
 - Config structs: `pkg/config/config.go` (`CacheConfig`, `ECRCache`)
 - Cache import/export: `pkg/build/build.go` (`buildCacheImports()`, `buildCacheExports()`)
+- Tests: `pkg/build/build_test.go`, `pkg/config/config_test.go`
+
+## Go Build Cache Mounts
+
+The build system supports automatic injection of BuildKit `--mount=type=cache` directives for Go build and module caches into Dockerfile `RUN` instructions:
+
+**Configuration**:
+- Set via `.buildtools.yaml`:
+  ```yaml
+  cache:
+    go_mounts: true
+  ```
+- Or via environment variable: `BUILDTOOLS_CACHE_GO_MOUNTS=true`
+
+**Implementation Details**:
+- `injectGoCacheMounts()` preprocesses Dockerfile content before writing the temp file
+- Identifies golang stages (including inherited ones via alias tracking in `parseGoStage()`)
+- Injects `--mount=type=cache,target=/root/.cache/go-build --mount=type=cache,target=/go/pkg/mod` into shell-form `RUN` instructions
+- Skips exec-form `RUN`, non-golang stages, and instructions that already have Go cache mounts
+- Modifies the temp copy only, not the original Dockerfile
+
+**Key Code Locations**:
+- Config field: `pkg/config/config.go` (`CacheConfig.GoMounts`)
+- Injection logic: `pkg/build/build.go` (`injectGoCacheMounts()`, `parseGoStage()`, `isShellRunInstruction()`, `hasGoCacheMount()`)
+- Integration point: `pkg/build/build.go` `build()` function, between Dockerfile read and temp file write
 - Tests: `pkg/build/build_test.go`, `pkg/config/config_test.go`
 
 ## GitHub Actions Outputs (Image Digest & Name)
