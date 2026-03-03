@@ -16,7 +16,7 @@ require (
 	github.com/containerd/containerd/v2 v2.2.1
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/go-git/go-git/v5 v5.17.0
-	github.com/liamg/tml v0.7.0
+	github.com/liamg/tml v0.7.1
 	github.com/moby/buildkit v0.27.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/spf13/cobra v1.10.2
