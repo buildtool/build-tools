@@ -30,7 +30,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/cli-runtime v0.35.2
 	k8s.io/client-go v0.35.2
-	k8s.io/klog/v2 v2.130.1
+	k8s.io/klog/v2 v2.140.0
 	k8s.io/kubectl v0.35.2
 )
 
