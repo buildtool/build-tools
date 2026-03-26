@@ -33,7 +33,7 @@ jobs:
           CGO_ENABLED=1 go test -p 1 -mod=readonly -race -coverprofile=coverage.txt -covermode=atomic -coverpkg=$(go list ./... | tr '\n' , | sed 's/,$//') ./...
           go tool cover -func=coverage.txt
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.txt
