@@ -30,8 +30,9 @@ import (
 	"regexp"
 
 	"github.com/apex/log"
-	img "github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
+	mobyclient "github.com/moby/moby/client"
+
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -68,10 +69,19 @@ type responsetype struct {
 	} `json:"aux"`
 }
 
+// toLoginOptions converts a registry.AuthConfig to mobyclient.RegistryLoginOptions.
+func toLoginOptions(auth registry.AuthConfig) mobyclient.RegistryLoginOptions {
+	return mobyclient.RegistryLoginOptions{
+		Username:      auth.Username,
+		Password:      auth.Password,
+		ServerAddress: auth.ServerAddress,
+	}
+}
+
 type dockerRegistry struct{}
 
 func (dockerRegistry) PushImage(client docker.Client, auth, image string) (string, error) {
-	out, err := client.ImagePush(context.Background(), image, img.PushOptions{All: true, RegistryAuth: auth})
+	out, err := client.ImagePush(context.Background(), image, mobyclient.ImagePushOptions{All: true, RegistryAuth: auth})
 	if err != nil {
 		return "", err
 	}

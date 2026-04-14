@@ -141,7 +141,7 @@ func TestAcr_LoginSuccess(t *testing.T) {
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", client.Username)
 	assert.Equal(t, "aaabbb", client.Password)
 	assert.Equal(t, registryUrl, client.ServerAddress)
-	logMock.Check(t, []string{"debug: Status: Logged in\n"})
+	logMock.Check(t, []string{"debug: Logged in\n"})
 }
 
 func TestAcr_GetAuthInfo(t *testing.T) {

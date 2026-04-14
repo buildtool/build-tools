@@ -30,8 +30,8 @@ import (
 	"time"
 
 	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
-	"github.com/docker/docker/api/types/registry"
 	auth2 "github.com/moby/buildkit/session/auth"
+	"github.com/moby/moby/api/types/registry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

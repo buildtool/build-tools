@@ -35,7 +35,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/apex/log"
 	"github.com/buildtool/build-tools/pkg/docker"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 )
 
 type Credential interface {
@@ -90,15 +90,15 @@ func (r *ACR) Login(client docker.Client) error {
 		return err
 	}
 	r.token = response["refresh_token"].(string)
-	ok, err := client.RegistryLogin(context.Background(), registry.AuthConfig{
+	_, err = client.RegistryLogin(context.Background(), toLoginOptions(registry.AuthConfig{
 		Username:      "00000000-0000-0000-0000-000000000000",
 		Password:      r.token,
 		ServerAddress: r.Url,
-	})
+	}))
 	if err != nil {
 		return err
 	}
-	log.Debugf("Status: %s\n", ok.Status)
+	log.Debugf("Logged in\n")
 	return nil
 }
 

@@ -27,7 +27,7 @@ import (
 	"testing"
 
 	"github.com/apex/log"
-	types "github.com/docker/docker/api/types/registry"
+	types "github.com/moby/moby/api/types/registry"
 	"github.com/stretchr/testify/assert"
 	mocks "gitlab.com/unboundsoftware/apex-mocks"
 

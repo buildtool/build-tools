@@ -30,7 +30,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -57,12 +57,12 @@ func (r Gitea) Login(client docker.Client) error {
 	tokenInfo := maskToken(r.Token)
 	log.Debugf("Gitea login: registry=%s, username=%s, token=%s\n", r.Registry, r.Username, tokenInfo)
 	authConfig := r.GetAuthConfig()
-	ok, err := client.RegistryLogin(context.Background(), authConfig)
+	_, err := client.RegistryLogin(context.Background(), toLoginOptions(authConfig))
 	if err != nil {
 		log.Errorf("Gitea login failed: %v\n", err)
 		return fmt.Errorf("gitea registry login to %s failed: %w", r.Registry, err)
 	}
-	log.Debugf("Gitea login successful: %s\n", ok.Status)
+	log.Debugf("Gitea login successful\n")
 	return nil
 }
 

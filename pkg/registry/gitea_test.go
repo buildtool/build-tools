@@ -87,7 +87,7 @@ func TestGitea_LoginSuccess(t *testing.T) {
 	assert.Equal(t, "gitea.example.com", client.ServerAddress)
 	logMock.Check(t, []string{
 		"debug: Gitea login: registry=gitea.example.com, username=user, token=secr...alue[len=18]\n",
-		"debug: Gitea login successful: Logged in\n",
+		"debug: Gitea login successful\n",
 	})
 }
 

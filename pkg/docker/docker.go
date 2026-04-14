@@ -35,21 +35,18 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types/build"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client"
+	mobyclient "github.com/moby/moby/client"
 )
 
 type Client interface {
-	RegistryLogin(ctx context.Context, auth registry.AuthConfig) (registry.AuthenticateOKBody, error)
-	ImageBuild(ctx context.Context, buildContext io.Reader, options build.ImageBuildOptions) (build.ImageBuildResponse, error)
-	ImagePush(ctx context.Context, image string, options image.PushOptions) (io.ReadCloser, error)
+	RegistryLogin(ctx context.Context, options mobyclient.RegistryLoginOptions) (mobyclient.RegistryLoginResult, error)
+	ImageBuild(ctx context.Context, buildContext io.Reader, options mobyclient.ImageBuildOptions) (mobyclient.ImageBuildResult, error)
+	ImagePush(ctx context.Context, image string, options mobyclient.ImagePushOptions) (mobyclient.ImagePushResponse, error)
 	DialHijack(ctx context.Context, url, proto string, meta map[string][]string) (net.Conn, error)
-	BuildCancel(ctx context.Context, id string) error
+	BuildCancel(ctx context.Context, id string, options mobyclient.BuildCancelOptions) (mobyclient.BuildCancelResult, error)
 }
 
-var _ Client = &client.Client{}
+var _ Client = &mobyclient.Client{}
 
 func Tag(registry, image, tag string) string {
 	slug := SlugifyTag(tag)
@@ -108,9 +105,8 @@ func FindStages(content string) []string {
 }
 
 func DefaultClient() (Client, error) {
-	return client.NewClientWithOpts(
-		client.WithTLSClientConfigFromEnv(),
-		client.WithHostFromEnv(),
-		client.WithAPIVersionNegotiation(),
-		client.WithVersionFromEnv())
+	return mobyclient.New(
+		mobyclient.WithTLSClientConfigFromEnv(),
+		mobyclient.WithHostFromEnv(),
+		mobyclient.WithAPIVersionFromEnv())
 }

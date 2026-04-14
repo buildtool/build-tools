@@ -40,7 +40,7 @@ import (
 	"github.com/buildtool/build-tools/pkg/vcs"
 	"github.com/buildtool/build-tools/pkg/version"
 
-	types "github.com/docker/docker/api/types/registry"
+	types "github.com/moby/moby/api/types/registry"
 	"github.com/stretchr/testify/assert"
 )
 
