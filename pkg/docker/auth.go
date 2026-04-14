@@ -35,9 +35,9 @@ import (
 	"github.com/apex/log"
 	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
 
-	"github.com/docker/docker/api/types/registry"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth"
+	"github.com/moby/moby/api/types/registry"
 	"golang.org/x/crypto/nacl/sign"
 	"google.golang.org/grpc"
 )

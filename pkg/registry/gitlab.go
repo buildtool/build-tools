@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -53,8 +53,8 @@ func (r Gitlab) Configured() bool {
 }
 
 func (r Gitlab) Login(client docker.Client) error {
-	if ok, err := client.RegistryLogin(context.Background(), r.GetAuthConfig()); err == nil {
-		log.Debugf("%s\n", ok.Status)
+	if _, err := client.RegistryLogin(context.Background(), toLoginOptions(r.GetAuthConfig())); err == nil {
+		log.Debugf("Logged in\n")
 		return nil
 	} else {
 		return err

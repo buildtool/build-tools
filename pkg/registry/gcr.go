@@ -28,7 +28,7 @@ import (
 	"encoding/json"
 
 	"github.com/apex/log"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -55,8 +55,8 @@ func (r *GCR) Configured() bool {
 func (r *GCR) Login(client docker.Client) error {
 	auth := r.GetAuthConfig()
 	auth.ServerAddress = r.Url
-	if ok, err := client.RegistryLogin(context.Background(), auth); err == nil {
-		log.Debugf("%s\n", ok.Status)
+	if _, err := client.RegistryLogin(context.Background(), toLoginOptions(auth)); err == nil {
+		log.Debugf("Logged in\n")
 		return nil
 	} else {
 		return err

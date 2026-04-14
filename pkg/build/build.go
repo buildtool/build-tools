@@ -40,16 +40,20 @@ import (
 
 	"github.com/apex/log"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	dockerbuild "github.com/docker/docker/api/types/build"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/stringid"
+	"github.com/containerd/platforms"
 	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/filesync"
 	"github.com/moby/buildkit/util/progress/progressui"
+	dockerbuild "github.com/moby/moby/api/types/build"
+	"github.com/moby/moby/api/types/jsonstream"
+	mobyclient "github.com/moby/moby/client"
+	"github.com/moby/moby/client/pkg/jsonmessage"
+	"github.com/moby/moby/client/pkg/stringid"
 	"github.com/opencontainers/go-digest"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/tonistiigi/fsutil"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
@@ -319,9 +323,9 @@ func buildStage(dkrClient docker.Client, dir string, buildVars Args, buildArgs m
 		defer func() { // make sure the Status ends cleanly on build errors
 			_ = s.Close()
 		}()
-		var outputs []dockerbuild.ImageBuildOutput
+		var outputs []mobyclient.ImageBuildOutput
 		if strings.HasPrefix(stage, "export") {
-			outputs = append(outputs, dockerbuild.ImageBuildOutput{
+			outputs = append(outputs, mobyclient.ImageBuildOutput{
 				Type:  "local",
 				Attrs: map[string]string{},
 			})
@@ -566,9 +570,9 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 	return imageDigest, nil
 }
 
-func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []dockerbuild.ImageBuildOutput, platform string) (finalErr error) {
+func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, dockerfile string, args map[string]*string, tags, caches []string, target string, pullParent bool, sessionID string, outputs []mobyclient.ImageBuildOutput, platform string) (finalErr error) {
 	buildID := stringid.GenerateRandomID()
-	options := dockerbuild.ImageBuildOptions{
+	options := mobyclient.ImageBuildOptions{
 		BuildArgs:     args,
 		BuildID:       buildID,
 		CacheFrom:     caches,
@@ -583,10 +587,10 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 		Tags:          tags,
 		Target:        target,
 		Version:       dockerbuild.BuilderBuildKit,
-		Platform:      platform,
+		Platforms:     parsePlatforms(platform),
 	}
 	logVerbose(options)
-	var response dockerbuild.ImageBuildResponse
+	var response mobyclient.ImageBuildResult
 	var err error
 	response, err = dkrClient.ImageBuild(context.Background(), nil, options)
 	if err != nil {
@@ -599,7 +603,8 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	eg.Go(func() error {
 		select {
 		case <-ctx.Done():
-			return dkrClient.BuildCancel(context.TODO(), buildID)
+			_, cancelErr := dkrClient.BuildCancel(context.TODO(), buildID, mobyclient.BuildCancelOptions{})
+			return cancelErr
 		case <-done:
 		}
 		return nil
@@ -612,7 +617,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 
 	buf := &bytes.Buffer{}
 	imageID := ""
-	writeAux := func(msg jsonmessage.JSONMessage) {
+	writeAux := func(msg jsonstream.Message) {
 		if msg.ID == "moby.image.id" {
 			var result dockerbuild.Result
 			if err := json.Unmarshal(*msg.Aux, &result); err != nil {
@@ -626,7 +631,7 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 
 	err = jsonmessage.DisplayJSONMessagesStream(response.Body, buf, os.Stdout.Fd(), true, writeAux)
 	if err != nil {
-		var jerr *jsonmessage.JSONError
+		var jerr *jsonstream.Error
 		if errors.As(err, &jerr) {
 			// If no error code is set, default to 1
 			if jerr.Code == 0 {
@@ -640,6 +645,20 @@ func doBuild(ctx context.Context, dkrClient docker.Client, eg *errgroup.Group, d
 	log.Info(imageID)
 
 	return nil
+}
+
+// parsePlatforms converts a comma-separated platform string (e.g. "linux/amd64,linux/arm64")
+// to a slice of ocispec.Platform.
+func parsePlatforms(platformStr string) []ocispec.Platform {
+	if platformStr == "" {
+		return nil
+	}
+	var result []ocispec.Platform
+	for _, p := range strings.Split(platformStr, ",") {
+		parsed := platforms.MustParse(strings.TrimSpace(p))
+		result = append(result, parsed)
+	}
+	return result
 }
 
 func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgroup.Group) {
@@ -656,7 +675,7 @@ func displayStatus(out *os.File, displayCh chan *client.SolveStatus, eg *errgrou
 	})
 }
 
-func logVerbose(options dockerbuild.ImageBuildOptions) {
+func logVerbose(options mobyclient.ImageBuildOptions) {
 	loggableOptions := options
 	loggableOptions.AuthConfigs = nil
 	loggableOptions.BuildID = ""
@@ -705,7 +724,7 @@ func newTracer() *tracer {
 	}
 }
 
-func (t *tracer) write(msg jsonmessage.JSONMessage) {
+func (t *tracer) write(msg jsonstream.Message) {
 	var resp controlapi.StatusResponse
 
 	if msg.ID != "moby.buildkit.trace" {

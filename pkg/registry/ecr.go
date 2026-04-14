@@ -37,7 +37,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/registry"
 
 	"github.com/buildtool/build-tools/pkg/docker"
 )
@@ -122,8 +122,8 @@ func (r *ECR) Login(client docker.Client) error {
 	r.username = parts[0]
 	r.password = parts[1]
 
-	if ok, err := client.RegistryLogin(context.Background(), registry.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url}); err == nil {
-		log.Debugf("%s\n", ok.Status)
+	if _, err := client.RegistryLogin(context.Background(), toLoginOptions(registry.AuthConfig{Username: r.username, Password: r.password, ServerAddress: r.Url})); err == nil {
+		log.Debugf("Logged in\n")
 		return nil
 	} else {
 		return err
