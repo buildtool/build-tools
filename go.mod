@@ -15,7 +15,7 @@ require (
 	github.com/caarlos0/env/v11 v11.4.0
 	github.com/containerd/containerd/v2 v2.2.3
 	github.com/containerd/platforms v1.0.0-rc.4
-	github.com/go-git/go-git/v5 v5.17.2
+	github.com/go-git/go-git/v5 v5.18.0
 	github.com/liamg/tml v0.7.1
 	github.com/moby/buildkit v0.29.0
 	github.com/moby/moby/api v1.54.1
