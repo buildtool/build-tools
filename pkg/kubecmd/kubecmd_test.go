@@ -85,7 +85,8 @@ func TestKubecmd_MissingTarget(t *testing.T) {
 	assert.Nil(t, cmd)
 	logMock.Check(t, []string{
 		fmt.Sprintf(
-			"debug: Parsing config from file: <green>'%s'</green>\n", filePath),
+			"debug: Parsing config from file: <green>'%s'</green>\n", filePath,
+		),
 		"warn: no target matching dummy found\n",
 	})
 }
