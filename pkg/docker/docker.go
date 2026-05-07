@@ -108,5 +108,6 @@ func DefaultClient() (Client, error) {
 	return mobyclient.New(
 		mobyclient.WithTLSClientConfigFromEnv(),
 		mobyclient.WithHostFromEnv(),
-		mobyclient.WithAPIVersionFromEnv())
+		mobyclient.WithAPIVersionFromEnv(),
+	)
 }

@@ -106,7 +106,8 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string) in
 		log.Error("Commit and/or branch information is <red>missing</red>. Perhaps your not in a Git repository or forgot to set environment variables?")
 		return -6
 	}
-	tags = append(tags,
+	tags = append(
+		tags,
 		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.Commit()),
 		docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), currentCI.BranchReplaceSlash()),
 	)

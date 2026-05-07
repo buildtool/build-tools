@@ -475,7 +475,8 @@ func buildMultiPlatformWithFactory(dkrClient docker.Client, dir string, buildVar
 			return dkrClient.DialHijack(ctx, "/session", proto, meta)
 		}
 
-		bkClient, err = clientFactory(ctx, "",
+		bkClient, err = clientFactory(
+			ctx, "",
 			client.WithContextDialer(dialContext),
 			client.WithSessionDialer(dialSession),
 		)
@@ -804,7 +805,8 @@ func (t *tracer) write(msg jsonstream.Message) {
 // golang stages to persist Go build and module caches across builds via BuildKit.
 var goCacheMountPrefix = []byte(
 	"--mount=type=cache,target=/root/.cache/go-build " +
-		"--mount=type=cache,target=/go/pkg/mod ")
+		"--mount=type=cache,target=/go/pkg/mod ",
+)
 
 // injectGoCacheMounts preprocesses Dockerfile content to add BuildKit cache
 // mount directives for Go build and module caches into RUN instructions within
