@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.57.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.42.1
 	github.com/caarlos0/env/v11 v11.4.1
-	github.com/containerd/containerd/v2 v2.3.0
+	github.com/containerd/containerd/v2 v2.3.1
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/liamg/tml v0.7.1
@@ -60,7 +60,7 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/containerd/console v1.0.5 // indirect
-	github.com/containerd/containerd/api v1.11.0 // indirect
+	github.com/containerd/containerd/api v1.11.1 // indirect
 	github.com/containerd/continuity v0.5.0 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
