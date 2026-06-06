@@ -24,7 +24,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	github.com/tonistiigi/fsutil v0.0.0-20260604084535-ecf346b4941c
+	github.com/tonistiigi/fsutil v0.0.0-20260605065046-8e8fbeee8226
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
 	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
