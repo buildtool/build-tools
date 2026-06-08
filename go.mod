@@ -28,7 +28,7 @@ require (
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
 	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20260603202125-055de637280b
-	golang.org/x/sync v0.20.0
+	golang.org/x/sync v0.21.0
 	google.golang.org/grpc v1.81.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/cli-runtime v0.36.1
