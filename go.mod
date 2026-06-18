@@ -18,7 +18,7 @@ require (
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/liamg/tml v0.7.1
 	github.com/moby/buildkit v0.31.0
-	github.com/moby/moby/api v1.54.2
+	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.4.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
