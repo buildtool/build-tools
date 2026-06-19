@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.58.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.43.3
 	github.com/caarlos0/env/v11 v11.4.1
-	github.com/containerd/containerd/v2 v2.3.1
+	github.com/containerd/containerd/v2 v2.3.2
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/liamg/tml v0.7.1
