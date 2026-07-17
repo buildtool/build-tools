@@ -17,7 +17,7 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/liamg/tml v0.7.1
-	github.com/moby/buildkit v0.31.1
+	github.com/moby/buildkit v0.31.2
 	github.com/moby/moby/api v1.55.0
 	github.com/moby/moby/client v0.5.0
 	github.com/opencontainers/go-digest v1.0.0
