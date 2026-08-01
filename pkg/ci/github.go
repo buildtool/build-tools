@@ -23,6 +23,7 @@
 package ci
 
 import (
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -31,6 +32,7 @@ type Github struct {
 	*Common
 	CICommit     string `env:"GITHUB_SHA"`
 	CIBuildName  string `env:"RUNNER_WORKSPACE"`
+	CIRepository string `env:"GITHUB_REPOSITORY"`
 	CIBranchName string `env:"GITHUB_REF"`
 }
 
@@ -45,11 +47,18 @@ func (c *Github) BranchReplaceSlash() string {
 }
 
 func (c *Github) BuildName() string {
+	// GITHUB_REPOSITORY is "<owner>/<repository>" and names the repository directly.
+	// Prefer it over deriving the name from RUNNER_WORKSPACE, whose layout differs per
+	// platform: GitHub Actions uses /home/runner/work/<repository>, while Gitea Actions
+	// uses /workspace/<owner>/<repository> and exports its parent, so the last path
+	// element there is the owner rather than the repository.
+	if c.CIRepository != "" {
+		return c.Common.BuildName(path.Base(c.CIRepository))
+	}
 	if c.CIBuildName != "" {
 		return c.Common.BuildName(filepath.Base(c.CIBuildName))
-	} else {
-		return c.Common.BuildName(c.CIBuildName)
 	}
+	return c.Common.BuildName(c.CIBuildName)
 }
 
 func (c *Github) Branch() string {
