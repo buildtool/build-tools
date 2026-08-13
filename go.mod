@@ -1,6 +1,6 @@
 module github.com/buildtool/build-tools
 
-go 1.26.5
+go 1.26.6
 
 require (
 	dario.cat/mergo v1.0.2
