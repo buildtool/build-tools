@@ -382,7 +382,7 @@ func TestBuild_BrokenBuildResult(t *testing.T) {
 		"debug: Logged in\n",
 		"debug: Using build variables commit <green>abc123</green> on branch <green>feature1</green>\n",
 		"debug: performing docker build with options (auths removed):\ntags:\n    - repo/reponame:abc123\n    - repo/reponame:feature1\nsuppressoutput: false\nremotecontext: client-session\nnocache: false\nremove: true\nforceremove: false\npullparent: true\nisolation: \"\"\ncpusetcpus: \"\"\ncpusetmems: \"\"\ncpushares: 0\ncpuquota: 0\ncpuperiod: 0\nmemory: 0\nmemoryswap: -1\ncgroupparent: \"\"\nnetworkmode: \"\"\nshmsize: 268435456\ndockerfile: build-tools-dockerfile\nulimits: []\nbuildargs:\n    BUILDKIT_INLINE_CACHE: \"1\"\n    CI_BRANCH: feature1\n    CI_COMMIT: abc123\nauthconfigs: {}\ncontext: null\nlabels: {}\nsquash: false\ncachefrom:\n    - repo/reponame:feature1\n    - repo/reponame:latest\nsecurityopt: []\nextrahosts: []\ntarget: \"\"\nsessionid: \"\"\nplatforms: []\nversion: \"2\"\nbuildid: \"\"\noutputs: []\n\n",
-		"error: failed to parse aux message: json: cannot unmarshal number into Go struct field Result.ID of type string",
+		"error: failed to parse aux message: json: cannot unmarshal number into Go struct field Result.id of type string",
 		"info: ",
 	})
 }
