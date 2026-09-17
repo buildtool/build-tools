@@ -851,7 +851,11 @@ func parseGoStage(fromLine string, goStages map[string]bool) bool {
 	}
 	image := strings.ToLower(fields[1])
 
-	isGo := strings.HasPrefix(image, "golang") || goStages[image]
+	// A stage alias (FROM modules AS build) is matched whole; a base image is
+	// matched on its final path segment, so that a namespaced or fully
+	// qualified reference such as amd64/golang or docker.io/library/golang is
+	// recognised as well as a bare golang.
+	isGo := goStages[image] || strings.HasPrefix(imageName(image), "golang")
 
 	// Register named stage (FROM image AS name)
 	if len(fields) >= 4 && strings.EqualFold(fields[2], "AS") {
@@ -860,6 +864,16 @@ func parseGoStage(fromLine string, goStages map[string]bool) bool {
 		}
 	}
 	return isGo
+}
+
+// imageName returns the final path segment of an image reference, dropping any
+// registry host and namespace: docker.io/library/golang:1.24 becomes
+// golang:1.24.
+func imageName(image string) string {
+	if i := strings.LastIndex(image, "/"); i >= 0 {
+		return image[i+1:]
+	}
+	return image
 }
 
 // isShellRunInstruction returns true if the trimmed line is a shell-form RUN
