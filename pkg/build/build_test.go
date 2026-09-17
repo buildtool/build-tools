@@ -2115,6 +2115,21 @@ func Test_injectGoCacheMounts(t *testing.T) {
 			expected: "FROM golang:1.24 AS builder\nRUN " + mount + "go build -o /app",
 		},
 		{
+			name:     "namespaced golang image",
+			input:    "FROM amd64/golang:1.24 AS builder\nRUN go build -o /app",
+			expected: "FROM amd64/golang:1.24 AS builder\nRUN " + mount + "go build -o /app",
+		},
+		{
+			name:     "fully qualified golang image",
+			input:    "FROM docker.io/library/golang:1.24 AS builder\nRUN go build -o /app",
+			expected: "FROM docker.io/library/golang:1.24 AS builder\nRUN " + mount + "go build -o /app",
+		},
+		{
+			name:     "registry path ending in golang is not matched mid-segment",
+			input:    "FROM example.com/notgolang:1.24 AS builder\nRUN go build -o /app",
+			expected: "FROM example.com/notgolang:1.24 AS builder\nRUN go build -o /app",
+		},
+		{
 			name:     "non-golang stage unchanged",
 			input:    "FROM alpine\nRUN apk add go",
 			expected: "FROM alpine\nRUN apk add go",
