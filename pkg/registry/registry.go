@@ -28,6 +28,8 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"strings"
+	"time"
 
 	"github.com/apex/log"
 	mobyclient "github.com/moby/moby/client"
@@ -80,8 +82,43 @@ func toLoginOptions(auth registry.AuthConfig) mobyclient.RegistryLoginOptions {
 
 type dockerRegistry struct{}
 
+// A registry answers a burst of pushes with HTTP 429, which the daemon
+// reports as an error line in the push stream ("toomanyrequests: Rate
+// exceeded" on ECR). The burst is over within seconds, so a push that was
+// throttled is retried a few times with a doubling wait rather than failing
+// the build.
+const (
+	pushRetries = 3
+	pushBackoff = 2 * time.Second
+)
+
+// pushSleep is time.Sleep, replaceable so tests do not wait.
+var pushSleep = time.Sleep
+
 func (dockerRegistry) PushImage(client docker.Client, auth, image string) (string, error) {
-	out, err := client.ImagePush(context.Background(), image, mobyclient.ImagePushOptions{All: true, RegistryAuth: auth})
+	backoff := pushBackoff
+	for attempt := 0; ; attempt++ {
+		digest, err := pushOnce(client, auth, image)
+		if err == nil || !isThrottled(err) || attempt == pushRetries {
+			return digest, err
+		}
+		log.Warnf("registry throttled the push of %s, retrying in %s", image, backoff)
+		pushSleep(backoff)
+		backoff *= 2
+	}
+}
+
+func isThrottled(err error) bool {
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "toomanyrequests") || strings.Contains(msg, "too many requests")
+}
+
+func pushOnce(client docker.Client, auth, image string) (string, error) {
+	// One tag per call. With All set the client drops the tag from the
+	// request and the daemon pushes every local tag of the repository, so a
+	// loop over N tags made N*N pushes - which is what tripped the registry's
+	// rate limit in the first place.
+	out, err := client.ImagePush(context.Background(), image, mobyclient.ImagePushOptions{RegistryAuth: auth})
 	if err != nil {
 		return "", err
 	}
