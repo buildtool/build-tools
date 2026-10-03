@@ -48,6 +48,10 @@ type MockDocker struct {
 	BuildError    []error
 	PushError     error
 	PushOutput    *string
+	// PushResponses answers successive ImagePush calls in order, the last one
+	// repeating; when empty every call answers PushOutput.
+	PushResponses []string
+	PushOptions   []mobyclient.ImagePushOptions
 	BrokenOutput  bool
 	ResponseError error
 	ResponseBody  io.Reader
@@ -74,14 +78,20 @@ func (m *MockDocker) ImageBuild(_ context.Context, buildContext io.Reader, optio
 	return mobyclient.ImageBuildResult{Body: io.NopCloser(body)}, nil
 }
 
-func (m *MockDocker) ImagePush(_ context.Context, image string, _ mobyclient.ImagePushOptions) (mobyclient.ImagePushResponse, error) {
+func (m *MockDocker) ImagePush(_ context.Context, image string, options mobyclient.ImagePushOptions) (mobyclient.ImagePushResponse, error) {
+	call := len(m.Images)
 	m.Images = append(m.Images, image)
+	m.PushOptions = append(m.PushOptions, options)
 
 	if m.PushError != nil {
 		return &mockPushResponse{ReadCloser: io.NopCloser(strings.NewReader("Push error"))}, m.PushError
 	}
 
-	return &mockPushResponse{ReadCloser: io.NopCloser(strings.NewReader(*m.PushOutput))}, nil
+	output := m.PushOutput
+	if len(m.PushResponses) > 0 {
+		output = &m.PushResponses[min(call, len(m.PushResponses)-1)]
+	}
+	return &mockPushResponse{ReadCloser: io.NopCloser(strings.NewReader(*output))}, nil
 }
 
 func (m *MockDocker) RegistryLogin(_ context.Context, options mobyclient.RegistryLoginOptions) (mobyclient.RegistryLoginResult, error) {

@@ -12,6 +12,12 @@ By following the conventions no additional flags are needed, but the following f
 $ push --file docker/Dockerfile.build
 ```
 
+Each tag is pushed in its own request: the build stages, the commit, the branch, and `latest` on the default branch.
+
+## Throttling
+
+A registry that rate-limits pushes answers with HTTP 429 (on ECR, `toomanyrequests: Rate exceeded`). A push that was throttled is retried up to three times, waiting 2, 4 and 8 seconds between attempts, before `push` fails. Other push errors are not retried.
+
 ## GitHub Actions outputs
 
 When running in GitHub Actions, the `push` command writes the following step outputs to `$GITHUB_OUTPUT`:

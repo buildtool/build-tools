@@ -25,6 +25,7 @@ package registry
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -83,4 +84,63 @@ func TestDockerRegistry_PushImage_AuxTakesPrecedenceOverStatus(t *testing.T) {
 	digest, err := registry.PushImage(client, "dummy", "image:v1")
 	assert.NoError(t, err)
 	assert.Equal(t, "sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7", digest)
+}
+
+func TestDockerRegistry_PushImage_PushesOneTagPerCall(t *testing.T) {
+	pushOut := `{"status":"Push successful"}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushOutput: &pushOut}
+
+	_, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"image:v1"}, client.Images)
+	// All would drop the tag from the request and push every local tag of
+	// the repository on each call.
+	assert.False(t, client.PushOptions[0].All)
+}
+
+func TestDockerRegistry_PushImage_RetriesWhenThrottled(t *testing.T) {
+	var waits []time.Duration
+	pushSleep = func(d time.Duration) { waits = append(waits, d) }
+	defer func() { pushSleep = time.Sleep }()
+
+	throttled := `{"errorDetail":{"message":"toomanyrequests: Rate exceeded"},"error":"toomanyrequests: Rate exceeded"}`
+	pushed := `{"progressDetail":{},"aux":{"Tag":"v1","Digest":"sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7","Size":2828}}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushResponses: []string{throttled, throttled, pushed}}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.NoError(t, err)
+	assert.Equal(t, "sha256:af534ee896ce2ac80f3413318329e45e3b3e74b89eb337b9364b8ac1e83498b7", digest)
+	assert.Len(t, client.Images, 3)
+	assert.Equal(t, []time.Duration{2 * time.Second, 4 * time.Second}, waits)
+}
+
+func TestDockerRegistry_PushImage_GivesUpAfterRetries(t *testing.T) {
+	var waits []time.Duration
+	pushSleep = func(d time.Duration) { waits = append(waits, d) }
+	defer func() { pushSleep = time.Sleep }()
+
+	throttled := `{"errorDetail":{"message":"toomanyrequests: Rate exceeded"},"error":"toomanyrequests: Rate exceeded"}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushResponses: []string{throttled}}
+
+	digest, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.EqualError(t, err, "toomanyrequests: Rate exceeded")
+	assert.Empty(t, digest)
+	assert.Len(t, client.Images, 1+pushRetries)
+	assert.Equal(t, []time.Duration{2 * time.Second, 4 * time.Second, 8 * time.Second}, waits)
+}
+
+func TestDockerRegistry_PushImage_DoesNotRetryOtherErrors(t *testing.T) {
+	pushSleep = func(time.Duration) { t.Fatal("slept for an error that is not throttling") }
+	defer func() { pushSleep = time.Sleep }()
+
+	denied := `{"errorDetail":{"message":"denied: requested access to the resource is denied"},"error":"denied"}`
+	registry := &Gitlab{}
+	client := &docker.MockDocker{PushResponses: []string{denied}}
+
+	_, err := registry.PushImage(client, "dummy", "image:v1")
+	assert.EqualError(t, err, "denied: requested access to the resource is denied")
+	assert.Len(t, client.Images, 1)
 }
