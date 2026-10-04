@@ -5,6 +5,7 @@ IgnoreURLs:
 - opencollective.com
 - https://gitlab.com/profile/personal_access_tokens
 - https://twitter.com/goreleaser
+- asciinema.org
 IgnoreDirs:
 - overrides
 IgnoreDirectoryMissingTrailingSlash: true
