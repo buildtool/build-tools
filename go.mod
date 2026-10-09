@@ -42,7 +42,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20261008234032-65faa4be4f89 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.10.1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
-	github.com/Microsoft/go-winio v0.6.3-0.20261005174057-24302489fec1 // indirect
+	github.com/Microsoft/go-winio v0.6.3 // indirect
 	github.com/ProtonMail/go-crypto v1.5.2 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.8 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.20.2 // indirect
