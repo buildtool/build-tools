@@ -12,7 +12,7 @@ By following the conventions no additional flags are needed, but the following f
 $ push --file docker/Dockerfile.build
 ```
 
-Each tag is pushed in its own request: the build stages, the commit, the branch, and `latest` on the default branch.
+Each tag is pushed in its own request: the build stages, the commit, the branch, and `latest` on the default branch. Export stages (named `export*`) are never pushed — `build` writes their output to a local directory and tags no image for them, so a push of their stage tag would fail.
 
 ## Throttling
 

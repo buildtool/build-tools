@@ -257,6 +257,46 @@ COPY --from=test file2 .
 	})
 }
 
+func TestPush_ExportStage(t *testing.T) {
+	defer func() { _ = os.RemoveAll(name) }()
+	dockerfile := `
+FROM scratch as build
+RUN echo apa > file
+RUN echo testdata > coverage.txt
+FROM scratch as export
+COPY --from=build /coverage.txt /
+FROM scratch
+COPY --from=build file .
+`
+	_ = write(name, "Dockerfile", dockerfile)
+
+	logMock := mocks.New()
+	log.SetHandler(logMock)
+	log.SetLevel(log.DebugLevel)
+	pushOut := `{"status":"Push successful"}`
+	client := &docker.MockDocker{PushOutput: &pushOut}
+	cfg := config.InitEmptyConfig()
+	cfg.CI.Gitlab.CIBuildName = "reponame"
+	cfg.CI.Gitlab.CICommit = "abc123"
+	cfg.CI.Gitlab.CIBranchName = "master"
+	cfg.Registry.Dockerhub.Namespace = "repo"
+
+	exitCode := doPush(client, cfg, name, "Dockerfile")
+
+	// The image for the export stage is never tagged in the daemon (its
+	// output is a local directory), so pushing it fails the build. Every
+	// other stage and the regular tags are pushed.
+	assert.Equal(t, 0, exitCode)
+	assert.Equal(t, []string{"repo/reponame:build", "repo/reponame:abc123", "repo/reponame:master", "repo/reponame:latest"}, client.Images)
+	logMock.Check(t, []string{
+		"debug: Logged in\n",
+		"info: Pushing tag '<green>repo/reponame:build</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:abc123</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:master</green>'\n",
+		"info: Pushing tag '<green>repo/reponame:latest</green>'\n",
+	})
+}
+
 func TestPush_Output(t *testing.T) {
 	defer func() { _ = os.RemoveAll(name) }()
 	_ = write(name, "Dockerfile", "FROM scratch")
