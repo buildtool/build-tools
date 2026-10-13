@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/apex/log"
 
@@ -99,6 +100,13 @@ func doPush(client docker.Client, cfg *config.Config, dir, dockerfile string) in
 
 	var tags []string
 	for _, stage := range stages {
+		// Export stages are special: build gives them a local directory
+		// output ('exported' next to the Dockerfile) and never tags an
+		// image with their name in the daemon. A push of a tag that does
+		// not exist fails the build ("tag does not exist"), so skip them.
+		if strings.HasPrefix(stage, "export") {
+			continue
+		}
 		tags = append(tags, docker.Tag(currentRegistry.RegistryUrl(), currentCI.BuildName(), stage))
 	}
 
