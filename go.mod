@@ -5,7 +5,7 @@ go 1.27.2
 require (
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.3
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.15.0
 	github.com/alecthomas/kong v1.16.1
 	github.com/apex/log v1.9.0
 	github.com/aws/aws-sdk-go-v2 v1.47.3
