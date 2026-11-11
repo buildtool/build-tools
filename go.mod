@@ -26,7 +26,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/tonistiigi/fsutil v0.0.0-20261103125000-e075fd9305eb
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
-	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto v0.59.0
 	golang.org/x/exp v0.0.0-20261109185158-a52e3aef5920
 	golang.org/x/sync v0.25.0
 	google.golang.org/grpc v1.85.0
