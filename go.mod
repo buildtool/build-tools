@@ -27,7 +27,7 @@ require (
 	github.com/tonistiigi/fsutil v0.0.0-20261103125000-e075fd9305eb
 	gitlab.com/unboundsoftware/apex-mocks v0.2.0
 	golang.org/x/crypto v0.59.0
-	golang.org/x/exp v0.0.0-20261117202309-7a49493bfd90
+	golang.org/x/exp v0.0.0-20261118215729-2791e4028fd4
 	golang.org/x/sync v0.25.0
 	google.golang.org/grpc v1.85.0
 	gopkg.in/yaml.v3 v3.0.1
